@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DH3项目HelpMe索引表</title>
+    <title>DH3项目HelpMe索引表 - 修复版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -676,7 +676,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>DH3项目HelpMe索引表</h1>
+            <h1>DH3项目HelpMe索引表 - 修复版</h1>
             <div class="admin-indicator" id="adminIndicator" style="display: none;">
                 <i class="fas fa-user-shield"></i> 管理员模式
             </div>
@@ -1172,45 +1172,94 @@
 
         // ========== 核心功能函数 ==========
 
-        // 打开文件夹路径
+        // 修复的打开文件夹路径函数 - 解决浏览器安全限制问题
         function openFolder(path) {
             const decodedPath = path.replace(/\\\\/g, '\\');
-            const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
             
             console.log('尝试打开路径:', decodedPath);
-            console.log('File URL:', fileUrl);
             
-            const testLink = document.createElement('a');
-            testLink.href = 'file:///';
+            // 检测路径类型
+            const isLocalPath = decodedPath.includes(':\\') || decodedPath.startsWith('D:\\') || decodedPath.startsWith('C:\\');
+            const isNetworkPath = decodedPath.startsWith('\\\\');
             
-            if (testLink.protocol === 'file:') {
-                window.open(fileUrl, '_blank');
-                showToast('正在尝试打开文件夹...', 'info');
-            } else {
-                if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + decodedPath)) {
+            // 对于本地路径，浏览器通常不允许直接打开
+            if (isLocalPath) {
+                console.log('检测到本地路径，浏览器安全限制阻止直接访问');
+                
+                // 提供复制到剪贴板选项
+                if (confirm(`由于浏览器安全限制，无法直接打开本地文件夹。\n\n路径: ${decodedPath}\n\n是否复制路径到剪贴板？`)) {
                     copyToClipboard(decodedPath).then(() => {
-                        showToast('文件夹路径已复制到剪贴板！', 'success');
+                        showToast('文件夹路径已复制到剪贴板！您可以在文件资源管理器中粘贴此路径。', 'success');
                     }).catch(err => {
                         showToast('复制失败，请手动复制路径', 'error');
+                        console.error('复制失败:', err);
                     });
                 }
+                return false;
             }
+            
+            // 对于网络路径，尝试使用 file:// 协议
+            if (isNetworkPath) {
+                console.log('检测到网络路径，尝试使用 file:// 协议');
+                const fileUrl = `file:${decodedPath.replace(/\\/g, '/')}`;
+                console.log('File URL:', fileUrl);
+                
+                // 测试浏览器是否支持 file 协议
+                const testLink = document.createElement('a');
+                testLink.href = 'file:///';
+                
+                // 尝试打开网络路径
+                try {
+                    window.open(fileUrl, '_blank');
+                    showToast('正在尝试打开网络文件夹...', 'info');
+                } catch (error) {
+                    console.error('打开网络路径失败:', error);
+                    
+                    // 如果打开失败，提供复制选项
+                    if (confirm(`无法直接打开网络文件夹。\n\n路径: ${decodedPath}\n\n是否复制路径到剪贴板？`)) {
+                        copyToClipboard(decodedPath).then(() => {
+                            showToast('网络路径已复制到剪贴板！您可以在文件资源管理器中粘贴此路径。', 'success');
+                        }).catch(err => {
+                            showToast('复制失败，请手动复制路径', 'error');
+                        });
+                    }
+                }
+                return false;
+            }
+            
+            // 对于其他类型的路径，提供复制选项
+            if (confirm(`无法直接打开此路径。\n\n路径: ${decodedPath}\n\n是否复制路径到剪贴板？`)) {
+                copyToClipboard(decodedPath).then(() => {
+                    showToast('路径已复制到剪贴板！', 'success');
+                }).catch(err => {
+                    showToast('复制失败，请手动复制路径', 'error');
+                });
+            }
+            
             return false;
         }
 
         // 复制到剪贴板
         async function copyToClipboard(text) {
             try {
-                await navigator.clipboard.writeText(text);
-                return true;
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } else {
+                    // 降级方案
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return true;
+                }
             } catch (err) {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                return true;
+                console.error('复制到剪贴板失败:', err);
+                throw err;
             }
         }
 
@@ -1230,10 +1279,20 @@
             
             document.body.appendChild(toast);
             
+            // 添加动画效果
             setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 10);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
             }, 3000);
         }
 
@@ -1405,7 +1464,7 @@
                         <td>${item.id}</td>
                         <td><span class="category ${categoryClass}">${categoryName}</span></td>
                         <td>
-                            <a href="#" class="${linkClass}" onclick="openFolder('${item.path.replace(/\\/g, '\\\\')}')">
+                            <a href="#" class="${linkClass}" onclick="return openFolder('${item.path.replace(/\\/g, '\\\\')}')">
                                 <i class="${iconClass} link-icon"></i> 
                                 ${item.title}
                                 <span class="path-type-badge ${badgeClass}">${badgeText}</span>
