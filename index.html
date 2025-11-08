@@ -864,6 +864,17 @@
             return hashHex;
         }
 
+        // 调试函数：计算并显示123456的哈希值
+        async function debugHash() {
+            const testPassword = "whj";
+            const hash = await sha256(testPassword);
+            console.log(`调试信息：密码 "${testPassword}" 的SHA-256哈希值:`, hash);
+            console.log('存储的哈希值:', adminAccounts[0].passwordHash);
+            console.log('是否匹配:', hash === adminAccounts[0].passwordHash);
+        }
+
+        // 页面加载时运行调试
+        debugHash();
         // 从GitHub加载配置和Excel表格数据
         async function loadConfigFromGitHub() {
             showLoadingIndicator('正在从GitHub加载配置...');
