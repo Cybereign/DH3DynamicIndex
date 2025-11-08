@@ -920,7 +920,7 @@
             note: '备注'
         };
 
-        // GitHub API 服务
+        // 修复的GitHub API 服务 - 处理SHA冲突问题
         class GitHubService {
             constructor(token) {
                 this.token = token;
@@ -936,6 +936,10 @@
                     });
 
                     if (!response.ok) {
+                        if (response.status === 404) {
+                            // 文件不存在，返回null
+                            return null;
+                        }
                         throw new Error(`获取文件失败: ${response.status}`);
                     }
 
@@ -943,7 +947,8 @@
                     const content = atob(data.content);
                     return {
                         content: content,
-                        sha: data.sha
+                        sha: data.sha,
+                        exists: true
                     };
                 } catch (error) {
                     console.error('获取文件内容失败:', error);
@@ -953,7 +958,17 @@
 
             async updateFileContent(filePath, content, sha, commitMessage) {
                 try {
-                    // 直接使用传入的base64内容，不进行重复编码
+                    const payload = {
+                        message: commitMessage,
+                        content: content,
+                        branch: GITHUB_BRANCH
+                    };
+
+                    // 只有在文件已存在时才提供SHA
+                    if (sha) {
+                        payload.sha = sha;
+                    }
+
                     const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}`, {
                         method: 'PUT',
                         headers: {
@@ -961,16 +976,17 @@
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            message: commitMessage,
-                            content: content, // 直接使用已经base64编码的内容
-                            sha: sha,
-                            branch: GITHUB_BRANCH
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     if (!response.ok) {
                         const errorData = await response.json();
+                        
+                        // 处理SHA不匹配错误
+                        if (response.status === 409) {
+                            throw new Error(`文件版本冲突。请先点击"修复Excel格式"按钮，然后重试。`);
+                        }
+                        
                         throw new Error(`更新文件失败: ${response.status} - ${errorData.message}`);
                     }
 
@@ -1006,6 +1022,93 @@
                         authenticated: false,
                         error: error.message
                     };
+                }
+            }
+
+            // 新增：强制创建新文件（忽略SHA冲突）
+            async forceCreateFile(filePath, content, commitMessage) {
+                try {
+                    // 先尝试获取当前文件信息
+                    let currentFile = null;
+                    try {
+                        currentFile = await this.getFileContent(filePath);
+                    } catch (error) {
+                        console.log('文件不存在或获取失败，将创建新文件');
+                    }
+
+                    const payload = {
+                        message: commitMessage,
+                        content: content,
+                        branch: GITHUB_BRANCH
+                    };
+
+                    // 如果文件存在，使用正确的SHA
+                    if (currentFile && currentFile.exists) {
+                        payload.sha = currentFile.sha;
+                    }
+
+                    const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        
+                        // 如果仍然冲突，尝试使用空SHA创建新文件
+                        if (response.status === 409) {
+                            console.log('文件冲突，尝试强制创建新文件...');
+                            return await this.forceCreateNewFile(filePath, content, commitMessage);
+                        }
+                        
+                        throw new Error(`强制创建文件失败: ${response.status} - ${errorData.message}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('文件强制创建成功:', data);
+                    return data;
+                } catch (error) {
+                    console.error('强制创建文件失败:', error);
+                    throw error;
+                }
+            }
+
+            // 强制创建新文件（忽略现有文件）
+            async forceCreateNewFile(filePath, content, commitMessage) {
+                try {
+                    // 直接创建新文件，不提供SHA
+                    const payload = {
+                        message: commitMessage,
+                        content: content,
+                        branch: GITHUB_BRANCH
+                    };
+
+                    const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`创建新文件失败: ${response.status} - ${errorData.message}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('新文件创建成功:', data);
+                    return data;
+                } catch (error) {
+                    console.error('创建新文件失败:', error);
+                    throw error;
                 }
             }
         }
@@ -1180,7 +1283,7 @@
             }
         }
 
-        // 处理Excel数据 - 修复乱码问题
+        // 处理Excel数据
         async function processExcelData(arrayBuffer) {
             try {
                 const data = new Uint8Array(arrayBuffer);
@@ -1194,7 +1297,6 @@
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // 使用sheet_to_json而不是sheet_to_row_object_array
                 const excelData = XLSX.utils.sheet_to_json(worksheet, { 
                     header: 1,
                     defval: '',
@@ -1345,7 +1447,7 @@
             updateStats();
         }
 
-        // ========== 修复Excel同步功能 ==========
+        // ========== 修复的Excel同步功能 ==========
 
         // 修复的ArrayBuffer转Base64函数
         function arrayBufferToBase64(buffer) {
@@ -1362,7 +1464,7 @@
             }
         }
 
-        // 修复的Excel同步功能 - 彻底解决乱码问题
+        // 修复的Excel同步功能 - 彻底解决SHA冲突问题
         async function syncDataToExcel() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -1378,13 +1480,17 @@
             try {
                 showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
 
-                // 1. 获取当前 Excel 文件的 SHA
+                // 1. 获取当前 Excel 文件信息
                 let fileInfo;
                 try {
                     fileInfo = await gitHubService.getFileContent('table.xlsx');
+                    if (!fileInfo) {
+                        console.log('文件不存在，将创建新文件');
+                        fileInfo = { sha: null, exists: false };
+                    }
                 } catch (error) {
-                    console.log('文件不存在，将创建新文件');
-                    fileInfo = { sha: null };
+                    console.log('获取文件信息失败，将创建新文件:', error);
+                    fileInfo = { sha: null, exists: false };
                 }
                 
                 // 2. 准备数据
@@ -1403,7 +1509,7 @@
                     excelData.push(row);
                 });
 
-                // 3. 创建工作表 - 使用修复的方法
+                // 3. 创建工作表
                 const worksheet = XLSX.utils.aoa_to_sheet(excelData);
                 
                 // 4. 设置列宽
@@ -1421,31 +1527,35 @@
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
                 
-                // 6. 生成 Excel 文件 - 使用正确的选项
+                // 6. 生成 Excel 文件
                 const excelBuffer = XLSX.write(workbook, { 
                     bookType: 'xlsx', 
                     type: 'array',
                     bookSST: false
                 });
 
-                // 7. 转换为 base64 - 关键修复：直接使用SheetJS生成的buffer
+                // 7. 转换为 base64
                 const excelBase64 = arrayBufferToBase64(excelBuffer);
 
-                // 8. 上传到 GitHub - 直接使用base64内容
-                await gitHubService.updateFileContent(
+                // 8. 上传到 GitHub - 使用强制创建方法解决SHA冲突
+                await gitHubService.forceCreateFile(
                     'table.xlsx',
                     excelBase64,
-                    fileInfo.sha,
                     `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
                 );
 
                 hideLoadingIndicator();
-                showToast('✅ 数据已成功同步到 GitHub Excel 文件！格式已修复。', 'success');
+                showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
                 
             } catch (error) {
                 console.error('同步到 Excel 失败:', error);
                 hideLoadingIndicator();
-                showToast(`同步失败: ${error.message}`, 'error');
+                
+                if (error.message.includes('文件版本冲突')) {
+                    showToast(`同步失败: ${error.message}\n\n请先点击"修复Excel格式"按钮，然后重试同步。`, 'error');
+                } else {
+                    showToast(`同步失败: ${error.message}`, 'error');
+                }
             }
         }
 
@@ -1490,7 +1600,7 @@
             }
         }
 
-        // 修复Excel文件格式功能
+        // 修复Excel文件格式功能 - 强制解决SHA冲突
         async function repairExcelFormat() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -1550,24 +1660,15 @@
                 // 转换为 base64
                 const excelBase64 = arrayBufferToBase64(excelBuffer);
 
-                // 获取文件SHA（如果存在）
-                let fileInfo;
-                try {
-                    fileInfo = await gitHubService.getFileContent('table.xlsx');
-                } catch (error) {
-                    fileInfo = { sha: null };
-                }
-
-                // 上传修复后的文件
-                await gitHubService.updateFileContent(
+                // 强制创建新文件，解决SHA冲突
+                await gitHubService.forceCreateNewFile(
                     'table.xlsx',
                     excelBase64,
-                    fileInfo.sha,
                     `修复Excel文件格式 - ${new Date().toLocaleString()}`
                 );
 
                 hideLoadingIndicator();
-                showToast('✅ Excel文件格式修复完成！现在从GitHub下载的文件应该显示正常。', 'success');
+                showToast('✅ Excel文件格式修复完成！SHA冲突已解决。现在可以正常使用同步功能。', 'success');
                 
             } catch (error) {
                 console.error('修复Excel格式失败:', error);
