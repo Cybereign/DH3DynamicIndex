@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DH3项目HelpMe索引表</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+    
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .admin-indicator {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .auth-section {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .login-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .login-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .login-btn {
+            padding: 8px 15px;
+            background: #6a11cb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .login-btn:hover {
+            background: #5a0db5;
+        }
+        
+        .logout-btn {
+            padding: 8px 15px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .config-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px 12px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+        
+        .filter-box {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 18px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        
+        .filter-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .filter-btn.active {
+            background: #6a11cb;
+            color: white;
+            border-color: #6a11cb;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #6a11cb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a0db5;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #f8f9fa;
+        }
+        
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #eaeaea;
+            font-size: 0.95rem;
+            position: relative;
+        }
+        
+        .editable-header {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .editable-header:hover {
+            background: #e9ecef;
+        }
+        
+        .editable-header .edit-icon {
+            opacity: 0;
+            margin-left: 5px;
+            font-size: 0.8rem;
+            transition: opacity 0.2s;
+        }
+        
+        .editable-header:hover .edit-icon {
+            opacity: 1;
+        }
+        
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eaeaea;
+            font-size: 0.95rem;
+        }
+        
+        tbody tr {
+            transition: background 0.2s;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .category {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .category-1 { background: #e3f2fd; color: #1976d2; }
+        .category-2 { background: #e8f5e9; color: #388e3c; }
+        .category-3 { background: #fff3e0; color: #f57c00; }
+        .category-4 { background: #fce4ec; color: #c2185b; }
+        .category-5 { background: #f3e5f5; color: #7b1fa2; }
+        .category-6 { background: #e0f2f1; color: #00796b; }
+        .category-7 { background: #fff8e1; color: #ff8f00; }
+        .category-8 { background: #fbe9e7; color: #d84315; }
+        .category-9 { background: #e8eaf6; color: #303f9f; }
+        .category-10 { background: #e0f7fa; color: #0097a7; }
+        
+        .link {
+            color: #2575fc;
+            text-decoration: none;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .link:hover {
+            color: #6a11cb;
+            text-decoration: underline;
+        }
+        
+        .link-icon {
+            font-size: 0.9rem;
+        }
+        
+        .folder-link {
+            color: #28a745;
+        }
+        
+        .folder-link:hover {
+            color: #218838;
+        }
+        
+        .note {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .empty-row {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .action-cell {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .edit-btn {
+            color: #17a2b8;
+        }
+        
+        .edit-btn:hover:not(:disabled) {
+            background: #e6f7fa;
+        }
+        
+        .delete-btn {
+            color: #dc3545;
+        }
+        
+        .delete-btn:hover:not(:disabled) {
+            background: #fbe7e9;
+        }
+        
+        .path-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+        
+        .badge-url {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .badge-folder {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .path-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .path-type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .path-type-btn.active {
+            background: #6a11cb;
+            color: white;
+            border-color: #6a11cb;
+        }
+        
+        .path-example {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .modal-footer {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .stats {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .permission-hint {
+            padding: 10px 15px;
+            background: #fff3cd;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .loading-indicator {
+            padding: 10px 15px;
+            background: #d1ecf1;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #0c5460;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .error-message {
+            padding: 10px 15px;
+            background: #f8d7da;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #721c24;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .path-display {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+        
+        .header-edit-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #6a11cb;
+            background: white;
+            padding: 0 15px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            outline: none;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            th, td {
+                padding: 12px 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .btn {
+                flex: 1;
+                justify-content: center;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .auth-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DH3项目HelpMe索引表</h1>
+            <div class="admin-indicator" id="adminIndicator" style="display: none;">
+                <i class="fas fa-user-shield"></i> 管理员模式
+            </div>
+        </header>
+        
+        <div class="auth-section">
+            <div id="loginSection" style="display: block;">
+                <div class="login-form">
+                    <input type="text" id="username" class="login-input" placeholder="用户名" value="admin">
+                    <input type="password" id="password" class="login-input" placeholder="密码" value="whj">
+                    <button class="login-btn" id="loginBtn">登录</button>
+                </div>
+            </div>
+            <div id="userSection" style="display: none;">
+                <div class="user-info">
+                    <span>欢迎, <strong id="userName">管理员</strong></span>
+                    <span class="config-info" id="configInfo"></span>
+                    <button class="logout-btn" id="logoutBtn">退出登录</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 配置加载状态指示器 -->
+        <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+            <i class="fas fa-sync fa-spin"></i>
+            <span>正在从GitHub加载配置...</span>
+        </div>
+        
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="errorText">配置加载失败，使用默认配置</span>
+        </div>
+        
+        <div class="controls">
+            <div class="search-box">
+                <span class="search-icon"><i class="fas fa-search"></i></span>
+                <input type="text" id="searchInput" placeholder="搜索页面名称、类别或备注...">
+            </div>
+            
+            <div class="filter-box">
+                <button class="filter-btn active" data-category="all">全部</button>
+                <!-- 分类按钮将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="addBtn" disabled>
+                    <i class="fas fa-plus"></i> 添加新条目
+                </button>
+                <button class="btn btn-success" id="exportBtn" disabled>
+                    <i class="fas fa-file-export"></i> 导出数据
+                </button>
+                <button class="btn btn-success" id="updateHTMLBtn" disabled>
+                    <i class="fas fa-download"></i> 更新HTML
+                </button>
+                <button class="btn btn-danger" id="resetBtn" disabled>
+                    <i class="fas fa-redo"></i> 重置数据
+                </button>
+                <button class="btn btn-primary" id="refreshConfigBtn">
+                    <i class="fas fa-sync-alt"></i> 刷新配置
+                </button>
+                <button class="btn btn-primary" id="editHeadersBtn" disabled>
+                    <i class="fas fa-edit"></i> 编辑表头
+                </button>
+            </div>
+        </div>
+        
+        <div class="permission-hint" id="permissionHint" style="display: none;">
+            <i class="fas fa-info-circle"></i>
+            <span>您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。</span>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="8%" class="editable-header" data-field="id">
+                            <span id="header-id">序号</span>
+                            <i class="fas fa-edit edit-icon"></i>
+                        </th>
+                        <th width="18%" class="editable-header" data-field="category">
+                            <span id="header-category">类别</span>
+                            <i class="fas fa-edit edit-icon"></i>
+                        </th>
+                        <th width="34%" class="editable-header" data-field="path">
+                            <span id="header-path">链接地址</span>
+                            <i class="fas fa-edit edit-icon"></i>
+                        </th>
+                        <th width="25%" class="editable-header" data-field="note">
+                            <span id="header-note">备注</span>
+                            <i class="fas fa-edit edit-icon"></i>
+                        </th>
+                        <th width="15%">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 表格内容将通过JavaScript动态生成 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="stats">
+            <div id="totalCount">总计: 0 个项目</div>
+            <div id="filteredCount">显示: 0 个项目</div>
+            <div id="configVersion">配置版本: 加载中...</div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑模态框 -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">添加新条目</h3>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm">
+                    <input type="hidden" id="editId" value="">
+                    <div class="form-group">
+                        <label class="form-label" for="itemTitle">页面标题</label>
+                        <input type="text" class="form-control" id="itemTitle" placeholder="输入页面标题" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="itemCategory">类别</label>
+                        <select class="form-select" id="itemCategory" required>
+                            <option value="">选择类别</option>
+                            <!-- 类别选项将通过JavaScript动态生成 -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">路径类型</label>
+                        <div class="path-type-selector">
+                            <button type="button" class="path-type-btn active" data-type="url">网页URL</button>
+                            <button type="button" class="path-type-btn" data-type="folder">文件夹路径</button>
+                        </div>
+                        <input type="text" class="form-control" id="itemPath" placeholder="输入网页URL地址" required>
+                        <div class="path-example" id="pathExample">例如: https://example.com/page</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="itemNote">备注</label>
+                        <textarea class="form-control" id="itemNote" placeholder="输入备注信息" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn cancel-btn" id="cancelBtn">取消</button>
+                <button class="btn btn-primary" id="saveItemBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表头编辑模态框 -->
+    <div class="modal" id="headersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑表头名称</h3>
+                <button class="close-btn" id="closeHeadersModal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="headersForm">
+                    <div class="form-group">
+                        <label class="form-label" for="headerIdInput">序号列名称</label>
+                        <input type="text" class="form-control" id="headerIdInput" placeholder="输入序号列名称">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="headerCategoryInput">类别列名称</label>
+                        <input type="text" class="form-control" id="headerCategoryInput" placeholder="输入类别列名称">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="headerPathInput">链接地址列名称</label>
+                        <input type="text" class="form-control" id="headerPathInput" placeholder="输入链接地址列名称">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="headerNoteInput">备注列名称</label>
+                        <input type="text" class="form-control" id="headerNoteInput" placeholder="输入备注列名称">
+                    </div>
+                </form>
+                <div class="permission-hint">
+                    <i class="fas fa-info-circle"></i>
+                    <span>修改表头名称后，页面显示会立即更新，同时会保存到本地存储中。</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn cancel-btn" id="cancelHeadersBtn">取消</button>
+                <button class="btn btn-primary" id="saveHeadersBtn">保存表头</button>
+                <button class="btn btn-success" id="resetHeadersBtn">重置表头</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入SheetJS库用于处理Excel文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // 示例数据 - 将从GitHub配置加载
+        let tableData = [];
+        
+        // GitHub配置URL
+        const GITHUB_CONFIG_URL = 'https://raw.githubusercontent.com/Cybereign/securityconfig/main/config.json';
+        const GITHUB_EXCEL_URL = 'https://raw.githubusercontent.com/Cybereign/securityconfig/main/table.xlsx';
+        
+        // 用户账户信息和配置
+        let adminAccounts = [];
+        let appConfig = {};
+        let categoryMap = {};
+        let categoryList = [];
+
+        // 表头配置
+        let headerConfig = {
+            id: '序号',
+            category: '类别',
+            path: '链接地址',
+            note: '备注'
+        };
+
+        // 自动登出和登录尝试
+        let logoutTimer;
+        let loginAttempts = 0;
+
+        // SHA-256哈希函数
+        async function sha256(message) {
+            const msgString = String(message);
+            const encoder = new TextEncoder();
+            const data = encoder.encode(msgString);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // 从GitHub加载配置和Excel表格数据
+        async function loadConfigFromGitHub() {
+            showLoadingIndicator('正在从GitHub加载配置...');
+            
+            try {
+                // 加载用户配置
+                const configResponse = await fetch(GITHUB_CONFIG_URL);
+                if (!configResponse.ok) {
+                    throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
+                }
+                const config = await configResponse.json();
+                
+                // 加载Excel表格数据
+                const excelResponse = await fetch(GITHUB_EXCEL_URL);
+                if (!excelResponse.ok) {
+                    throw new Error(`Excel表格加载失败: HTTP ${excelResponse.status}`);
+                }
+                
+                const arrayBuffer = await excelResponse.arrayBuffer();
+                await processExcelData(arrayBuffer);
+                
+                // 处理配置
+                adminAccounts = config.users || [];
+                appConfig = config.settings || {};
+                
+                console.log('✅ GitHub配置和Excel表格数据加载成功');
+                hideLoadingIndicator();
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 配置加载失败:', error);
+                showErrorMessage(`配置加载失败: ${error.message}，使用默认配置`);
+                useDefaultConfig();
+                hideLoadingIndicator();
+                return false;
+            }
+        }
+
+        // 处理Excel数据
+        async function processExcelData(arrayBuffer) {
+            try {
+                // 读取Excel文件
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // 获取第一个工作表
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // 将工作表转换为JSON
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                if (excelData.length < 2) {
+                    throw new Error('Excel文件为空或格式不正确');
+                }
+                
+                // 获取表头
+                const headers = excelData[0];
+                console.log('Excel表头:', headers);
+                
+                // 处理数据行
+                tableData = [];
+                categoryMap = {};
+                categoryList = [];
+                
+                for (let i = 1; i < excelData.length; i++) {
+                    const row = excelData[i];
+                    if (row.length === 0) continue;
+                    
+                    // 根据表头映射数据
+                    const item = {
+                        id: getCellValue(row, headers, '序号') || (i),
+                        title: getCellValue(row, headers, '标题') || '',
+                        path: getCellValue(row, headers, '地址') || '',
+                        type: (getCellValue(row, headers, '地址类型') || 'url').toLowerCase(),
+                        note: getCellValue(row, headers, '备注') || ''
+                    };
+                    
+                    // 设置类别（使用序号作为类别ID）
+                    const categoryId = `category${item.id}`;
+                    item.category = categoryId;
+                    
+                    tableData.push(item);
+                    
+                    // 构建分类映射（使用标题作为分类名称）
+                    const categoryName = item.title || `分类${item.id}`;
+                    categoryMap[categoryId] = categoryName;
+                    
+                    if (!categoryList.find(cat => cat.id === categoryId)) {
+                        categoryList.push({
+                            id: categoryId,
+                            name: categoryName
+                        });
+                    }
+                }
+                
+                // 更新UI
+                updateCategoryFilters();
+                renderTable(tableData);
+                updateStats();
+                
+            } catch (error) {
+                console.error('Excel数据处理失败:', error);
+                throw new Error(`Excel文件处理失败: ${error.message}`);
+            }
+        }
+
+        // 获取单元格值（支持不同的表头名称）
+        function getCellValue(row, headers, fieldName) {
+            const index = headers.findIndex(header => 
+                header && header.toString().trim() === fieldName
+            );
+            
+            if (index !== -1 && row[index] !== undefined) {
+                return row[index] !== null ? row[index].toString().trim() : '';
+            }
+            
+            // 如果找不到精确匹配，尝试模糊匹配
+            const fuzzyIndex = headers.findIndex(header => 
+                header && header.toString().trim().includes(fieldName)
+            );
+            
+            if (fuzzyIndex !== -1 && row[fuzzyIndex] !== undefined) {
+                return row[fuzzyIndex] !== null ? row[fuzzyIndex].toString().trim() : '';
+            }
+            
+            return '';
+        }
+
+        // 更新分类筛选器
+        function updateCategoryFilters() {
+            const filterBox = document.querySelector('.filter-box');
+            
+            // 清空现有的分类按钮（保留"全部"按钮）
+            const allButton = filterBox.querySelector('[data-category="all"]');
+            filterBox.innerHTML = '';
+            filterBox.appendChild(allButton);
+            
+            // 添加分类按钮
+            categoryList.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.setAttribute('data-category', category.id);
+                button.textContent = category.name;
+                filterBox.appendChild(button);
+            });
+            
+            // 重新绑定事件
+            setupFilterEvents();
+        }
+
+        // 更新类别选择下拉框
+        function updateCategorySelect() {
+            const categorySelect = document.getElementById('itemCategory');
+            categorySelect.innerHTML = '<option value="">选择类别</option>';
+            
+            categoryList.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // 使用默认配置
+        function useDefaultConfig() {
+            adminAccounts = [
+                { 
+                    username: 'admin', 
+                    passwordHash: 'b107fce20b89ab22f4eb72843df4acc2628c88d38c54f56bdf3767f53238274f',
+                    name: '管理员',
+                    permissions: ['read', 'write', 'delete', 'export', 'config']
+                }
+            ];
+            
+            appConfig = {
+                autoLogout: 60,
+                maxLoginAttempts: 5
+            };
+            
+            // 使用示例数据
+            tableData = [
+                {
+                    "id": 1,
+                    "title": "DH3项目华为接口联系人清单",
+                    "category": "category1",
+                    "path": "https://acndoaymjsa1.feishu.cn/file/NI95bmHjpoopKBxVGhrc7S9SnUc",
+                    "type": "url",
+                    "note": "飞书 包含华为座舱、智驾、网联相关接口人信息"
+                },
+                {
+                    "id": 2,
+                    "title": "DH3项目责任分工",
+                    "category": "category2", 
+                    "path": "\\\\10.4.9.25\\Project\\DH系列",
+                    "type": "folder",
+                    "note": "外网共享文件夹"
+                }
+            ];
+            
+            categoryMap = {
+                "category1": "DH3项目华为接口联系人清单",
+                "category2": "DH3项目责任分工"
+            };
+            
+            categoryList = [
+                { id: "category1", name: "DH3项目华为接口联系人清单" },
+                { id: "category2", name: "DH3项目责任分工" }
+            ];
+            
+            updateCategoryFilters();
+            updateCategorySelect();
+            renderTable(tableData);
+            updateStats();
+            updateConfigInfo({
+                project: 'DH3项目HelpMe索引表',
+                version: '默认配置',
+                lastUpdated: new Date().toISOString()
+            });
+        }
+
+        // 更新配置信息显示
+        function updateConfigInfo(config) {
+            const configInfo = document.getElementById('configInfo');
+            const configVersion = document.getElementById('configVersion');
+            
+            if (configInfo && configVersion) {
+                const versionInfo = config.version ? `v${config.version}` : '未知版本';
+                const updateTime = config.lastUpdated ? new Date(config.lastUpdated).toLocaleString() : '未知时间';
+                
+                configInfo.textContent = `${config.project || 'DH3项目'} ${versionInfo}`;
+                configVersion.textContent = `配置版本: ${versionInfo} | 更新: ${updateTime}`;
+            }
+        }
+
+        // 显示加载指示器
+        function showLoadingIndicator(message) {
+            const indicator = document.getElementById('loadingIndicator');
+            const text = indicator.querySelector('span');
+            if (indicator) {
+                text.textContent = message;
+                indicator.style.display = 'flex';
+            }
+        }
+
+        // 隐藏加载指示器
+        function hideLoadingIndicator() {
+            const indicator = document.getElementById('loadingIndicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+        }
+
+        // 显示错误信息
+        function showErrorMessage(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            if (errorDiv && errorText) {
+                errorText.textContent = message;
+                errorDiv.style.display = 'flex';
+            }
+        }
+
+        // 隐藏错误信息
+        function hideErrorMessage() {
+            const errorDiv = document.getElementById('errorMessage');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+        }
+
+        // DOM元素
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const addBtn = document.getElementById('addBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const updateHTMLBtn = document.getElementById('updateHTMLBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const refreshConfigBtn = document.getElementById('refreshConfigBtn');
+        const editHeadersBtn = document.getElementById('editHeadersBtn');
+        const itemModal = document.getElementById('itemModal');
+        const headersModal = document.getElementById('headersModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const itemForm = document.getElementById('itemForm');
+        const headersForm = document.getElementById('headersForm');
+        const editId = document.getElementById('editId');
+        const itemTitle = document.getElementById('itemTitle');
+        const itemCategory = document.getElementById('itemCategory');
+        const itemPath = document.getElementById('itemPath');
+        const itemNote = document.getElementById('itemNote');
+        const saveItemBtn = document.getElementById('saveItemBtn');
+        const closeModal = document.getElementById('closeModal');
+        const closeHeadersModal = document.getElementById('closeHeadersModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelHeadersBtn = document.getElementById('cancelHeadersBtn');
+        const saveHeadersBtn = document.getElementById('saveHeadersBtn');
+        const resetHeadersBtn = document.getElementById('resetHeadersBtn');
+        const totalCount = document.getElementById('totalCount');
+        const filteredCount = document.getElementById('filteredCount');
+        const pathTypeButtons = document.querySelectorAll('.path-type-btn');
+        const pathExample = document.getElementById('pathExample');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginSection = document.getElementById('loginSection');
+        const userSection = document.getElementById('userSection');
+        const userName = document.getElementById('userName');
+        const adminIndicator = document.getElementById('adminIndicator');
+        const permissionHint = document.getElementById('permissionHint');
+
+        // 当前显示的数据和路径类型
+        let currentData = [...tableData];
+        let currentPathType = 'url';
+        let isLoggedIn = false;
+        let currentUser = null;
+
+        // 数据持久化函数
+        function saveDataToStorage() {
+            localStorage.setItem('h5IndexData', JSON.stringify(tableData));
+        }
+
+        function loadDataFromStorage() {
+            const savedData = localStorage.getItem('h5IndexData');
+            if (savedData) {
+                return JSON.parse(savedData);
+            }
+            return null;
+        }
+
+        // 表头配置持久化
+        function saveHeadersToStorage() {
+            localStorage.setItem('h5IndexHeaders', JSON.stringify(headerConfig));
+        }
+
+        function loadHeadersFromStorage() {
+            const savedHeaders = localStorage.getItem('h5IndexHeaders');
+            if (savedHeaders) {
+                return JSON.parse(savedHeaders);
+            }
+            return null;
+        }
+
+        // 设置自动登出
+        function setupAutoLogout() {
+            // 清除现有计时器
+            if (logoutTimer) {
+                clearTimeout(logoutTimer);
+            }
+            
+            // 获取自动登出时间设置（分钟）
+            const autoLogoutMinutes = appConfig.autoLogout || 60;
+            
+            // 设置新的计时器
+            logoutTimer = setTimeout(() => {
+                if (isLoggedIn) {
+                    alert(`由于长时间未操作，系统已自动登出。自动登出时间：${autoLogoutMinutes}分钟`);
+                    handleLogout();
+                }
+            }, autoLogoutMinutes * 60 * 1000); // 转换为毫秒
+        }
+
+        // 重置自动登出计时器（在用户操作时调用）
+        function resetAutoLogoutTimer() {
+            if (isLoggedIn) {
+                setupAutoLogout();
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 加载表头配置
+            const savedHeaders = loadHeadersFromStorage();
+            if (savedHeaders) {
+                headerConfig = savedHeaders;
+            }
+            updateTableHeaders();
+
+            // 从GitHub加载配置
+            await loadConfigFromGitHub();
+            
+            // 加载本地数据（如果有）
+            const savedData = loadDataFromStorage();
+            if (savedData && savedData.length > 0) {
+                tableData = savedData;
+                currentData = [...tableData];
+                renderTable(currentData);
+                updateStats();
+            }
+            
+            setupEventListeners();
+            checkLoginStatus();
+            updateCategorySelect();
+            
+            // 设置用户活动监听器
+            document.addEventListener('click', resetAutoLogoutTimer);
+            document.addEventListener('keypress', resetAutoLogoutTimer);
+            document.addEventListener('mousemove', resetAutoLogoutTimer);
+        });
+
+        // 更新表格表头显示
+        function updateTableHeaders() {
+            document.getElementById('header-id').textContent = headerConfig.id;
+            document.getElementById('header-category').textContent = headerConfig.category;
+            document.getElementById('header-path').textContent = headerConfig.path;
+            document.getElementById('header-note').textContent = headerConfig.note;
+
+            // 更新搜索框占位符
+            searchInput.placeholder = `搜索页面名称、${headerConfig.category.toLowerCase()}或${headerConfig.note.toLowerCase()}...`;
+        }
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('h5IndexCurrentUser');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                loginSuccess(user);
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 搜索功能
+            searchInput.addEventListener('input', handleSearch);
+            
+            // 路径类型选择
+            pathTypeButtons.forEach(btn => {
+                btn.addEventListener('click', handlePathTypeChange);
+            });
+            
+            // 添加新条目
+            addBtn.addEventListener('click', () => openModal());
+            
+            // 导出数据
+            exportBtn.addEventListener('click', exportData);
+            
+            // 更新HTML
+            updateHTMLBtn.addEventListener('click', downloadUpdatedHTML);
+            
+            // 重置数据
+            resetBtn.addEventListener('click', resetData);
+            
+            // 刷新配置
+            refreshConfigBtn.addEventListener('click', refreshConfig);
+            
+            // 编辑表头
+            editHeadersBtn.addEventListener('click', openHeadersModal);
+            
+            // 模态框控制
+            closeModal.addEventListener('click', closeModalFunc);
+            closeHeadersModal.addEventListener('click', closeHeadersModalFunc);
+            cancelBtn.addEventListener('click', closeModalFunc);
+            cancelHeadersBtn.addEventListener('click', closeHeadersModalFunc);
+            saveItemBtn.addEventListener('click', saveItem);
+            saveHeadersBtn.addEventListener('click', saveHeaders);
+            resetHeadersBtn.addEventListener('click', resetHeaders);
+            
+            // 登录/登出
+            loginBtn.addEventListener('click', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', (e) => {
+                if (e.target === itemModal) {
+                    closeModalFunc();
+                }
+                if (e.target === headersModal) {
+                    closeHeadersModalFunc();
+                }
+            });
+            
+            // 回车登录
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+
+            // 表头点击编辑
+            setupHeaderEditListeners();
+        }
+
+        // 设置表头编辑事件
+        function setupHeaderEditListeners() {
+            const editableHeaders = document.querySelectorAll('.editable-header');
+            editableHeaders.forEach(header => {
+                header.addEventListener('click', (e) => {
+                    if (isLoggedIn && currentUser.permissions.includes('config')) {
+                        editHeader(e.currentTarget);
+                    }
+                });
+            });
+        }
+
+        // 编辑单个表头
+        function editHeader(headerElement) {
+            const field = headerElement.dataset.field;
+            const currentText = headerElement.querySelector('span').textContent;
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'header-edit-input';
+            input.value = currentText;
+            
+            headerElement.style.position = 'relative';
+            headerElement.appendChild(input);
+            input.focus();
+            input.select();
+            
+            const saveEdit = () => {
+                const newValue = input.value.trim();
+                if (newValue && newValue !== currentText) {
+                    headerConfig[field] = newValue;
+                    saveHeadersToStorage();
+                    updateTableHeaders();
+                }
+                headerElement.removeChild(input);
+            };
+            
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveEdit();
+                }
+                if (e.key === 'Escape') {
+                    headerElement.removeChild(input);
+                }
+            });
+        }
+
+        // 设置筛选事件
+        function setupFilterEvents() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', handleFilter);
+            });
+        }
+
+        // 打开表头编辑模态框
+        function openHeadersModal() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            document.getElementById('headerIdInput').value = headerConfig.id;
+            document.getElementById('headerCategoryInput').value = headerConfig.category;
+            document.getElementById('headerPathInput').value = headerConfig.path;
+            document.getElementById('headerNoteInput').value = headerConfig.note;
+            
+            headersModal.style.display = 'flex';
+        }
+
+        // 关闭表头编辑模态框
+        function closeHeadersModalFunc() {
+            headersModal.style.display = 'none';
+        }
+
+        // 保存表头配置
+        function saveHeaders() {
+            const newHeaders = {
+                id: document.getElementById('headerIdInput').value.trim() || '序号',
+                category: document.getElementById('headerCategoryInput').value.trim() || '类别',
+                path: document.getElementById('headerPathInput').value.trim() || '链接地址',
+                note: document.getElementById('headerNoteInput').value.trim() || '备注'
+            };
+            
+            headerConfig = newHeaders;
+            saveHeadersToStorage();
+            updateTableHeaders();
+            closeHeadersModalFunc();
+            alert('表头名称已更新！');
+        }
+
+        // 重置表头配置
+        function resetHeaders() {
+            headerConfig = {
+                id: '序号',
+                category: '类别',
+                path: '链接地址',
+                note: '备注'
+            };
+            saveHeadersToStorage();
+            updateTableHeaders();
+            closeHeadersModalFunc();
+            alert('表头名称已重置为默认值！');
+        }
+
+        // 刷新配置
+        async function refreshConfig() {
+            const success = await loadConfigFromGitHub();
+            if (success) {
+                alert('配置刷新成功！');
+                // 如果用户已登录，重新检查权限
+                if (isLoggedIn && currentUser) {
+                    const updatedUser = adminAccounts.find(acc => acc.username === currentUser.username);
+                    if (updatedUser) {
+                        currentUser.permissions = updatedUser.permissions;
+                        updateUIForPermissions();
+                    }
+                }
+            }
+        }
+
+        // 根据权限更新UI
+        function updateUIForPermissions() {
+            if (!currentUser) return;
+            
+            const canWrite = currentUser.permissions.includes('write');
+            const canDelete = currentUser.permissions.includes('delete');
+            const canExport = currentUser.permissions.includes('export');
+            const canConfig = currentUser.permissions.includes('config');
+            
+            // 更新操作按钮状态
+            addBtn.disabled = !canWrite;
+            resetBtn.disabled = !canDelete;
+            exportBtn.disabled = !canExport;
+            updateHTMLBtn.disabled = !canExport;
+            editHeadersBtn.disabled = !canConfig;
+            
+            // 设置表头是否可编辑
+            const editableHeaders = document.querySelectorAll('.editable-header');
+            editableHeaders.forEach(header => {
+                if (canConfig) {
+                    header.style.cursor = 'pointer';
+                } else {
+                    header.style.cursor = 'default';
+                }
+            });
+        }
+
+        // 处理登录
+        async function handleLogin() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            // 检查登录尝试次数
+            const maxAttempts = appConfig.maxLoginAttempts || 5;
+            if (loginAttempts >= maxAttempts) {
+                alert(`登录尝试次数过多，请稍后再试。最大尝试次数：${maxAttempts}`);
+                return;
+            }
+            
+            // 计算输入密码的哈希值
+            const passwordHash = await sha256(password);
+            
+            const user = adminAccounts.find(acc => 
+                acc.username === username && acc.passwordHash === passwordHash
+            );
+            
+            if (user) {
+                // 登录成功，重置尝试次数
+                loginAttempts = 0;
+                loginSuccess(user);
+                localStorage.setItem('h5IndexCurrentUser', JSON.stringify({
+                    username: user.username,
+                    name: user.name,
+                    permissions: user.permissions || ['read']
+                }));
+            } else {
+                // 登录失败，增加尝试次数
+                loginAttempts++;
+                const remainingAttempts = maxAttempts - loginAttempts;
+                alert(`用户名或密码错误，剩余尝试次数：${remainingAttempts}`);
+                
+                // 清空密码输入框
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        // 登录成功
+        function loginSuccess(user) {
+            isLoggedIn = true;
+            currentUser = user;
+            
+            // 更新UI
+            loginSection.style.display = 'none';
+            userSection.style.display = 'block';
+            userName.textContent = user.name;
+            adminIndicator.style.display = 'flex';
+            permissionHint.style.display = 'none';
+            
+            // 根据权限启用功能
+            updateUIForPermissions();
+            
+            // 重新渲染表格以启用操作按钮
+            renderTable(currentData);
+            
+            // 清空密码输入框
+            passwordInput.value = '';
+            
+            // 设置自动登出计时器
+            setupAutoLogout();
+        }
+
+        // 处理登出
+        function handleLogout() {
+            isLoggedIn = false;
+            currentUser = null;
+            
+            // 清除自动登出计时器
+            if (logoutTimer) {
+                clearTimeout(logoutTimer);
+                logoutTimer = null;
+            }
+            
+            // 更新UI
+            loginSection.style.display = 'block';
+            userSection.style.display = 'none';
+            adminIndicator.style.display = 'none';
+            permissionHint.style.display = 'flex';
+            
+            // 禁用所有管理员功能
+            addBtn.disabled = true;
+            resetBtn.disabled = true;
+            exportBtn.disabled = true;
+            updateHTMLBtn.disabled = true;
+            editHeadersBtn.disabled = true;
+            
+            // 清除保存的登录状态
+            localStorage.removeItem('h5IndexCurrentUser');
+            
+            // 重新渲染表格以禁用操作按钮
+            renderTable(currentData);
+            
+            // 清空输入框
+            usernameInput.value = '';
+            passwordInput.value = '';
+        }
+
+        // 处理路径类型变化
+        function handlePathTypeChange(e) {
+            pathTypeButtons.forEach(btn => btn.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            currentPathType = e.currentTarget.dataset.type;
+            
+            // 更新路径示例
+            if (currentPathType === 'url') {
+                pathExample.textContent = '例如: https://example.com/page';
+                itemPath.placeholder = '输入网页URL地址';
+            } else {
+                pathExample.textContent = '例如: \\\\10.4.9.25\\Project\\文件夹 或 D:\\Projects\\文件夹';
+                itemPath.placeholder = '输入文件夹路径';
+            }
+        }
+
+        // 渲染表格
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
+                return;
+            }
+            
+            tableBody.innerHTML = data.map(item => {
+                const isUrl = item.type === 'url';
+                const linkClass = isUrl ? 'link' : 'link folder-link';
+                const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
+                const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
+                const badgeText = isUrl ? '网页' : '文件夹';
+                const categoryName = categoryMap[item.category] || item.category;
+                const categoryClass = `category-${(item.id % 10) || 1}`;
+                
+                // 为URL链接添加target="_blank"，文件夹链接使用自定义处理
+                if (isUrl) {
+                    return `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                        <td>
+                            <a href="${item.path}" target="_blank" class="${linkClass}">
+                                <i class="${iconClass} link-icon"></i> 
+                                ${item.title}
+                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                            </a>
+                        </td>
+                        <td class="note">${item.note}</td>
+                        <td class="action-cell">
+                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                } else {
+                    return `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                        <td>
+                            <a href="#" class="${linkClass}" onclick="openFolder('${item.path.replace(/\\/g, '\\\\')}')">
+                                <i class="${iconClass} link-icon"></i> 
+                                ${item.title}
+                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                            </a>
+                        </td>
+                        <td class="note">${item.note}</td>
+                        <td class="action-cell">
+                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                }
+            }).join('');
+            
+            // 添加编辑和删除事件
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        openModal(id);
+                    });
+                }
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        deleteItem(id);
+                    });
+                }
+            });
+            
+            // 更新统计数据
+            updateStats();
+        }
+
+        // 打开文件夹路径
+        function openFolder(path) {
+            // 解码路径（将\\\\恢复为\\）
+            const decodedPath = path.replace(/\\\\/g, '\\');
+            
+            // 尝试使用file协议打开
+            const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
+            
+            // 创建测试链接检查协议支持
+            const testLink = document.createElement('a');
+            testLink.href = 'file:///';
+            
+            if (testLink.protocol === 'file:') {
+                // 尝试在新标签页中打开
+                window.open(fileUrl, '_blank');
+            } else {
+                // 如果不支持file协议，提供复制路径功能
+                if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + decodedPath)) {
+                    navigator.clipboard.writeText(decodedPath).then(() => {
+                        alert('文件夹路径已复制到剪贴板！\n\n路径: ' + decodedPath + '\n\n您可以在文件资源管理器的地址栏中粘贴此路径来打开文件夹。');
+                    }).catch(err => {
+                        // 备用复制方法
+                        const textArea = document.createElement('textarea');
+                        textArea.value = decodedPath;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        alert('文件夹路径已复制到剪贴板！\n\n路径: ' + decodedPath);
+                    });
+                }
+            }
+            return false;
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            totalCount.textContent = `总计: ${tableData.length} 个项目`;
+            filteredCount.textContent = `显示: ${currentData.length} 个项目`;
+        }
+
+        // 处理搜索
+        function handleSearch() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+            filterTable(searchTerm, activeCategory);
+        }
+
+        // 处理筛选
+        function handleFilter(e) {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = e.currentTarget.dataset.category;
+            filterTable(searchTerm, category);
+        }
+
+        // 筛选表格数据
+        function filterTable(searchTerm, category) {
+            let filteredData = tableData;
+            
+            // 按搜索词筛选
+            if (searchTerm) {
+                filteredData = filteredData.filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) || 
+                    (categoryMap[item.category] || item.category).toLowerCase().includes(searchTerm) ||
+                    item.note.toLowerCase().includes(searchTerm) ||
+                    item.path.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // 按类别筛选
+            if (category !== 'all') {
+                filteredData = filteredData.filter(item => item.category === category);
+            }
+            
+            currentData = filteredData;
+            renderTable(currentData);
+        }
+
+        // 打开模态框（添加或编辑）
+        function openModal(id = null) {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            if (id) {
+                // 编辑模式
+                const item = tableData.find(item => item.id === id);
+                if (item) {
+                    modalTitle.textContent = '编辑条目';
+                    editId.value = item.id;
+                    itemTitle.value = item.title;
+                    itemCategory.value = item.category;
+                    itemPath.value = item.path;
+                    itemNote.value = item.note;
+                    
+                    // 设置路径类型
+                    currentPathType = item.type;
+                    pathTypeButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.type === item.type);
+                    });
+                    updatePathExample();
+                }
+            } else {
+                // 添加模式
+                modalTitle.textContent = '添加新条目';
+                itemForm.reset();
+                editId.value = '';
+                
+                // 重置路径类型为URL
+                currentPathType = 'url';
+                pathTypeButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === 'url');
+                });
+                updatePathExample();
+            }
+            
+            itemModal.style.display = 'flex';
+        }
+
+        // 更新路径示例
+        function updatePathExample() {
+            if (currentPathType === 'url') {
+                pathExample.textContent = '例如: https://example.com/page';
+                itemPath.placeholder = '输入网页URL地址';
+            } else {
+                pathExample.textContent = '例如: \\\\10.4.9.25\\Project\\文件夹 或 D:\\Projects\\文件夹';
+                itemPath.placeholder = '输入文件夹路径';
+            }
+        }
+
+        // 关闭模态框
+        function closeModalFunc() {
+            itemModal.style.display = 'none';
+            itemForm.reset();
+        }
+
+        // 保存条目（添加或更新）
+        function saveItem() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            // 表单验证
+            if (!itemTitle.value.trim() || !itemCategory.value || !itemPath.value.trim()) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+            
+            // 自动检测路径类型
+            const pathValue = itemPath.value.trim();
+            let detectedType = currentPathType;
+            
+            // 如果用户没有明确选择类型，尝试自动检测
+            if (pathValue.startsWith('http://') || pathValue.startsWith('https://')) {
+                detectedType = 'url';
+            } else if (pathValue.includes('\\\\') || pathValue.includes(':\\')) {
+                detectedType = 'folder';
+            }
+            
+            const id = editId.value ? parseInt(editId.value) : generateId();
+            const newItem = {
+                id: id,
+                title: itemTitle.value.trim(),
+                category: itemCategory.value,
+                path: pathValue,
+                type: detectedType,
+                note: itemNote.value.trim()
+            };
+            
+            if (editId.value) {
+                // 更新现有条目
+                const index = tableData.findIndex(item => item.id === id);
+                if (index !== -1) {
+                    tableData[index] = newItem;
+                }
+            } else {
+                // 添加新条目
+                tableData.push(newItem);
+            }
+            
+            // 保存到本地存储
+            saveDataToStorage();
+            
+            // 重新应用当前筛选条件
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+            filterTable(searchTerm, activeCategory);
+            
+            closeModalFunc();
+        }
+
+        // 生成新ID
+        function generateId() {
+            return tableData.length > 0 ? Math.max(...tableData.map(item => item.id)) + 1 : 1;
+        }
+
+        // 删除条目
+        function deleteItem(id) {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            if (confirm('确定要删除这个条目吗？')) {
+                tableData = tableData.filter(item => item.id !== id);
+                
+                // 保存到本地存储
+                saveDataToStorage();
+                
+                // 重新应用当前筛选条件
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+                filterTable(searchTerm, activeCategory);
+            }
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(tableData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'h5-index-data.json';
+            link.click();
+        }
+
+        // 生成并下载更新后的HTML文件
+        function downloadUpdatedHTML() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            // 创建更新后的HTML内容
+            const updatedHTML = generateUpdatedHTML();
+            
+            // 创建下载链接
+            const blob = new Blob([updatedHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'DH3项目HelpMe索引表_更新版.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('更新后的HTML文件已生成并开始下载！');
+        }
+
+        // 生成包含当前数据的HTML
+        function generateUpdatedHTML() {
+            // 获取当前页面的HTML内容
+            const currentHTML = document.documentElement.outerHTML;
+            
+            // 找到tableData的定义位置并替换为当前数据
+            const dataRegex = /let tableData = \[[\s\S]*?\];/;
+            const newDataDefinition = `let tableData = ${JSON.stringify(tableData, null, 8)};`;
+            
+            // 替换数据定义
+            let updatedHTML = currentHTML.replace(dataRegex, newDataDefinition);
+            
+            // 找到tablebody并清空其内容，只保留注释
+            const tableBodyRegex = /<tbody id="tableBody">[\s\S]*?<\/tbody>/;
+            const emptyTableBody = `<tbody id="tableBody">\n                    <!-- 表格内容将通过JavaScript动态生成 -->\n                </tbody>`;
+            
+            updatedHTML = updatedHTML.replace(tableBodyRegex, emptyTableBody);
+            
+            return updatedHTML;
+        }
+
+        // 重置数据
+        function resetData() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub配置的数据。')) {
+                // 重新加载GitHub配置
+                loadConfigFromGitHub();
+                localStorage.removeItem('h5IndexData');
+                alert('数据已重置为GitHub配置的初始状态');
+            }
+        }
+    </script>
+</body>
+</html>
