@@ -1056,74 +1056,74 @@
             return '';
         }
 
-        // 处理Excel数据
-        async function processExcelData(arrayBuffer) {
-            try {
-                // 读取Excel文件
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                // 获取第一个工作表
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // 将工作表转换为JSON
-                const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                
-                if (excelData.length < 2) {
-                    throw new Error('Excel文件为空或格式不正确');
-                }
-                
-                // 获取表头
-                const headers = excelData[0];
-                console.log('Excel实际表头:', headers);
-                
-                // 处理数据行
-                tableData = [];
-                categoryMap = {};
-                categoryList = [];
-                
-                for (let i = 1; i < excelData.length; i++) {
-                    const row = excelData[i];
-                    if (row.length === 0) continue;
-                    
-                    // 使用修复后的映射获取数据
-                    const item = {
-                        id: getCellValue(row, headers, '序号') || (i),
-                        title: getCellValue(row, headers, '分类') || '', // 这里映射到"标题"
-                        path: getCellValue(row, headers, '链接地址') || '', // 这里映射到"地址"
-                        type: (getCellValue(row, headers, '地址类型') || 'url').toLowerCase(),
-                        note: getCellValue(row, headers, '备注') || ''
-                    };
-                    
-                    // 设置类别（使用标题作为分类）
-                    const categoryId = `category${item.id}`;
-                    item.category = categoryId;
-                    
-                    tableData.push(item);
-                    
-                    // 构建分类映射（使用标题作为分类名称）
-                    const categoryName = item.title || `分类${item.id}`;
-                    categoryMap[categoryId] = categoryName;
-                    
-                    if (!categoryList.find(cat => cat.id === categoryId)) {
-                        categoryList.push({
-                            id: categoryId,
-                            name: categoryName
-                        });
-                    }
-                }
-                
-                // 更新UI
-                updateCategoryFilters();
-                renderTable(tableData);
-                updateStats();
-                
-            } catch (error) {
-                console.error('Excel数据处理失败:', error);
-                throw new Error(`Excel文件处理失败: ${error.message}`);
+        // 修改 processExcelData 函数
+async function processExcelData(arrayBuffer) {
+    try {
+        // 读取Excel文件
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // 获取第一个工作表
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // 将工作表转换为JSON（包含表头）
+        const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (excelData.length < 2) {
+            throw new Error('Excel文件为空或格式不正确');
+        }
+        
+        // 获取表头（第一行）
+        const headers = excelData[0];
+        console.log('Excel表头:', headers);
+        
+        // 处理数据行（从第二行开始）
+        tableData = [];
+        categoryMap = {};
+        categoryList = [];
+        
+        for (let i = 1; i < excelData.length; i++) {
+            const row = excelData[i];
+            if (row.length === 0) continue;
+            
+            // 根据表头位置获取数据
+            const item = {
+                id: row[0] || i,  // 第一列：序号
+                title: row[1] || '',  // 第二列：标题
+                path: row[2] || '',   // 第三列：地址
+                type: (row[3] || 'url').toLowerCase(),  // 第四列：地址类型
+                note: row[4] || ''    // 第五列：备注
+            };
+            
+            // 设置类别
+            const categoryId = `category${item.id}`;
+            item.category = categoryId;
+            
+            tableData.push(item);
+            
+            // 构建分类映射
+            const categoryName = item.title || `分类${item.id}`;
+            categoryMap[categoryId] = categoryName;
+            
+            if (!categoryList.find(cat => cat.id === categoryId)) {
+                categoryList.push({
+                    id: categoryId,
+                    name: categoryName
+                });
             }
         }
+        
+        // 更新UI
+        updateCategoryFilters();
+        renderTable(tableData);
+        updateStats();
+        
+    } catch (error) {
+        console.error('Excel数据处理失败:', error);
+        throw new Error(`Excel文件处理失败: ${error.message}`);
+    }
+}
 
         // 更新分类筛选器
         function updateCategoryFilters() {
