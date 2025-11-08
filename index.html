@@ -192,6 +192,7 @@
         .action-buttons {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
         .btn {
@@ -647,10 +648,23 @@
                     <input type="password" id="password" class="login-input" placeholder="密码">
                     <button class="login-btn" id="loginBtn">登录</button>
                 </div>
+                <div class="github-auth" style="margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                        <input type="password" id="githubToken" class="login-input" placeholder="GitHub个人访问令牌" style="width: 250px;">
+                        <button class="login-btn" id="setupGitHubBtn">配置GitHub同步</button>
+                    </div>
+                    <small style="color: #28a745; display: block;">
+                        <i class="fas fa-check-circle"></i> 此功能完全免费 - 
+                        <a href="javascript:void(0)" onclick="showGitHubTokenHelp()" style="color: #28a745;">如何获取免费令牌？</a>
+                    </small>
+                </div>
             </div>
             <div id="userSection" style="display: none;">
                 <div class="user-info">
                     <span>欢迎, <strong id="userName">管理员</strong></span>
+                    <span id="githubStatus" class="config-info" style="color: #28a745; margin-left: 10px;">
+                        <i class="fas fa-check-circle"></i> GitHub已连接
+                    </span>
                     <span class="config-info" id="configInfo"></span>
                     <button class="logout-btn" id="logoutBtn">退出登录</button>
                 </div>
@@ -685,6 +699,9 @@
                 </button>
                 <button class="btn btn-success" id="exportBtn" disabled>
                     <i class="fas fa-file-export"></i> 导出数据
+                </button>
+                <button class="btn btn-success" id="syncExcelBtn" disabled>
+                    <i class="fas fa-sync"></i> 同步到 Excel
                 </button>
                 <button class="btn btn-success" id="updateHTMLBtn" disabled>
                     <i class="fas fa-download"></i> 更新HTML
@@ -832,8 +849,15 @@
         let tableData = [];
         
         // GitHub配置URL
-        const GITHUB_CONFIG_URL = 'https://raw.githubusercontent.com/Cybereign/securityconfig/main/config.json';
-        const GITHUB_EXCEL_URL = 'https://raw.githubusercontent.com/Cybereign/securityconfig/main/table.xlsx';
+        const GITHUB_OWNER = 'Cybereign';
+        const GITHUB_REPO = 'securityconfig';
+        const GITHUB_BRANCH = 'main';
+        const GITHUB_CONFIG_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/config.json`;
+        const GITHUB_EXCEL_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/table.xlsx`;
+        
+        // GitHub API 端点
+        const GITHUB_API_BASE = 'https://api.github.com';
+        const GITHUB_CONTENT_URL = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents`;
         
         // 用户账户信息和配置
         let adminAccounts = [];
@@ -848,6 +872,105 @@
             path: '链接地址',
             note: '备注'
         };
+
+        // GitHub API 服务
+        class GitHubService {
+            constructor(token) {
+                this.token = token;
+            }
+
+            // 获取文件内容
+            async getFileContent(filePath) {
+                try {
+                    const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}?ref=${GITHUB_BRANCH}`, {
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`获取文件失败: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    // GitHub API 返回的是 base64 编码的内容
+                    const content = atob(data.content);
+                    return {
+                        content: content,
+                        sha: data.sha // 需要这个 SHA 来更新文件
+                    };
+                } catch (error) {
+                    console.error('获取文件内容失败:', error);
+                    throw error;
+                }
+            }
+
+            // 更新文件内容
+            async updateFileContent(filePath, content, sha, commitMessage) {
+                try {
+                    // 内容需要 base64 编码
+                    const contentBase64 = btoa(unescape(encodeURIComponent(content)));
+                    
+                    const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: commitMessage,
+                            content: contentBase64,
+                            sha: sha,
+                            branch: GITHUB_BRANCH
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`更新文件失败: ${response.status} - ${errorData.message}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('文件更新成功:', data);
+                    return data;
+                } catch (error) {
+                    console.error('更新文件失败:', error);
+                    throw error;
+                }
+            }
+
+            // 检查认证状态
+            async checkAuth() {
+                try {
+                    const response = await fetch(`${GITHUB_API_BASE}/user`, {
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('GitHub 认证失败');
+                    }
+
+                    const userData = await response.json();
+                    return {
+                        authenticated: true,
+                        username: userData.login
+                    };
+                } catch (error) {
+                    return {
+                        authenticated: false,
+                        error: error.message
+                    };
+                }
+            }
+        }
+
+        // 创建 GitHub 服务实例
+        let gitHubService = null;
 
         // 自动登出和登录尝试
         let logoutTimer;
@@ -902,6 +1025,37 @@
             }
         }
 
+        // 修复表头映射 - 确保网页显示与Excel表头一致
+        function getCellValue(row, headers, fieldName) {
+            // 首先尝试精确匹配
+            const index = headers.findIndex(header => {
+                if (!header) return false;
+                const headerStr = header.toString().trim();
+                
+                // 建立映射关系
+                const mapping = {
+                    '序号': ['序号', 'ID', '编号'],
+                    '分类': ['标题', '分类', '类别', 'Category'], 
+                    '链接地址': ['地址', '路径', '链接', 'Path', 'URL'],
+                    '备注': ['备注', '说明', '描述', 'Note']
+                };
+                
+                // 检查当前表头是否匹配目标字段
+                const targetFields = mapping[fieldName];
+                if (targetFields) {
+                    return targetFields.some(target => headerStr === target);
+                }
+                
+                return headerStr === fieldName;
+            });
+            
+            if (index !== -1 && row[index] !== undefined) {
+                return row[index] !== null ? row[index].toString().trim() : '';
+            }
+            
+            return '';
+        }
+
         // 处理Excel数据
         async function processExcelData(arrayBuffer) {
             try {
@@ -922,7 +1076,7 @@
                 
                 // 获取表头
                 const headers = excelData[0];
-                console.log('Excel表头:', headers);
+                console.log('Excel实际表头:', headers);
                 
                 // 处理数据行
                 tableData = [];
@@ -933,16 +1087,16 @@
                     const row = excelData[i];
                     if (row.length === 0) continue;
                     
-                    // 根据表头映射数据
+                    // 使用修复后的映射获取数据
                     const item = {
                         id: getCellValue(row, headers, '序号') || (i),
-                        title: getCellValue(row, headers, '标题') || '',
-                        path: getCellValue(row, headers, '地址') || '',
+                        title: getCellValue(row, headers, '分类') || '', // 这里映射到"标题"
+                        path: getCellValue(row, headers, '链接地址') || '', // 这里映射到"地址"
                         type: (getCellValue(row, headers, '地址类型') || 'url').toLowerCase(),
                         note: getCellValue(row, headers, '备注') || ''
                     };
                     
-                    // 设置类别（使用序号作为类别ID）
+                    // 设置类别（使用标题作为分类）
                     const categoryId = `category${item.id}`;
                     item.category = categoryId;
                     
@@ -969,28 +1123,6 @@
                 console.error('Excel数据处理失败:', error);
                 throw new Error(`Excel文件处理失败: ${error.message}`);
             }
-        }
-
-        // 获取单元格值（支持不同的表头名称）
-        function getCellValue(row, headers, fieldName) {
-            const index = headers.findIndex(header => 
-                header && header.toString().trim() === fieldName
-            );
-            
-            if (index !== -1 && row[index] !== undefined) {
-                return row[index] !== null ? row[index].toString().trim() : '';
-            }
-            
-            // 如果找不到精确匹配，尝试模糊匹配
-            const fuzzyIndex = headers.findIndex(header => 
-                header && header.toString().trim().includes(fieldName)
-            );
-            
-            if (fuzzyIndex !== -1 && row[fuzzyIndex] !== undefined) {
-                return row[fuzzyIndex] !== null ? row[fuzzyIndex].toString().trim() : '';
-            }
-            
-            return '';
         }
 
         // 更新分类筛选器
@@ -1135,11 +1267,205 @@
             }
         }
 
+        // 显示 GitHub 令牌帮助
+        function showGitHubTokenHelp() {
+            alert(`GitHub 个人访问令牌 - 完全免费\n\n` +
+                  `如何获取：\n` +
+                  `1. 登录 GitHub → Settings → Developer settings\n` +
+                  `2. 选择 Personal access tokens → Tokens (classic)\n` +
+                  `3. 点击 Generate new token\n` +
+                  `4. 设置备注，选择过期时间（建议1年）\n` +
+                  `5. 勾选 repo 权限（完整控制私有仓库）\n` +
+                  `6. 生成令牌并复制保存\n\n` +
+                  `💡 重要提示：\n` +
+                  `• 这个功能完全免费\n` +
+                  `• 不会产生任何费用\n` +
+                  `• 令牌只保存在您的浏览器本地\n` +
+                  `• 可以随时在 GitHub 上撤销令牌`);
+        }
+
+        // ArrayBuffer 转 Base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // 完整的 Excel 同步功能
+        async function syncDataToExcel() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                document.getElementById('githubToken').focus();
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
+
+                // 1. 获取当前 Excel 文件的 SHA
+                const fileInfo = await gitHubService.getFileContent('table.xlsx');
+                
+                // 2. 读取当前 Excel 文件结构
+                const arrayBuffer = await fetch(GITHUB_EXCEL_URL).then(r => r.arrayBuffer());
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // 3. 获取原始表头结构
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const originalHeaders = excelData[0];
+                
+                console.log('原始表头结构:', originalHeaders);
+
+                // 4. 准备新的数据
+                const newData = [originalHeaders]; // 保持原始表头
+                
+                tableData.forEach(item => {
+                    const row = new Array(originalHeaders.length).fill('');
+                    
+                    // 根据原始表头结构映射数据
+                    originalHeaders.forEach((header, index) => {
+                        switch(header) {
+                            case '序号':
+                                row[index] = item.id;
+                                break;
+                            case '标题':
+                                row[index] = item.title;
+                                break;
+                            case '地址':
+                                row[index] = item.path;
+                                break;
+                            case '地址类型':
+                                row[index] = item.type;
+                                break;
+                            case '备注':
+                                row[index] = item.note;
+                                break;
+                            default:
+                                // 保持其他列不变
+                                if (excelData[1] && excelData[1][index] !== undefined) {
+                                    row[index] = excelData[1][index];
+                                }
+                        }
+                    });
+                    
+                    newData.push(row);
+                });
+
+                // 5. 创建新的工作表
+                const newWorksheet = XLSX.utils.aoa_to_sheet(newData);
+                
+                // 6. 创建新的工作簿
+                const newWorkbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, firstSheetName);
+                
+                // 7. 生成 Excel 文件
+                const excelBuffer = XLSX.write(newWorkbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array' 
+                });
+
+                // 8. 转换为 base64
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 9. 上传到 GitHub
+                await gitHubService.updateFileContent(
+                    'table.xlsx',
+                    excelBase64,
+                    fileInfo.sha,
+                    `自动同步表格数据 - ${new Date().toLocaleString()}`
+                );
+
+                hideLoadingIndicator();
+                alert('✅ 数据已成功同步到 GitHub Excel 文件！\n页面将在3秒后刷新...');
+                
+                // 刷新页面以加载最新数据
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+
+            } catch (error) {
+                console.error('同步到 Excel 失败:', error);
+                hideLoadingIndicator();
+                alert(`同步失败: ${error.message}`);
+            }
+        }
+
+        // 配置 GitHub 同步
+        async function setupGitHubSync() {
+            const token = document.getElementById('githubToken').value.trim();
+            
+            if (!token) {
+                alert('请输入 GitHub 个人访问令牌');
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在验证 GitHub 令牌...');
+                
+                // 创建 GitHub 服务实例
+                gitHubService = new GitHubService(token);
+                
+                // 验证令牌
+                const authResult = await gitHubService.checkAuth();
+                
+                if (authResult.authenticated) {
+                    // 保存令牌到本地存储（安全考虑）
+                    localStorage.setItem('githubToken', token);
+                    document.getElementById('githubToken').value = ''; // 清空输入框
+                    
+                    // 更新 UI
+                    document.getElementById('githubStatus').innerHTML = 
+                        `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
+                    
+                    hideLoadingIndicator();
+                    alert('GitHub 令牌配置成功！现在可以同步数据到 Excel 文件了。');
+                } else {
+                    throw new Error('GitHub 令牌验证失败');
+                }
+                
+            } catch (error) {
+                console.error('GitHub 配置失败:', error);
+                hideLoadingIndicator();
+                alert(`GitHub 配置失败: ${error.message}\n\n请检查：\n1. 令牌是否正确\n2. 令牌是否具有 repo 权限\n3. 网络连接是否正常`);
+            }
+        }
+
+        // 加载保存的 GitHub 令牌
+        function loadGitHubToken() {
+            const savedToken = localStorage.getItem('githubToken');
+            if (savedToken) {
+                gitHubService = new GitHubService(savedToken);
+                
+                // 验证令牌是否仍然有效
+                gitHubService.checkAuth().then(authResult => {
+                    if (authResult.authenticated) {
+                        document.getElementById('githubStatus').innerHTML = 
+                            `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
+                    } else {
+                        // 令牌失效，清除保存的令牌
+                        localStorage.removeItem('githubToken');
+                        gitHubService = null;
+                    }
+                });
+            }
+        }
+
         // DOM元素
         const tableBody = document.getElementById('tableBody');
         const searchInput = document.getElementById('searchInput');
         const addBtn = document.getElementById('addBtn');
         const exportBtn = document.getElementById('exportBtn');
+        const syncExcelBtn = document.getElementById('syncExcelBtn');
         const updateHTMLBtn = document.getElementById('updateHTMLBtn');
         const resetBtn = document.getElementById('resetBtn');
         const refreshConfigBtn = document.getElementById('refreshConfigBtn');
@@ -1174,6 +1500,7 @@
         const userName = document.getElementById('userName');
         const adminIndicator = document.getElementById('adminIndicator');
         const permissionHint = document.getElementById('permissionHint');
+        const setupGitHubBtn = document.getElementById('setupGitHubBtn');
 
         // 当前显示的数据和路径类型
         let currentData = [...tableData];
@@ -1242,6 +1569,9 @@
             }
             updateTableHeaders();
 
+            // 加载保存的 GitHub 令牌
+            loadGitHubToken();
+
             // 从GitHub加载配置
             await loadConfigFromGitHub();
             
@@ -1300,6 +1630,9 @@
             // 导出数据
             exportBtn.addEventListener('click', exportData);
             
+            // 同步到 Excel
+            syncExcelBtn.addEventListener('click', syncDataToExcel);
+            
             // 更新HTML
             updateHTMLBtn.addEventListener('click', downloadUpdatedHTML);
             
@@ -1311,6 +1644,9 @@
             
             // 编辑表头
             editHeadersBtn.addEventListener('click', openHeadersModal);
+            
+            // GitHub 配置
+            setupGitHubBtn.addEventListener('click', setupGitHubSync);
             
             // 模态框控制
             closeModal.addEventListener('click', closeModalFunc);
@@ -1481,6 +1817,7 @@
             addBtn.disabled = !canWrite;
             resetBtn.disabled = !canDelete;
             exportBtn.disabled = !canExport;
+            syncExcelBtn.disabled = !canExport;
             updateHTMLBtn.disabled = !canExport;
             editHeadersBtn.disabled = !canConfig;
             
@@ -1587,6 +1924,7 @@
             addBtn.disabled = true;
             resetBtn.disabled = true;
             exportBtn.disabled = true;
+            syncExcelBtn.disabled = true;
             updateHTMLBtn.disabled = true;
             editHeadersBtn.disabled = true;
             
