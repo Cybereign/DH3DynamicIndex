@@ -703,6 +703,9 @@
                 <button class="btn btn-success" id="syncExcelBtn" disabled>
                     <i class="fas fa-sync"></i> 同步到 Excel
                 </button>
+                <button class="btn btn-success" id="downloadExcelBtn">
+                    <i class="fas fa-download"></i> 下载 Excel
+                </button>
                 <button class="btn btn-success" id="updateHTMLBtn" disabled>
                     <i class="fas fa-download"></i> 更新HTML
                 </button>
@@ -1025,7 +1028,7 @@
             }
         }
 
-        // 处理Excel数据 - 支持6列表格结构和固定分类
+        // 处理Excel数据 - 修复分类重复问题
         async function processExcelData(arrayBuffer) {
             try {
                 // 读取Excel文件
@@ -1052,8 +1055,8 @@
                 categoryMap = {};
                 categoryList = [];
                 
-                // 收集所有出现的分类
-                const foundCategories = new Set();
+                // 使用Map来确保分类唯一性
+                const uniqueCategories = new Map();
                 
                 for (let i = 1; i < excelData.length; i++) {
                     const row = excelData[i];
@@ -1062,7 +1065,7 @@
                     // 根据表头位置获取数据 - 6列表格结构
                     const item = {
                         id: row[0] || i,                    // 第一列：序号
-                        category: row[1] || '',             // 第二列：分类
+                        category: (row[1] || '').trim(),    // 第二列：分类，去除前后空格
                         title: row[2] || '',                // 第三列：标题
                         path: row[3] || '',                 // 第四列：地址
                         type: (row[4] || 'url').toLowerCase(), // 第五列：地址类型
@@ -1071,39 +1074,26 @@
                     
                     tableData.push(item);
                     
-                    // 收集分类
-                    if (item.category) {
-                        foundCategories.add(item.category);
+                    // 收集唯一分类
+                    if (item.category && !uniqueCategories.has(item.category)) {
+                        const categoryId = `category${uniqueCategories.size + 1}`;
+                        uniqueCategories.set(item.category, {
+                            id: categoryId,
+                            name: item.category
+                        });
                     }
                 }
                 
                 // 构建分类列表
-                let categoryIndex = 1;
-                foundCategories.forEach(categoryName => {
-                    const categoryId = `category${categoryIndex}`;
-                    categoryList.push({
-                        id: categoryId,
-                        name: categoryName
-                    });
-                    categoryMap[categoryId] = categoryName;
-                    categoryIndex++;
+                categoryList = Array.from(uniqueCategories.values());
+                
+                // 构建分类映射
+                categoryList.forEach(category => {
+                    categoryMap[category.id] = category.name;
                 });
                 
-                // 如果没有找到分类，使用默认分类
-                if (categoryList.length === 0) {
-                    const defaultCategories = ['开发计划', '设计评审', '阶段评审', '联系信息', '项目文档'];
-                    defaultCategories.forEach((categoryName, index) => {
-                        const categoryId = `category${index + 1}`;
-                        categoryList.push({
-                            id: categoryId,
-                            name: categoryName
-                        });
-                        categoryMap[categoryId] = categoryName;
-                    });
-                }
-                
                 console.log('处理后的数据:', tableData);
-                console.log('分类列表:', categoryList);
+                console.log('去重后的分类列表:', categoryList);
                 
                 // 更新UI
                 updateCategoryFilters();
@@ -1116,7 +1106,7 @@
             }
         }
 
-        // 更新分类筛选器
+        // 更新分类筛选器 - 修复重复问题
         function updateCategoryFilters() {
             const filterBox = document.querySelector('.filter-box');
             
@@ -1125,13 +1115,18 @@
             filterBox.innerHTML = '';
             filterBox.appendChild(allButton);
             
-            // 添加分类按钮
+            // 添加分类按钮 - 确保唯一性
+            const addedCategories = new Set();
             categoryList.forEach(category => {
-                const button = document.createElement('button');
-                button.className = 'filter-btn';
-                button.setAttribute('data-category', category.id);
-                button.textContent = category.name;
-                filterBox.appendChild(button);
+                // 防止重复添加相同的分类
+                if (!addedCategories.has(category.name)) {
+                    const button = document.createElement('button');
+                    button.className = 'filter-btn';
+                    button.setAttribute('data-category', category.id);
+                    button.textContent = category.name;
+                    filterBox.appendChild(button);
+                    addedCategories.add(category.name);
+                }
             });
             
             // 重新绑定事件
@@ -1307,7 +1302,7 @@
             return btoa(binary);
         }
 
-        // 完整的 Excel 同步功能 - 支持6列表格结构
+        // 修复的 Excel 同步功能
         async function syncDataToExcel() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -1326,78 +1321,57 @@
                 // 1. 获取当前 Excel 文件的 SHA
                 const fileInfo = await gitHubService.getFileContent('table.xlsx');
                 
-                // 2. 读取当前 Excel 文件结构
-                const arrayBuffer = await fetch(GITHUB_EXCEL_URL).then(r => r.arrayBuffer());
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
+                // 2. 准备数据 - 创建完整的Excel数据结构
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
                 
-                // 3. 获取原始表头结构
-                const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                const originalHeaders = excelData[0];
-                
-                console.log('原始表头结构:', originalHeaders);
-
-                // 4. 准备新的数据 - 保持原有的6列表头结构
-                const newData = [originalHeaders]; // 保持原始表头：序号、分类、标题、地址、地址类型、备注
-                
+                // 添加数据行
                 tableData.forEach(item => {
-                    const row = new Array(originalHeaders.length).fill('');
-                    
-                    // 根据原始表头结构映射数据
-                    originalHeaders.forEach((header, index) => {
-                        switch(header) {
-                            case '序号':
-                                row[index] = item.id;
-                                break;
-                            case '分类':
-                                row[index] = item.category;
-                                break;
-                            case '标题':
-                                row[index] = item.title;
-                                break;
-                            case '地址':
-                                row[index] = item.path;
-                                break;
-                            case '地址类型':
-                                row[index] = item.type;
-                                break;
-                            case '备注':
-                                row[index] = item.note;
-                                break;
-                            default:
-                                // 保持其他列不变
-                                if (excelData[1] && excelData[1][index] !== undefined) {
-                                    row[index] = excelData[1][index];
-                                }
-                        }
-                    });
-                    
-                    newData.push(row);
+                    const row = [
+                        item.id,
+                        item.category,
+                        item.title,
+                        item.path,
+                        item.type,
+                        item.note
+                    ];
+                    excelData.push(row);
                 });
 
-                // 5. 创建新的工作表
-                const newWorksheet = XLSX.utils.aoa_to_sheet(newData);
+                // 3. 创建工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
                 
-                // 6. 创建新的工作簿
-                const newWorkbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, firstSheetName);
+                // 4. 设置列宽
+                const colWidths = [
+                    { wch: 8 },  // 序号
+                    { wch: 15 }, // 分类
+                    { wch: 30 }, // 标题
+                    { wch: 40 }, // 地址
+                    { wch: 12 }, // 地址类型
+                    { wch: 25 }  // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 5. 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
                 
-                // 7. 生成 Excel 文件
-                const excelBuffer = XLSX.write(newWorkbook, { 
+                // 6. 生成 Excel 文件
+                const excelBuffer = XLSX.write(workbook, { 
                     bookType: 'xlsx', 
-                    type: 'array' 
+                    type: 'array',
+                    bookSST: false
                 });
 
-                // 8. 转换为 base64
+                // 7. 转换为 base64
                 const excelBase64 = arrayBufferToBase64(excelBuffer);
 
-                // 9. 上传到 GitHub
+                // 8. 上传到 GitHub
                 await gitHubService.updateFileContent(
                     'table.xlsx',
                     excelBase64,
                     fileInfo.sha,
-                    `自动同步表格数据 - ${new Date().toLocaleString()}`
+                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
                 );
 
                 hideLoadingIndicator();
@@ -1412,6 +1386,55 @@
                 console.error('同步到 Excel 失败:', error);
                 hideLoadingIndicator();
                 alert(`同步失败: ${error.message}`);
+            }
+        }
+
+        // 下载Excel文件功能
+        function downloadExcel() {
+            try {
+                // 准备数据
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                // 添加数据行
+                tableData.forEach(item => {
+                    const row = [
+                        item.id,
+                        item.category,
+                        item.title,
+                        item.path,
+                        item.type,
+                        item.note
+                    ];
+                    excelData.push(row);
+                });
+
+                // 创建工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                // 设置列宽
+                const colWidths = [
+                    { wch: 8 },  // 序号
+                    { wch: 15 }, // 分类
+                    { wch: 30 }, // 标题
+                    { wch: 40 }, // 地址
+                    { wch: 12 }, // 地址类型
+                    { wch: 25 }  // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                
+                // 生成并下载Excel文件
+                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
+                
+                alert('Excel文件下载成功！');
+                
+            } catch (error) {
+                console.error('下载Excel失败:', error);
+                alert('下载Excel文件失败: ' + error.message);
             }
         }
 
@@ -1481,6 +1504,7 @@
         const addBtn = document.getElementById('addBtn');
         const exportBtn = document.getElementById('exportBtn');
         const syncExcelBtn = document.getElementById('syncExcelBtn');
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
         const updateHTMLBtn = document.getElementById('updateHTMLBtn');
         const resetBtn = document.getElementById('resetBtn');
         const refreshConfigBtn = document.getElementById('refreshConfigBtn');
@@ -1647,6 +1671,9 @@
             
             // 同步到 Excel
             syncExcelBtn.addEventListener('click', syncDataToExcel);
+            
+            // 下载 Excel
+            downloadExcelBtn.addEventListener('click', downloadExcel);
             
             // 更新HTML
             updateHTMLBtn.addEventListener('click', downloadUpdatedHTML);
@@ -2118,7 +2145,7 @@
             filterTable(searchTerm, category);
         }
 
-        // 筛选表格数据
+        // 筛选表格数据 - 修复筛选逻辑
         function filterTable(searchTerm, category) {
             let filteredData = tableData;
             
@@ -2142,6 +2169,7 @@
             
             currentData = filteredData;
             renderTable(currentData);
+            updateStats();
         }
 
         // 打开模态框（添加或编辑）
@@ -2205,7 +2233,7 @@
             itemForm.reset();
         }
 
-        // 保存条目（添加或更新）
+        // 保存条目（添加或更新）- 修复分类处理
         function saveItem() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -2252,13 +2280,14 @@
                 // 添加新条目
                 tableData.push(newItem);
                 
-                // 如果选择了新分类，添加到分类列表
+                // 如果选择了新分类，添加到分类列表（确保唯一性）
                 if (categoryName && !categoryList.find(cat => cat.name === categoryName)) {
                     const categoryId = `category${categoryList.length + 1}`;
-                    categoryList.push({
+                    const newCategory = {
                         id: categoryId,
                         name: categoryName
-                    });
+                    };
+                    categoryList.push(newCategory);
                     categoryMap[categoryId] = categoryName;
                     updateCategoryFilters();
                     updateCategorySelect();
