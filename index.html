@@ -868,9 +868,15 @@
         async function debugHash() {
             const testPassword = "whj";
             const hash = await sha256(testPassword);
-            console.log(`调试信息：密码 "${testPassword}" 的SHA-256哈希值:`, hash);
-            console.log('存储的哈希值:', adminAccounts[0].passwordHash);
-            console.log('是否匹配:', hash === adminAccounts[0].passwordHash);
+    
+            // 确保adminAccounts已经加载
+            if (adminAccounts.length > 0) {
+                console.log(`调试信息：密码 "${testPassword}" 的SHA-256哈希值:`, hash);
+                console.log('存储的哈希值:', adminAccounts[0].passwordHash);
+                console.log('是否匹配:', hash === adminAccounts[0].passwordHash);
+            } else {
+                console.log('adminAccounts 尚未加载');
+            }
         }
 
         // 页面加载时运行调试
