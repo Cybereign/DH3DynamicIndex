@@ -234,6 +234,15 @@
             background: #c82333;
         }
         
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        
         .btn:disabled {
             background: #6c757d;
             cursor: not-allowed;
@@ -738,6 +747,9 @@
                 <button class="btn btn-success" id="downloadExcelBtn">
                     <i class="fas fa-download"></i> 下载 Excel
                 </button>
+                <button class="btn btn-warning" id="repairExcelBtn" disabled>
+                    <i class="fas fa-tools"></i> 修复Excel格式
+                </button>
                 <button class="btn btn-success" id="updateHTMLBtn" disabled>
                     <i class="fas fa-download"></i> 更新HTML
                 </button>
@@ -941,8 +953,7 @@
 
             async updateFileContent(filePath, content, sha, commitMessage) {
                 try {
-                    const contentBase64 = btoa(unescape(encodeURIComponent(content)));
-                    
+                    // 直接使用传入的base64内容，不进行重复编码
                     const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}`, {
                         method: 'PUT',
                         headers: {
@@ -952,7 +963,7 @@
                         },
                         body: JSON.stringify({
                             message: commitMessage,
-                            content: contentBase64,
+                            content: content, // 直接使用已经base64编码的内容
                             sha: sha,
                             branch: GITHUB_BRANCH
                         })
@@ -1019,6 +1030,7 @@
         const exportBtn = document.getElementById('exportBtn');
         const syncExcelBtn = document.getElementById('syncExcelBtn');
         const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        const repairExcelBtn = document.getElementById('repairExcelBtn');
         const updateHTMLBtn = document.getElementById('updateHTMLBtn');
         const resetBtn = document.getElementById('resetBtn');
         const refreshConfigBtn = document.getElementById('refreshConfigBtn');
@@ -1057,27 +1069,21 @@
 
         // ========== 核心功能函数 ==========
 
-        // 打开文件夹路径 - 使用您提供的有效方法
+        // 打开文件夹路径
         function openFolder(path) {
-            // 解码路径（将\\\\恢复为\\）
             const decodedPath = path.replace(/\\\\/g, '\\');
-            
-            // 尝试使用file协议打开
             const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
             
             console.log('尝试打开路径:', decodedPath);
             console.log('File URL:', fileUrl);
             
-            // 创建测试链接检查协议支持
             const testLink = document.createElement('a');
             testLink.href = 'file:///';
             
             if (testLink.protocol === 'file:') {
-                // 尝试在新标签页中打开
                 window.open(fileUrl, '_blank');
                 showToast('正在尝试打开文件夹...', 'info');
             } else {
-                // 如果不支持file协议，提供复制路径功能
                 if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + decodedPath)) {
                     copyToClipboard(decodedPath).then(() => {
                         showToast('文件夹路径已复制到剪贴板！', 'success');
@@ -1095,7 +1101,6 @@
                 await navigator.clipboard.writeText(text);
                 return true;
             } catch (err) {
-                // 备用复制方法
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 document.body.appendChild(textArea);
@@ -1108,7 +1113,6 @@
 
         // 显示Toast消息
         function showToast(message, type = 'info') {
-            // 移除现有的toast
             const existingToast = document.querySelector('.toast');
             if (existingToast) {
                 existingToast.remove();
@@ -1123,7 +1127,6 @@
             
             document.body.appendChild(toast);
             
-            // 3秒后自动消失
             setTimeout(() => {
                 if (toast.parentNode) {
                     toast.remove();
@@ -1147,14 +1150,12 @@
             showLoadingIndicator('正在从GitHub加载配置...');
             
             try {
-                // 加载用户配置
                 const configResponse = await fetch(GITHUB_CONFIG_URL);
                 if (!configResponse.ok) {
                     throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
                 }
                 const config = await configResponse.json();
                 
-                // 加载Excel表格数据
                 const excelResponse = await fetch(GITHUB_EXCEL_URL);
                 if (!excelResponse.ok) {
                     throw new Error(`Excel表格加载失败: HTTP ${excelResponse.status}`);
@@ -1163,7 +1164,6 @@
                 const arrayBuffer = await excelResponse.arrayBuffer();
                 await processExcelData(arrayBuffer);
                 
-                // 处理配置
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
                 
@@ -1180,14 +1180,26 @@
             }
         }
 
-        // 处理Excel数据
+        // 处理Excel数据 - 修复乱码问题
         async function processExcelData(arrayBuffer) {
             try {
                 const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
+                const workbook = XLSX.read(data, { 
+                    type: 'array',
+                    cellText: false,
+                    cellDates: true,
+                    raw: false
+                });
+                
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                // 使用sheet_to_json而不是sheet_to_row_object_array
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: '',
+                    blankrows: false
+                });
                 
                 if (excelData.length < 2) {
                     throw new Error('Excel文件为空或格式不正确');
@@ -1203,16 +1215,18 @@
                 
                 for (let i = 1; i < excelData.length; i++) {
                     const row = excelData[i];
-                    if (row.length === 0) continue;
+                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
                     
                     const item = {
-                        id: row[0] || i,
-                        category: (row[1] || '').trim(),
-                        title: row[2] || '',
-                        path: row[3] || '',
-                        type: (row[4] || 'url').toLowerCase(),
-                        note: row[5] || ''
+                        id: parseInt(row[0]) || i,
+                        category: String(row[1] || '').trim(),
+                        title: String(row[2] || '').trim(),
+                        path: String(row[3] || '').trim(),
+                        type: String(row[4] || 'url').toLowerCase().trim(),
+                        note: String(row[5] || '').trim()
                     };
+                    
+                    if (!item.title && !item.path) continue;
                     
                     tableData.push(item);
                     
@@ -1310,7 +1324,6 @@
                 }
             }).join('');
             
-            // 添加编辑和删除事件
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 if (!btn.disabled) {
                     btn.addEventListener('click', (e) => {
@@ -1331,6 +1344,239 @@
             
             updateStats();
         }
+
+        // ========== 修复Excel同步功能 ==========
+
+        // 修复的ArrayBuffer转Base64函数
+        function arrayBufferToBase64(buffer) {
+            try {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary);
+            } catch (error) {
+                console.error('Base64转换失败:', error);
+                throw new Error('文件编码转换失败');
+            }
+        }
+
+        // 修复的Excel同步功能 - 彻底解决乱码问题
+        async function syncDataToExcel() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                document.getElementById('githubToken').focus();
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
+
+                // 1. 获取当前 Excel 文件的 SHA
+                let fileInfo;
+                try {
+                    fileInfo = await gitHubService.getFileContent('table.xlsx');
+                } catch (error) {
+                    console.log('文件不存在，将创建新文件');
+                    fileInfo = { sha: null };
+                }
+                
+                // 2. 准备数据
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                tableData.forEach(item => {
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                // 3. 创建工作表 - 使用修复的方法
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                // 4. 设置列宽
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 5. 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                
+                // 6. 生成 Excel 文件 - 使用正确的选项
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                // 7. 转换为 base64 - 关键修复：直接使用SheetJS生成的buffer
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 8. 上传到 GitHub - 直接使用base64内容
+                await gitHubService.updateFileContent(
+                    'table.xlsx',
+                    excelBase64,
+                    fileInfo.sha,
+                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
+                );
+
+                hideLoadingIndicator();
+                showToast('✅ 数据已成功同步到 GitHub Excel 文件！格式已修复。', 'success');
+                
+            } catch (error) {
+                console.error('同步到 Excel 失败:', error);
+                hideLoadingIndicator();
+                showToast(`同步失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 修复的下载Excel文件功能
+        function downloadExcel() {
+            try {
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                tableData.forEach(item => {
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
+                
+                showToast('Excel文件下载成功！', 'success');
+                
+            } catch (error) {
+                console.error('下载Excel失败:', error);
+                showToast('下载Excel文件失败: ' + error.message, 'error');
+            }
+        }
+
+        // 修复Excel文件格式功能
+        async function repairExcelFormat() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在修复 Excel 文件格式...');
+
+                // 创建全新的Excel文件结构
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                // 添加当前数据
+                tableData.forEach(item => {
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                // 创建工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                // 设置列宽
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                
+                // 生成 Excel 文件
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                // 转换为 base64
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 获取文件SHA（如果存在）
+                let fileInfo;
+                try {
+                    fileInfo = await gitHubService.getFileContent('table.xlsx');
+                } catch (error) {
+                    fileInfo = { sha: null };
+                }
+
+                // 上传修复后的文件
+                await gitHubService.updateFileContent(
+                    'table.xlsx',
+                    excelBase64,
+                    fileInfo.sha,
+                    `修复Excel文件格式 - ${new Date().toLocaleString()}`
+                );
+
+                hideLoadingIndicator();
+                showToast('✅ Excel文件格式修复完成！现在从GitHub下载的文件应该显示正常。', 'success');
+                
+            } catch (error) {
+                console.error('修复Excel格式失败:', error);
+                hideLoadingIndicator();
+                showToast(`修复失败: ${error.message}`, 'error');
+            }
+        }
+
+        // ========== 其他功能函数 ==========
 
         // 更新分类筛选器
         function updateCategoryFilters() {
@@ -1551,6 +1797,9 @@
             
             // 下载 Excel
             downloadExcelBtn.addEventListener('click', downloadExcel);
+            
+            // 修复Excel格式
+            repairExcelBtn.addEventListener('click', repairExcelFormat);
             
             // 更新HTML
             updateHTMLBtn.addEventListener('click', downloadUpdatedHTML);
@@ -1946,6 +2195,7 @@
             resetBtn.disabled = !canDelete;
             exportBtn.disabled = !canExport;
             syncExcelBtn.disabled = !canExport;
+            repairExcelBtn.disabled = !canExport;
             updateHTMLBtn.disabled = !canExport;
             editHeadersBtn.disabled = !canConfig;
             
@@ -2033,6 +2283,7 @@
             resetBtn.disabled = true;
             exportBtn.disabled = true;
             syncExcelBtn.disabled = true;
+            repairExcelBtn.disabled = true;
             updateHTMLBtn.disabled = true;
             editHeadersBtn.disabled = true;
             
@@ -2089,132 +2340,6 @@
                   `• 不会产生任何费用\n` +
                   `• 令牌只保存在您的浏览器本地\n` +
                   `• 可以随时在 GitHub 上撤销令牌`);
-        }
-
-        // ArrayBuffer 转 Base64
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            const len = bytes.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary);
-        }
-
-        // 同步数据到Excel
-        async function syncDataToExcel() {
-            if (!isLoggedIn) {
-                alert('请先登录管理员账户');
-                return;
-            }
-
-            if (!gitHubService) {
-                alert('请先配置 GitHub 个人访问令牌');
-                document.getElementById('githubToken').focus();
-                return;
-            }
-
-            try {
-                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
-
-                const fileInfo = await gitHubService.getFileContent('table.xlsx');
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                tableData.forEach(item => {
-                    const row = [
-                        item.id,
-                        item.category,
-                        item.title,
-                        item.path,
-                        item.type,
-                        item.note
-                    ];
-                    excelData.push(row);
-                });
-
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                const colWidths = [
-                    { wch: 8 },  // 序号
-                    { wch: 15 }, // 分类
-                    { wch: 30 }, // 标题
-                    { wch: 40 }, // 地址
-                    { wch: 12 }, // 地址类型
-                    { wch: 25 }  // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
-                const excelBuffer = XLSX.write(workbook, { 
-                    bookType: 'xlsx', 
-                    type: 'array',
-                    bookSST: false
-                });
-
-                const excelBase64 = arrayBufferToBase64(excelBuffer);
-
-                await gitHubService.updateFileContent(
-                    'table.xlsx',
-                    excelBase64,
-                    fileInfo.sha,
-                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
-                );
-
-                hideLoadingIndicator();
-                alert('✅ 数据已成功同步到 GitHub Excel 文件！\n页面将在3秒后刷新...');
-                
-                setTimeout(() => {
-                    location.reload();
-                }, 3000);
-
-            } catch (error) {
-                console.error('同步到 Excel 失败:', error);
-                hideLoadingIndicator();
-                alert(`同步失败: ${error.message}`);
-            }
-        }
-
-        // 下载Excel文件
-        function downloadExcel() {
-            try {
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                tableData.forEach(item => {
-                    const row = [
-                        item.id,
-                        item.category,
-                        item.title,
-                        item.path,
-                        item.type,
-                        item.note
-                    ];
-                    excelData.push(row);
-                });
-
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                const colWidths = [
-                    { wch: 8 },  // 序号
-                    { wch: 15 }, // 分类
-                    { wch: 30 }, // 标题
-                    { wch: 40 }, // 地址
-                    { wch: 12 }, // 地址类型
-                    { wch: 25 }  // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
-                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
-                
-                alert('Excel文件下载成功！');
-                
-            } catch (error) {
-                console.error('下载Excel失败:', error);
-                alert('下载Excel文件失败: ' + error.message);
-            }
         }
 
         // 配置 GitHub 同步
