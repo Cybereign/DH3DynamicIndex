@@ -643,8 +643,8 @@
         <div class="auth-section">
             <div id="loginSection" style="display: block;">
                 <div class="login-form">
-                    <input type="text" id="username" class="login-input" placeholder="用户名" value="admin">
-                    <input type="password" id="password" class="login-input" placeholder="密码" value="whj">
+                    <input type="text" id="username" class="login-input" placeholder="用户名">
+                    <input type="password" id="password" class="login-input" placeholder="密码">
                     <button class="login-btn" id="loginBtn">登录</button>
                 </div>
             </div>
@@ -701,7 +701,7 @@
             </div>
         </div>
         
-        <div class="permission-hint" id="permissionHint" style="display: none;">
+        <div class="permission-hint" id="permissionHint" style="display: flex;">
             <i class="fas fa-info-circle"></i>
             <span>您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。</span>
         </div>
@@ -864,23 +864,6 @@
             return hashHex;
         }
 
-        // 调试函数：计算并显示123456的哈希值
-        async function debugHash() {
-            const testPassword = "whj";
-            const hash = await sha256(testPassword);
-    
-            // 确保adminAccounts已经加载
-            if (adminAccounts.length > 0) {
-                console.log(`调试信息：密码 "${testPassword}" 的SHA-256哈希值:`, hash);
-                console.log('存储的哈希值:', adminAccounts[0].passwordHash);
-                console.log('是否匹配:', hash === adminAccounts[0].passwordHash);
-            } else {
-                console.log('adminAccounts 尚未加载');
-            }
-        }
-
-        // 页面加载时运行调试
-        debugHash();
         // 从GitHub加载配置和Excel表格数据
         async function loadConfigFromGitHub() {
             showLoadingIndicator('正在从GitHub加载配置...');
@@ -1368,7 +1351,7 @@
             const editableHeaders = document.querySelectorAll('.editable-header');
             editableHeaders.forEach(header => {
                 header.addEventListener('click', (e) => {
-                    if (isLoggedIn && currentUser.permissions.includes('config')) {
+                    if (isLoggedIn && currentUser && currentUser.permissions.includes('config')) {
                         editHeader(e.currentTarget);
                     }
                 });
@@ -1532,6 +1515,7 @@
             // 计算输入密码的哈希值
             const passwordHash = await sha256(password);
             
+            // 安全地查找用户
             const user = adminAccounts.find(acc => 
                 acc.username === username && acc.passwordHash === passwordHash
             );
