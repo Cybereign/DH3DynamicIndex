@@ -1172,70 +1172,42 @@
 
         // ========== 核心功能函数 ==========
 
-        // 修复的打开文件夹路径函数 - 解决浏览器安全限制问题
+        // 修复的打开文件夹路径函数 - 基于您提供的有效代码
         function openFolder(path) {
+            // 解码路径（将\\\\恢复为\\）
             const decodedPath = path.replace(/\\\\/g, '\\');
             
+            // 尝试使用file协议打开
+            const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
+            
             console.log('尝试打开路径:', decodedPath);
+            console.log('File URL:', fileUrl);
             
-            // 检测路径类型
-            const isLocalPath = decodedPath.includes(':\\') || decodedPath.startsWith('D:\\') || decodedPath.startsWith('C:\\');
-            const isNetworkPath = decodedPath.startsWith('\\\\');
+            // 创建测试链接检查协议支持 - 这是关键差异
+            const testLink = document.createElement('a');
+            testLink.href = 'file:///';
             
-            // 对于本地路径，浏览器通常不允许直接打开
-            if (isLocalPath) {
-                console.log('检测到本地路径，浏览器安全限制阻止直接访问');
-                
-                // 提供复制到剪贴板选项
-                if (confirm(`由于浏览器安全限制，无法直接打开本地文件夹。\n\n路径: ${decodedPath}\n\n是否复制路径到剪贴板？`)) {
+            if (testLink.protocol === 'file:') {
+                // 尝试在新标签页中打开
+                window.open(fileUrl, '_blank');
+                showToast('正在尝试打开文件夹...', 'info');
+            } else {
+                // 如果不支持file协议，提供复制路径功能
+                if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + decodedPath)) {
                     copyToClipboard(decodedPath).then(() => {
-                        showToast('文件夹路径已复制到剪贴板！您可以在文件资源管理器中粘贴此路径。', 'success');
+                        showToast('文件夹路径已复制到剪贴板！您可以在文件资源管理器中粘贴此路径来打开文件夹。', 'success');
                     }).catch(err => {
-                        showToast('复制失败，请手动复制路径', 'error');
-                        console.error('复制失败:', err);
+                        // 备用复制方法
+                        const textArea = document.createElement('textarea');
+                        textArea.value = decodedPath;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        showToast('文件夹路径已复制到剪贴板！', 'success');
                     });
                 }
-                return false;
             }
-            
-            // 对于网络路径，尝试使用 file:// 协议
-            if (isNetworkPath) {
-                console.log('检测到网络路径，尝试使用 file:// 协议');
-                const fileUrl = `file:${decodedPath.replace(/\\/g, '/')}`;
-                console.log('File URL:', fileUrl);
-                
-                // 测试浏览器是否支持 file 协议
-                const testLink = document.createElement('a');
-                testLink.href = 'file:///';
-                
-                // 尝试打开网络路径
-                try {
-                    window.open(fileUrl, '_blank');
-                    showToast('正在尝试打开网络文件夹...', 'info');
-                } catch (error) {
-                    console.error('打开网络路径失败:', error);
-                    
-                    // 如果打开失败，提供复制选项
-                    if (confirm(`无法直接打开网络文件夹。\n\n路径: ${decodedPath}\n\n是否复制路径到剪贴板？`)) {
-                        copyToClipboard(decodedPath).then(() => {
-                            showToast('网络路径已复制到剪贴板！您可以在文件资源管理器中粘贴此路径。', 'success');
-                        }).catch(err => {
-                            showToast('复制失败，请手动复制路径', 'error');
-                        });
-                    }
-                }
-                return false;
-            }
-            
-            // 对于其他类型的路径，提供复制选项
-            if (confirm(`无法直接打开此路径。\n\n路径: ${decodedPath}\n\n是否复制路径到剪贴板？`)) {
-                copyToClipboard(decodedPath).then(() => {
-                    showToast('路径已复制到剪贴板！', 'success');
-                }).catch(err => {
-                    showToast('复制失败，请手动复制路径', 'error');
-                });
-            }
-            
             return false;
         }
 
