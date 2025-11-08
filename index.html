@@ -685,7 +685,7 @@
         <div class="controls">
             <div class="search-box">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
-                <input type="text" id="searchInput" placeholder="搜索页面名称、类别或备注...">
+                <input type="text" id="searchInput" placeholder="搜索页面名称、分类或备注...">
             </div>
             
             <div class="filter-box">
@@ -1025,7 +1025,7 @@
             }
         }
 
-        // 处理Excel数据 - 支持6列表格结构
+        // 处理Excel数据 - 支持6列表格结构和固定分类
         async function processExcelData(arrayBuffer) {
             try {
                 // 读取Excel文件
@@ -1052,6 +1052,9 @@
                 categoryMap = {};
                 categoryList = [];
                 
+                // 收集所有出现的分类
+                const foundCategories = new Set();
+                
                 for (let i = 1; i < excelData.length; i++) {
                     const row = excelData[i];
                     if (row.length === 0) continue;
@@ -1068,20 +1071,39 @@
                     
                     tableData.push(item);
                     
-                    // 构建分类映射（使用"分类"列的内容）
-                    const categoryId = `category${item.id}`;
-                    const categoryName = item.category || `分类${item.id}`;
+                    // 收集分类
+                    if (item.category) {
+                        foundCategories.add(item.category);
+                    }
+                }
+                
+                // 构建分类列表
+                let categoryIndex = 1;
+                foundCategories.forEach(categoryName => {
+                    const categoryId = `category${categoryIndex}`;
+                    categoryList.push({
+                        id: categoryId,
+                        name: categoryName
+                    });
                     categoryMap[categoryId] = categoryName;
-                    
-                    if (!categoryList.find(cat => cat.id === categoryId)) {
+                    categoryIndex++;
+                });
+                
+                // 如果没有找到分类，使用默认分类
+                if (categoryList.length === 0) {
+                    const defaultCategories = ['开发计划', '设计评审', '阶段评审', '联系信息', '项目文档'];
+                    defaultCategories.forEach((categoryName, index) => {
+                        const categoryId = `category${index + 1}`;
                         categoryList.push({
                             id: categoryId,
                             name: categoryName
                         });
-                    }
+                        categoryMap[categoryId] = categoryName;
+                    });
                 }
                 
                 console.log('处理后的数据:', tableData);
+                console.log('分类列表:', categoryList);
                 
                 // 更新UI
                 updateCategoryFilters();
@@ -1149,30 +1171,52 @@
             tableData = [
                 {
                     "id": 1,
-                    "category": "项目文档",
-                    "title": "DH3项目华为接口联系人清单",
-                    "path": "https://acndoaymjsa1.feishu.cn/file/NI95bmHjpoopKBxVGhrc7S9SnUc",
+                    "category": "开发计划",
+                    "title": "DH3项目开发计划",
+                    "path": "https://example.com/development-plan",
                     "type": "url",
-                    "note": "飞书 包含华为座舱、智驾、网联相关接口人信息"
+                    "note": "项目整体开发计划和时间安排"
                 },
                 {
                     "id": 2,
-                    "category": "项目文档",
-                    "title": "DH3项目责任分工", 
-                    "path": "\\\\10.4.9.25\\Project\\DH系列",
+                    "category": "设计评审",
+                    "title": "系统架构设计评审",
+                    "path": "\\\\10.4.9.25\\Project\\Design",
                     "type": "folder",
-                    "note": "外网共享文件夹"
+                    "note": "系统架构设计文档和评审记录"
+                },
+                {
+                    "id": 3,
+                    "category": "阶段评审",
+                    "title": "第一阶段交付评审",
+                    "path": "https://example.com/phase-review",
+                    "type": "url",
+                    "note": "第一阶段成果交付和评审材料"
+                },
+                {
+                    "id": 4,
+                    "category": "联系信息",
+                    "title": "项目组成员联系方式",
+                    "path": "\\\\10.4.9.25\\Project\\Contacts",
+                    "type": "folder",
+                    "note": "项目组所有成员的联系方式"
                 }
             ];
             
-            categoryMap = {
-                "category1": "项目文档",
-                "category2": "项目文档"
-            };
-            
+            // 构建分类列表
             categoryList = [
-                { id: "category1", name: "项目文档" }
+                { id: "category1", name: "开发计划" },
+                { id: "category2", name: "设计评审" },
+                { id: "category3", name: "阶段评审" },
+                { id: "category4", name: "联系信息" }
             ];
+            
+            categoryMap = {
+                "category1": "开发计划",
+                "category2": "设计评审",
+                "category3": "阶段评审",
+                "category4": "联系信息"
+            };
             
             updateCategoryFilters();
             updateCategorySelect();
@@ -2090,10 +2134,10 @@
             
             // 按类别筛选
             if (category !== 'all') {
-                filteredData = filteredData.filter(item => {
-                    const categoryId = `category${item.id}`;
-                    return categoryId === category;
-                });
+                const selectedCategory = categoryList.find(cat => cat.id === category);
+                if (selectedCategory) {
+                    filteredData = filteredData.filter(item => item.category === selectedCategory.name);
+                }
             }
             
             currentData = filteredData;
@@ -2114,7 +2158,9 @@
                     modalTitle.textContent = '编辑条目';
                     editId.value = item.id;
                     itemTitle.value = item.title;
-                    itemCategory.value = `category${item.id}`;
+                    // 找到对应的分类ID
+                    const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
+                    itemCategory.value = categoryEntry ? categoryEntry[0] : '';
                     itemPath.value = item.path;
                     itemNote.value = item.note;
                     
@@ -2184,9 +2230,12 @@
             }
             
             const id = editId.value ? parseInt(editId.value) : generateId();
+            const selectedCategory = categoryList.find(cat => cat.id === itemCategory.value);
+            const categoryName = selectedCategory ? selectedCategory.name : '未分类';
+            
             const newItem = {
                 id: id,
-                category: itemCategory.options[itemCategory.selectedIndex].text,
+                category: categoryName,  // 使用分类名称而不是ID
                 title: itemTitle.value.trim(),
                 path: pathValue,
                 type: detectedType,
@@ -2203,16 +2252,14 @@
                 // 添加新条目
                 tableData.push(newItem);
                 
-                // 更新分类列表
-                const categoryId = `category${id}`;
-                const categoryName = newItem.category || `分类${id}`;
-                categoryMap[categoryId] = categoryName;
-                
-                if (!categoryList.find(cat => cat.id === categoryId)) {
+                // 如果选择了新分类，添加到分类列表
+                if (categoryName && !categoryList.find(cat => cat.name === categoryName)) {
+                    const categoryId = `category${categoryList.length + 1}`;
                     categoryList.push({
                         id: categoryId,
                         name: categoryName
                     });
+                    categoryMap[categoryId] = categoryName;
                     updateCategoryFilters();
                     updateCategorySelect();
                 }
