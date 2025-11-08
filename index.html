@@ -597,6 +597,38 @@
             outline: none;
         }
         
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 400px;
+        }
+        
+        .toast-success {
+            background: #28a745;
+        }
+        
+        .toast-error {
+            background: #dc3545;
+        }
+        
+        .toast-info {
+            background: #17a2b8;
+        }
+        
+        .toast-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
         @media (max-width: 768px) {
             .controls {
                 flex-direction: column;
@@ -788,7 +820,6 @@
                         <div class="path-type-selector">
                             <button type="button" class="path-type-btn active" data-type="url">网页URL</button>
                             <button type="button" class="path-type-btn" data-type="folder">文件夹路径</button>
-                            <button type="button" class="path-type-btn" data-type="network">网络路径</button>
                         </div>
                         <input type="text" class="form-control" id="itemPath" placeholder="输入网页URL地址" required>
                         <div class="path-example" id="pathExample">例如: https://example.com/page</div>
@@ -883,7 +914,6 @@
                 this.token = token;
             }
 
-            // 获取文件内容
             async getFileContent(filePath) {
                 try {
                     const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}?ref=${GITHUB_BRANCH}`, {
@@ -898,11 +928,10 @@
                     }
 
                     const data = await response.json();
-                    // GitHub API 返回的是 base64 编码的内容
                     const content = atob(data.content);
                     return {
                         content: content,
-                        sha: data.sha // 需要这个 SHA 来更新文件
+                        sha: data.sha
                     };
                 } catch (error) {
                     console.error('获取文件内容失败:', error);
@@ -910,10 +939,8 @@
                 }
             }
 
-            // 更新文件内容
             async updateFileContent(filePath, content, sha, commitMessage) {
                 try {
-                    // 内容需要 base64 编码
                     const contentBase64 = btoa(unescape(encodeURIComponent(content)));
                     
                     const response = await fetch(`${GITHUB_CONTENT_URL}/${filePath}`, {
@@ -945,7 +972,6 @@
                 }
             }
 
-            // 检查认证状态
             async checkAuth() {
                 try {
                     const response = await fetch(`${GITHUB_API_BASE}/user`, {
@@ -979,6 +1005,131 @@
         // 自动登出和登录尝试
         let logoutTimer;
         let loginAttempts = 0;
+
+        // 当前显示的数据和路径类型
+        let currentData = [];
+        let currentPathType = 'url';
+        let isLoggedIn = false;
+        let currentUser = null;
+
+        // DOM元素
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const addBtn = document.getElementById('addBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const syncExcelBtn = document.getElementById('syncExcelBtn');
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        const updateHTMLBtn = document.getElementById('updateHTMLBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const refreshConfigBtn = document.getElementById('refreshConfigBtn');
+        const editHeadersBtn = document.getElementById('editHeadersBtn');
+        const itemModal = document.getElementById('itemModal');
+        const headersModal = document.getElementById('headersModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const itemForm = document.getElementById('itemForm');
+        const headersForm = document.getElementById('headersForm');
+        const editId = document.getElementById('editId');
+        const itemTitle = document.getElementById('itemTitle');
+        const itemCategory = document.getElementById('itemCategory');
+        const itemPath = document.getElementById('itemPath');
+        const itemNote = document.getElementById('itemNote');
+        const saveItemBtn = document.getElementById('saveItemBtn');
+        const closeModal = document.getElementById('closeModal');
+        const closeHeadersModal = document.getElementById('closeHeadersModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelHeadersBtn = document.getElementById('cancelHeadersBtn');
+        const saveHeadersBtn = document.getElementById('saveHeadersBtn');
+        const resetHeadersBtn = document.getElementById('resetHeadersBtn');
+        const totalCount = document.getElementById('totalCount');
+        const filteredCount = document.getElementById('filteredCount');
+        const pathTypeButtons = document.querySelectorAll('.path-type-btn');
+        const pathExample = document.getElementById('pathExample');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginSection = document.getElementById('loginSection');
+        const userSection = document.getElementById('userSection');
+        const userName = document.getElementById('userName');
+        const adminIndicator = document.getElementById('adminIndicator');
+        const permissionHint = document.getElementById('permissionHint');
+        const setupGitHubBtn = document.getElementById('setupGitHubBtn');
+
+        // ========== 核心功能函数 ==========
+
+        // 打开文件夹路径 - 使用您提供的有效方法
+        function openFolder(path) {
+            // 解码路径（将\\\\恢复为\\）
+            const decodedPath = path.replace(/\\\\/g, '\\');
+            
+            // 尝试使用file协议打开
+            const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
+            
+            console.log('尝试打开路径:', decodedPath);
+            console.log('File URL:', fileUrl);
+            
+            // 创建测试链接检查协议支持
+            const testLink = document.createElement('a');
+            testLink.href = 'file:///';
+            
+            if (testLink.protocol === 'file:') {
+                // 尝试在新标签页中打开
+                window.open(fileUrl, '_blank');
+                showToast('正在尝试打开文件夹...', 'info');
+            } else {
+                // 如果不支持file协议，提供复制路径功能
+                if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + decodedPath)) {
+                    copyToClipboard(decodedPath).then(() => {
+                        showToast('文件夹路径已复制到剪贴板！', 'success');
+                    }).catch(err => {
+                        showToast('复制失败，请手动复制路径', 'error');
+                    });
+                }
+            }
+            return false;
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                // 备用复制方法
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                return true;
+            }
+        }
+
+        // 显示Toast消息
+        function showToast(message, type = 'info') {
+            // 移除现有的toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // 3秒后自动消失
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
 
         // SHA-256哈希函数
         async function sha256(message) {
@@ -1029,53 +1180,42 @@
             }
         }
 
-        // 处理Excel数据 - 修复分类重复问题
+        // 处理Excel数据
         async function processExcelData(arrayBuffer) {
             try {
-                // 读取Excel文件
                 const data = new Uint8Array(arrayBuffer);
                 const workbook = XLSX.read(data, { type: 'array' });
-                
-                // 获取第一个工作表
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                
-                // 将工作表转换为JSON（包含表头）
                 const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 
                 if (excelData.length < 2) {
                     throw new Error('Excel文件为空或格式不正确');
                 }
                 
-                // 获取表头（第一行）
                 const headers = excelData[0];
                 console.log('Excel表头结构:', headers);
                 
-                // 处理数据行（从第二行开始）
                 tableData = [];
                 categoryMap = {};
                 categoryList = [];
-                
-                // 使用Map来确保分类唯一性
                 const uniqueCategories = new Map();
                 
                 for (let i = 1; i < excelData.length; i++) {
                     const row = excelData[i];
                     if (row.length === 0) continue;
                     
-                    // 根据表头位置获取数据 - 6列表格结构
                     const item = {
-                        id: row[0] || i,                    // 第一列：序号
-                        category: (row[1] || '').trim(),    // 第二列：分类，去除前后空格
-                        title: row[2] || '',                // 第三列：标题
-                        path: row[3] || '',                 // 第四列：地址
-                        type: (row[4] || 'url').toLowerCase(), // 第五列：地址类型
-                        note: row[5] || ''                  // 第六列：备注
+                        id: row[0] || i,
+                        category: (row[1] || '').trim(),
+                        title: row[2] || '',
+                        path: row[3] || '',
+                        type: (row[4] || 'url').toLowerCase(),
+                        note: row[5] || ''
                     };
                     
                     tableData.push(item);
                     
-                    // 收集唯一分类
                     if (item.category && !uniqueCategories.has(item.category)) {
                         const categoryId = `category${uniqueCategories.size + 1}`;
                         uniqueCategories.set(item.category, {
@@ -1085,10 +1225,7 @@
                     }
                 }
                 
-                // 构建分类列表
                 categoryList = Array.from(uniqueCategories.values());
-                
-                // 构建分类映射
                 categoryList.forEach(category => {
                     categoryMap[category.id] = category.name;
                 });
@@ -1096,7 +1233,6 @@
                 console.log('处理后的数据:', tableData);
                 console.log('去重后的分类列表:', categoryList);
                 
-                // 更新UI
                 updateCategoryFilters();
                 renderTable(tableData);
                 updateStats();
@@ -1107,19 +1243,104 @@
             }
         }
 
-        // 更新分类筛选器 - 修复重复问题
+        // 渲染表格
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
+                return;
+            }
+            
+            tableBody.innerHTML = data.map(item => {
+                const isUrl = item.type === 'url';
+                const linkClass = isUrl ? 'link' : 'link folder-link';
+                const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
+                const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
+                const badgeText = isUrl ? '网页' : '文件夹';
+                const categoryName = item.category || `分类${item.id}`;
+                const categoryClass = `category-${(item.id % 10) || 1}`;
+                
+                if (isUrl) {
+                    return `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                        <td>
+                            <a href="${item.path}" target="_blank" class="${linkClass}">
+                                <i class="${iconClass} link-icon"></i> 
+                                ${item.title}
+                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                            </a>
+                            <div class="path-display">${item.path}</div>
+                        </td>
+                        <td class="note">${item.note}</td>
+                        <td class="action-cell">
+                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                } else {
+                    return `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                        <td>
+                            <a href="#" class="${linkClass}" onclick="openFolder('${item.path.replace(/\\/g, '\\\\')}')">
+                                <i class="${iconClass} link-icon"></i> 
+                                ${item.title}
+                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                            </a>
+                            <div class="path-display">${item.path}</div>
+                        </td>
+                        <td class="note">${item.note}</td>
+                        <td class="action-cell">
+                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                }
+            }).join('');
+            
+            // 添加编辑和删除事件
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        openModal(id);
+                    });
+                }
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        deleteItem(id);
+                    });
+                }
+            });
+            
+            updateStats();
+        }
+
+        // 更新分类筛选器
         function updateCategoryFilters() {
             const filterBox = document.querySelector('.filter-box');
-            
-            // 清空现有的分类按钮（保留"全部"按钮）
             const allButton = filterBox.querySelector('[data-category="all"]');
             filterBox.innerHTML = '';
             filterBox.appendChild(allButton);
             
-            // 添加分类按钮 - 确保唯一性
             const addedCategories = new Set();
             categoryList.forEach(category => {
-                // 防止重复添加相同的分类
                 if (!addedCategories.has(category.name)) {
                     const button = document.createElement('button');
                     button.className = 'filter-btn';
@@ -1130,7 +1351,6 @@
                 }
             });
             
-            // 重新绑定事件
             setupFilterEvents();
         }
 
@@ -1163,7 +1383,6 @@
                 maxLoginAttempts: 5
             };
             
-            // 使用示例数据 - 6列表格结构
             tableData = [
                 {
                     "id": 1,
@@ -1177,8 +1396,8 @@
                     "id": 2,
                     "category": "设计评审",
                     "title": "系统架构设计评审",
-                    "path": "\\\\10.4.9.25\\Project\\Design",
-                    "type": "network",
+                    "path": "\\\\10.4.9.25\\Project\\DH系列\\060-整车开发\\DH3\\J2评审输入",
+                    "type": "folder",
                     "note": "系统架构设计文档和评审记录"
                 },
                 {
@@ -1188,365 +1407,26 @@
                     "path": "https://example.com/phase-review",
                     "type": "url",
                     "note": "第一阶段成果交付和评审材料"
-                },
-                {
-                    "id": 4,
-                    "category": "联系信息",
-                    "title": "项目组成员联系方式",
-                    "path": "\\\\10.4.9.25\\Project\\Contacts",
-                    "type": "network",
-                    "note": "项目组所有成员的联系方式"
                 }
             ];
             
-            // 构建分类列表
             categoryList = [
                 { id: "category1", name: "开发计划" },
                 { id: "category2", name: "设计评审" },
-                { id: "category3", name: "阶段评审" },
-                { id: "category4", name: "联系信息" }
+                { id: "category3", name: "阶段评审" }
             ];
             
             categoryMap = {
                 "category1": "开发计划",
                 "category2": "设计评审",
-                "category3": "阶段评审",
-                "category4": "联系信息"
+                "category3": "阶段评审"
             };
             
             updateCategoryFilters();
             updateCategorySelect();
             renderTable(tableData);
             updateStats();
-            updateConfigInfo({
-                project: 'DH3项目HelpMe索引表',
-                version: '默认配置',
-                lastUpdated: new Date().toISOString()
-            });
         }
-
-        // 更新配置信息显示
-        function updateConfigInfo(config) {
-            const configInfo = document.getElementById('configInfo');
-            const configVersion = document.getElementById('configVersion');
-            
-            if (configInfo && configVersion) {
-                const versionInfo = config.version ? `v${config.version}` : '未知版本';
-                const updateTime = config.lastUpdated ? new Date(config.lastUpdated).toLocaleString() : '未知时间';
-                
-                configInfo.textContent = `${config.project || 'DH3项目'} ${versionInfo}`;
-                configVersion.textContent = `配置版本: ${versionInfo} | 更新: ${updateTime}`;
-            }
-        }
-
-        // 显示加载指示器
-        function showLoadingIndicator(message) {
-            const indicator = document.getElementById('loadingIndicator');
-            const text = indicator.querySelector('span');
-            if (indicator) {
-                text.textContent = message;
-                indicator.style.display = 'flex';
-            }
-        }
-
-        // 隐藏加载指示器
-        function hideLoadingIndicator() {
-            const indicator = document.getElementById('loadingIndicator');
-            if (indicator) {
-                indicator.style.display = 'none';
-            }
-        }
-
-        // 显示错误信息
-        function showErrorMessage(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            if (errorDiv && errorText) {
-                errorText.textContent = message;
-                errorDiv.style.display = 'flex';
-            }
-        }
-
-        // 隐藏错误信息
-        function hideErrorMessage() {
-            const errorDiv = document.getElementById('errorMessage');
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-        }
-
-        // 显示 GitHub 令牌帮助
-        function showGitHubTokenHelp() {
-            alert(`GitHub 个人访问令牌 - 完全免费\n\n` +
-                  `如何获取：\n` +
-                  `1. 登录 GitHub → Settings → Developer settings\n` +
-                  `2. 选择 Personal access tokens → Tokens (classic)\n` +
-                  `3. 点击 Generate new token\n` +
-                  `4. 设置备注，选择过期时间（建议1年）\n` +
-                  `5. 勾选 repo 权限（完整控制私有仓库）\n` +
-                  `6. 生成令牌并复制保存\n\n` +
-                  `💡 重要提示：\n` +
-                  `• 这个功能完全免费\n` +
-                  `• 不会产生任何费用\n` +
-                  `• 令牌只保存在您的浏览器本地\n` +
-                  `• 可以随时在 GitHub 上撤销令牌`);
-        }
-
-        // ArrayBuffer 转 Base64
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            const len = bytes.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary);
-        }
-
-        // 修复的 Excel 同步功能
-        async function syncDataToExcel() {
-            if (!isLoggedIn) {
-                alert('请先登录管理员账户');
-                return;
-            }
-
-            if (!gitHubService) {
-                alert('请先配置 GitHub 个人访问令牌');
-                document.getElementById('githubToken').focus();
-                return;
-            }
-
-            try {
-                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
-
-                // 1. 获取当前 Excel 文件的 SHA
-                const fileInfo = await gitHubService.getFileContent('table.xlsx');
-                
-                // 2. 准备数据 - 创建完整的Excel数据结构
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                // 添加数据行
-                tableData.forEach(item => {
-                    const row = [
-                        item.id,
-                        item.category,
-                        item.title,
-                        item.path,
-                        item.type,
-                        item.note
-                    ];
-                    excelData.push(row);
-                });
-
-                // 3. 创建工作表
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                
-                // 4. 设置列宽
-                const colWidths = [
-                    { wch: 8 },  // 序号
-                    { wch: 15 }, // 分类
-                    { wch: 30 }, // 标题
-                    { wch: 40 }, // 地址
-                    { wch: 12 }, // 地址类型
-                    { wch: 25 }  // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                // 5. 创建工作簿
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
-                
-                // 6. 生成 Excel 文件
-                const excelBuffer = XLSX.write(workbook, { 
-                    bookType: 'xlsx', 
-                    type: 'array',
-                    bookSST: false
-                });
-
-                // 7. 转换为 base64
-                const excelBase64 = arrayBufferToBase64(excelBuffer);
-
-                // 8. 上传到 GitHub
-                await gitHubService.updateFileContent(
-                    'table.xlsx',
-                    excelBase64,
-                    fileInfo.sha,
-                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
-                );
-
-                hideLoadingIndicator();
-                alert('✅ 数据已成功同步到 GitHub Excel 文件！\n页面将在3秒后刷新...');
-                
-                // 刷新页面以加载最新数据
-                setTimeout(() => {
-                    location.reload();
-                }, 3000);
-
-            } catch (error) {
-                console.error('同步到 Excel 失败:', error);
-                hideLoadingIndicator();
-                alert(`同步失败: ${error.message}`);
-            }
-        }
-
-        // 下载Excel文件功能
-        function downloadExcel() {
-            try {
-                // 准备数据
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                // 添加数据行
-                tableData.forEach(item => {
-                    const row = [
-                        item.id,
-                        item.category,
-                        item.title,
-                        item.path,
-                        item.type,
-                        item.note
-                    ];
-                    excelData.push(row);
-                });
-
-                // 创建工作表
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                
-                // 设置列宽
-                const colWidths = [
-                    { wch: 8 },  // 序号
-                    { wch: 15 }, // 分类
-                    { wch: 30 }, // 标题
-                    { wch: 40 }, // 地址
-                    { wch: 12 }, // 地址类型
-                    { wch: 25 }  // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                // 创建工作簿
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
-                
-                // 生成并下载Excel文件
-                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
-                
-                alert('Excel文件下载成功！');
-                
-            } catch (error) {
-                console.error('下载Excel失败:', error);
-                alert('下载Excel文件失败: ' + error.message);
-            }
-        }
-
-        // 配置 GitHub 同步
-        async function setupGitHubSync() {
-            const token = document.getElementById('githubToken').value.trim();
-            
-            if (!token) {
-                alert('请输入 GitHub 个人访问令牌');
-                return;
-            }
-
-            try {
-                showLoadingIndicator('正在验证 GitHub 令牌...');
-                
-                // 创建 GitHub 服务实例
-                gitHubService = new GitHubService(token);
-                
-                // 验证令牌
-                const authResult = await gitHubService.checkAuth();
-                
-                if (authResult.authenticated) {
-                    // 保存令牌到本地存储（安全考虑）
-                    localStorage.setItem('githubToken', token);
-                    document.getElementById('githubToken').value = ''; // 清空输入框
-                    
-                    // 更新 UI
-                    document.getElementById('githubStatus').innerHTML = 
-                        `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
-                    
-                    hideLoadingIndicator();
-                    alert('GitHub 令牌配置成功！现在可以同步数据到 Excel 文件了。');
-                } else {
-                    throw new Error('GitHub 令牌验证失败');
-                }
-                
-            } catch (error) {
-                console.error('GitHub 配置失败:', error);
-                hideLoadingIndicator();
-                alert(`GitHub 配置失败: ${error.message}\n\n请检查：\n1. 令牌是否正确\n2. 令牌是否具有 repo 权限\n3. 网络连接是否正常`);
-            }
-        }
-
-        // 加载保存的 GitHub 令牌
-        function loadGitHubToken() {
-            const savedToken = localStorage.getItem('githubToken');
-            if (savedToken) {
-                gitHubService = new GitHubService(savedToken);
-                
-                // 验证令牌是否仍然有效
-                gitHubService.checkAuth().then(authResult => {
-                    if (authResult.authenticated) {
-                        document.getElementById('githubStatus').innerHTML = 
-                            `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
-                    } else {
-                        // 令牌失效，清除保存的令牌
-                        localStorage.removeItem('githubToken');
-                        gitHubService = null;
-                    }
-                });
-            }
-        }
-
-        // DOM元素
-        const tableBody = document.getElementById('tableBody');
-        const searchInput = document.getElementById('searchInput');
-        const addBtn = document.getElementById('addBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const syncExcelBtn = document.getElementById('syncExcelBtn');
-        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
-        const updateHTMLBtn = document.getElementById('updateHTMLBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const refreshConfigBtn = document.getElementById('refreshConfigBtn');
-        const editHeadersBtn = document.getElementById('editHeadersBtn');
-        const itemModal = document.getElementById('itemModal');
-        const headersModal = document.getElementById('headersModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const itemForm = document.getElementById('itemForm');
-        const headersForm = document.getElementById('headersForm');
-        const editId = document.getElementById('editId');
-        const itemTitle = document.getElementById('itemTitle');
-        const itemCategory = document.getElementById('itemCategory');
-        const itemPath = document.getElementById('itemPath');
-        const itemNote = document.getElementById('itemNote');
-        const saveItemBtn = document.getElementById('saveItemBtn');
-        const closeModal = document.getElementById('closeModal');
-        const closeHeadersModal = document.getElementById('closeHeadersModal');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const cancelHeadersBtn = document.getElementById('cancelHeadersBtn');
-        const saveHeadersBtn = document.getElementById('saveHeadersBtn');
-        const resetHeadersBtn = document.getElementById('resetHeadersBtn');
-        const totalCount = document.getElementById('totalCount');
-        const filteredCount = document.getElementById('filteredCount');
-        const pathTypeButtons = document.querySelectorAll('.path-type-btn');
-        const pathExample = document.getElementById('pathExample');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const loginSection = document.getElementById('loginSection');
-        const userSection = document.getElementById('userSection');
-        const userName = document.getElementById('userName');
-        const adminIndicator = document.getElementById('adminIndicator');
-        const permissionHint = document.getElementById('permissionHint');
-        const setupGitHubBtn = document.getElementById('setupGitHubBtn');
-
-        // 当前显示的数据和路径类型
-        let currentData = [...tableData];
-        let currentPathType = 'url';
-        let isLoggedIn = false;
-        let currentUser = null;
 
         // 数据持久化函数
         function saveDataToStorage() {
@@ -1576,24 +1456,21 @@
 
         // 设置自动登出
         function setupAutoLogout() {
-            // 清除现有计时器
             if (logoutTimer) {
                 clearTimeout(logoutTimer);
             }
             
-            // 获取自动登出时间设置（分钟）
             const autoLogoutMinutes = appConfig.autoLogout || 60;
             
-            // 设置新的计时器
             logoutTimer = setTimeout(() => {
                 if (isLoggedIn) {
                     alert(`由于长时间未操作，系统已自动登出。自动登出时间：${autoLogoutMinutes}分钟`);
                     handleLogout();
                 }
-            }, autoLogoutMinutes * 60 * 1000); // 转换为毫秒
+            }, autoLogoutMinutes * 60 * 1000);
         }
 
-        // 重置自动登出计时器（在用户操作时调用）
+        // 重置自动登出计时器
         function resetAutoLogoutTimer() {
             if (isLoggedIn) {
                 setupAutoLogout();
@@ -1615,7 +1492,7 @@
             // 从GitHub加载配置
             await loadConfigFromGitHub();
             
-            // 加载本地数据（如果有）
+            // 加载本地数据
             const savedData = loadDataFromStorage();
             if (savedData && savedData.length > 0) {
                 tableData = savedData;
@@ -1641,7 +1518,6 @@
             document.getElementById('header-path').textContent = headerConfig.path;
             document.getElementById('header-note').textContent = headerConfig.note;
 
-            // 更新搜索框占位符
             searchInput.placeholder = `搜索页面名称、${headerConfig.category.toLowerCase()}或${headerConfig.note.toLowerCase()}...`;
         }
 
@@ -1781,6 +1657,217 @@
             });
         }
 
+        // 处理路径类型变化
+        function handlePathTypeChange(e) {
+            pathTypeButtons.forEach(btn => btn.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            currentPathType = e.currentTarget.dataset.type;
+            
+            if (currentPathType === 'url') {
+                pathExample.textContent = '例如: https://example.com/page';
+                itemPath.placeholder = '输入网页URL地址';
+            } else {
+                pathExample.textContent = '例如: \\\\10.4.9.25\\Project\\文件夹 或 D:\\Projects\\文件夹';
+                itemPath.placeholder = '输入文件夹路径';
+            }
+        }
+
+        // 处理搜索
+        function handleSearch() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+            filterTable(searchTerm, activeCategory);
+        }
+
+        // 处理筛选
+        function handleFilter(e) {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = e.currentTarget.dataset.category;
+            filterTable(searchTerm, category);
+        }
+
+        // 筛选表格数据
+        function filterTable(searchTerm, category) {
+            let filteredData = tableData;
+            
+            if (searchTerm) {
+                filteredData = filteredData.filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) || 
+                    (item.category || '').toLowerCase().includes(searchTerm) ||
+                    item.note.toLowerCase().includes(searchTerm) ||
+                    item.path.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (category !== 'all') {
+                const selectedCategory = categoryList.find(cat => cat.id === category);
+                if (selectedCategory) {
+                    filteredData = filteredData.filter(item => item.category === selectedCategory.name);
+                }
+            }
+            
+            currentData = filteredData;
+            renderTable(currentData);
+            updateStats();
+        }
+
+        // 打开模态框
+        function openModal(id = null) {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            if (id) {
+                const item = tableData.find(item => item.id === id);
+                if (item) {
+                    modalTitle.textContent = '编辑条目';
+                    editId.value = item.id;
+                    itemTitle.value = item.title;
+                    const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
+                    itemCategory.value = categoryEntry ? categoryEntry[0] : '';
+                    itemPath.value = item.path;
+                    itemNote.value = item.note;
+                    
+                    currentPathType = item.type;
+                    pathTypeButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.type === item.type);
+                    });
+                    updatePathExample();
+                }
+            } else {
+                modalTitle.textContent = '添加新条目';
+                itemForm.reset();
+                editId.value = '';
+                
+                currentPathType = 'url';
+                pathTypeButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === 'url');
+                });
+                updatePathExample();
+            }
+            
+            itemModal.style.display = 'flex';
+        }
+
+        // 更新路径示例
+        function updatePathExample() {
+            if (currentPathType === 'url') {
+                pathExample.textContent = '例如: https://example.com/page';
+                itemPath.placeholder = '输入网页URL地址';
+            } else {
+                pathExample.textContent = '例如: \\\\10.4.9.25\\Project\\文件夹 或 D:\\Projects\\文件夹';
+                itemPath.placeholder = '输入文件夹路径';
+            }
+        }
+
+        // 关闭模态框
+        function closeModalFunc() {
+            itemModal.style.display = 'none';
+            itemForm.reset();
+        }
+
+        // 保存条目
+        function saveItem() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            if (!itemTitle.value.trim() || !itemCategory.value || !itemPath.value.trim()) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+            
+            const pathValue = itemPath.value.trim();
+            let detectedType = currentPathType;
+            
+            if (pathValue.startsWith('http://') || pathValue.startsWith('https://')) {
+                detectedType = 'url';
+            } else if (pathValue.includes('\\\\') || pathValue.includes(':\\')) {
+                detectedType = 'folder';
+            }
+            
+            const id = editId.value ? parseInt(editId.value) : generateId();
+            const selectedCategory = categoryList.find(cat => cat.id === itemCategory.value);
+            const categoryName = selectedCategory ? selectedCategory.name : '未分类';
+            
+            const newItem = {
+                id: id,
+                category: categoryName,
+                title: itemTitle.value.trim(),
+                path: pathValue,
+                type: detectedType,
+                note: itemNote.value.trim()
+            };
+            
+            if (editId.value) {
+                const index = tableData.findIndex(item => item.id === id);
+                if (index !== -1) {
+                    tableData[index] = newItem;
+                }
+            } else {
+                tableData.push(newItem);
+                
+                if (categoryName && !categoryList.find(cat => cat.name === categoryName)) {
+                    const categoryId = `category${categoryList.length + 1}`;
+                    const newCategory = {
+                        id: categoryId,
+                        name: categoryName
+                    };
+                    categoryList.push(newCategory);
+                    categoryMap[categoryId] = categoryName;
+                    updateCategoryFilters();
+                    updateCategorySelect();
+                }
+            }
+            
+            saveDataToStorage();
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+            filterTable(searchTerm, activeCategory);
+            
+            closeModalFunc();
+        }
+
+        // 生成新ID
+        function generateId() {
+            return tableData.length > 0 ? Math.max(...tableData.map(item => item.id)) + 1 : 1;
+        }
+
+        // 删除条目
+        function deleteItem(id) {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+            
+            if (confirm('确定要删除这个条目吗？')) {
+                tableData = tableData.filter(item => item.id !== id);
+                saveDataToStorage();
+                
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+                filterTable(searchTerm, activeCategory);
+            }
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(tableData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'h5-index-data.json';
+            link.click();
+        }
+
         // 打开表头编辑模态框
         function openHeadersModal() {
             if (!isLoggedIn) {
@@ -1836,7 +1923,6 @@
             const success = await loadConfigFromGitHub();
             if (success) {
                 alert('配置刷新成功！');
-                // 如果用户已登录，重新检查权限
                 if (isLoggedIn && currentUser) {
                     const updatedUser = adminAccounts.find(acc => acc.username === currentUser.username);
                     if (updatedUser) {
@@ -1856,7 +1942,6 @@
             const canExport = currentUser.permissions.includes('export');
             const canConfig = currentUser.permissions.includes('config');
             
-            // 更新操作按钮状态
             addBtn.disabled = !canWrite;
             resetBtn.disabled = !canDelete;
             exportBtn.disabled = !canExport;
@@ -1864,7 +1949,6 @@
             updateHTMLBtn.disabled = !canExport;
             editHeadersBtn.disabled = !canConfig;
             
-            // 设置表头是否可编辑
             const editableHeaders = document.querySelectorAll('.editable-header');
             editableHeaders.forEach(header => {
                 if (canConfig) {
@@ -1885,23 +1969,18 @@
                 return;
             }
             
-            // 检查登录尝试次数
             const maxAttempts = appConfig.maxLoginAttempts || 5;
             if (loginAttempts >= maxAttempts) {
                 alert(`登录尝试次数过多，请稍后再试。最大尝试次数：${maxAttempts}`);
                 return;
             }
             
-            // 计算输入密码的哈希值
             const passwordHash = await sha256(password);
-            
-            // 安全地查找用户
             const user = adminAccounts.find(acc => 
                 acc.username === username && acc.passwordHash === passwordHash
             );
             
             if (user) {
-                // 登录成功，重置尝试次数
                 loginAttempts = 0;
                 loginSuccess(user);
                 localStorage.setItem('h5IndexCurrentUser', JSON.stringify({
@@ -1910,12 +1989,9 @@
                     permissions: user.permissions || ['read']
                 }));
             } else {
-                // 登录失败，增加尝试次数
                 loginAttempts++;
                 const remainingAttempts = maxAttempts - loginAttempts;
                 alert(`用户名或密码错误，剩余尝试次数：${remainingAttempts}`);
-                
-                // 清空密码输入框
                 passwordInput.value = '';
                 passwordInput.focus();
             }
@@ -1926,23 +2002,15 @@
             isLoggedIn = true;
             currentUser = user;
             
-            // 更新UI
             loginSection.style.display = 'none';
             userSection.style.display = 'block';
             userName.textContent = user.name;
             adminIndicator.style.display = 'flex';
             permissionHint.style.display = 'none';
             
-            // 根据权限启用功能
             updateUIForPermissions();
-            
-            // 重新渲染表格以启用操作按钮
             renderTable(currentData);
-            
-            // 清空密码输入框
             passwordInput.value = '';
-            
-            // 设置自动登出计时器
             setupAutoLogout();
         }
 
@@ -1951,19 +2019,16 @@
             isLoggedIn = false;
             currentUser = null;
             
-            // 清除自动登出计时器
             if (logoutTimer) {
                 clearTimeout(logoutTimer);
                 logoutTimer = null;
             }
             
-            // 更新UI
             loginSection.style.display = 'block';
             userSection.style.display = 'none';
             adminIndicator.style.display = 'none';
             permissionHint.style.display = 'flex';
             
-            // 禁用所有管理员功能
             addBtn.disabled = true;
             resetBtn.disabled = true;
             exportBtn.disabled = true;
@@ -1971,212 +2036,10 @@
             updateHTMLBtn.disabled = true;
             editHeadersBtn.disabled = true;
             
-            // 清除保存的登录状态
             localStorage.removeItem('h5IndexCurrentUser');
-            
-            // 重新渲染表格以禁用操作按钮
             renderTable(currentData);
-            
-            // 清空输入框
             usernameInput.value = '';
             passwordInput.value = '';
-        }
-
-        // 处理路径类型变化
-        function handlePathTypeChange(e) {
-            pathTypeButtons.forEach(btn => btn.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-            currentPathType = e.currentTarget.dataset.type;
-            
-            // 更新路径示例
-            updatePathExample();
-        }
-
-        // 更新路径示例
-        function updatePathExample() {
-            if (currentPathType === 'url') {
-                pathExample.textContent = '例如: https://example.com/page';
-                itemPath.placeholder = '输入网页URL地址';
-            } else if (currentPathType === 'folder') {
-                pathExample.textContent = '例如: D:\\Projects\\文件夹';
-                itemPath.placeholder = '输入本地文件夹路径';
-            } else {
-                pathExample.textContent = '例如: \\\\10.4.9.25\\Project\\文件夹';
-                itemPath.placeholder = '输入网络共享文件夹路径';
-            }
-        }
-
-        // 渲染表格
-        function renderTable(data) {
-            if (data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
-                return;
-            }
-            
-            tableBody.innerHTML = data.map(item => {
-                const isUrl = item.type === 'url';
-                const isNetwork = item.type === 'network';
-                const linkClass = isUrl ? 'link' : 'link folder-link';
-                const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
-                const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
-                const badgeText = isUrl ? '网页' : (isNetwork ? '网络路径' : '文件夹');
-                const categoryName = item.category || `分类${item.id}`;
-                const categoryClass = `category-${(item.id % 10) || 1}`;
-                
-                // 为URL链接添加target="_blank"，文件夹和网络路径使用自定义处理
-                if (isUrl) {
-                    return `
-                    <tr>
-                        <td>${item.id}</td>
-                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
-                        <td>
-                            <a href="${item.path}" target="_blank" class="${linkClass}">
-                                <i class="${iconClass} link-icon"></i> 
-                                ${item.title}
-                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
-                            </a>
-                            <div class="path-display">${item.path}</div>
-                        </td>
-                        <td class="note">${item.note}</td>
-                        <td class="action-cell">
-                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    `;
-                } else {
-                    return `
-                    <tr>
-                        <td>${item.id}</td>
-                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
-                        <td>
-                            <a href="#" class="${linkClass}" onclick="handleFolderClick('${item.path.replace(/\\/g, '\\\\')}', '${item.type}')">
-                                <i class="${iconClass} link-icon"></i> 
-                                ${item.title}
-                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
-                            </a>
-                            <div class="path-display">${item.path}</div>
-                        </td>
-                        <td class="note">${item.note}</td>
-                        <td class="action-cell">
-                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    `;
-                }
-            }).join('');
-            
-            // 添加编辑和删除事件
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                if (!btn.disabled) {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        openModal(id);
-                    });
-                }
-            });
-            
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                if (!btn.disabled) {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        deleteItem(id);
-                    });
-                }
-            });
-            
-            // 更新统计数据
-            updateStats();
-        }
-
-        // 处理文件夹点击 - 修复网络路径问题
-        function handleFolderClick(path, type) {
-            // 解码路径（将\\\\恢复为\\）
-            const decodedPath = path.replace(/\\\\/g, '\\');
-            
-            if (type === 'network') {
-                // 对于网络路径，提供多种打开方式
-                openNetworkFolder(decodedPath);
-            } else {
-                // 对于本地文件夹路径
-                openLocalFolder(decodedPath);
-            }
-            return false;
-        }
-
-        // 打开网络文件夹 - 提供多种解决方案
-        function openNetworkFolder(path) {
-            const message = `网络路径: ${path}\n\n由于浏览器安全限制，无法直接打开网络文件夹。请选择以下方式之一：\n\n1. 复制路径并在文件资源管理器中打开\n2. 使用"运行"对话框 (Win+R) 输入路径\n3. 在文件资源管理器地址栏粘贴路径`;
-            
-            if (confirm(message + '\n\n是否复制路径到剪贴板？')) {
-                copyToClipboard(path).then(() => {
-                    alert('路径已复制到剪贴板！\n\n您可以在文件资源管理器的地址栏中粘贴此路径来打开文件夹。');
-                }).catch(err => {
-                    // 备用复制方法
-                    const textArea = document.createElement('textarea');
-                    textArea.value = path;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    alert('路径已复制到剪贴板！\n\n您可以在文件资源管理器的地址栏中粘贴此路径来打开文件夹。');
-                });
-            }
-        }
-
-        // 打开本地文件夹
-        function openLocalFolder(path) {
-            // 尝试使用file协议打开
-            const fileUrl = `file:///${path.replace(/\\/g, '/')}`;
-            
-            // 创建测试链接检查协议支持
-            const testLink = document.createElement('a');
-            testLink.href = 'file:///';
-            
-            if (testLink.protocol === 'file:') {
-                // 尝试在新标签页中打开
-                window.open(fileUrl, '_blank');
-            } else {
-                // 如果不支持file协议，提供复制路径功能
-                if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + path)) {
-                    copyToClipboard(path).then(() => {
-                        alert('文件夹路径已复制到剪贴板！\n\n您可以在文件资源管理器的地址栏中粘贴此路径来打开文件夹。');
-                    }).catch(err => {
-                        // 备用复制方法
-                        const textArea = document.createElement('textarea');
-                        textArea.value = path;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        alert('文件夹路径已复制到剪贴板！\n\n您可以在文件资源管理器的地址栏中粘贴此路径来打开文件夹。');
-                    });
-                }
-            }
-        }
-
-        // 复制到剪贴板
-        async function copyToClipboard(text) {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-            } else {
-                // 备用方法
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-            }
         }
 
         // 更新统计数据
@@ -2185,209 +2048,223 @@
             filteredCount.textContent = `显示: ${currentData.length} 个项目`;
         }
 
-        // 处理搜索
-        function handleSearch() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
-            filterTable(searchTerm, activeCategory);
-        }
-
-        // 处理筛选
-        function handleFilter(e) {
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-            
-            const searchTerm = searchInput.value.toLowerCase();
-            const category = e.currentTarget.dataset.category;
-            filterTable(searchTerm, category);
-        }
-
-        // 筛选表格数据 - 修复筛选逻辑
-        function filterTable(searchTerm, category) {
-            let filteredData = tableData;
-            
-            // 按搜索词筛选
-            if (searchTerm) {
-                filteredData = filteredData.filter(item => 
-                    item.title.toLowerCase().includes(searchTerm) || 
-                    (item.category || '').toLowerCase().includes(searchTerm) ||
-                    item.note.toLowerCase().includes(searchTerm) ||
-                    item.path.toLowerCase().includes(searchTerm)
-                );
+        // 显示加载指示器
+        function showLoadingIndicator(message) {
+            const indicator = document.getElementById('loadingIndicator');
+            const text = indicator.querySelector('span');
+            if (indicator) {
+                text.textContent = message;
+                indicator.style.display = 'flex';
             }
-            
-            // 按类别筛选
-            if (category !== 'all') {
-                const selectedCategory = categoryList.find(cat => cat.id === category);
-                if (selectedCategory) {
-                    filteredData = filteredData.filter(item => item.category === selectedCategory.name);
-                }
-            }
-            
-            currentData = filteredData;
-            renderTable(currentData);
-            updateStats();
         }
 
-        // 打开模态框（添加或编辑）
-        function openModal(id = null) {
+        function hideLoadingIndicator() {
+            const indicator = document.getElementById('loadingIndicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+        }
+
+        function showErrorMessage(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            if (errorDiv && errorText) {
+                errorText.textContent = message;
+                errorDiv.style.display = 'flex';
+            }
+        }
+
+        // GitHub相关功能
+        function showGitHubTokenHelp() {
+            alert(`GitHub 个人访问令牌 - 完全免费\n\n` +
+                  `如何获取：\n` +
+                  `1. 登录 GitHub → Settings → Developer settings\n` +
+                  `2. 选择 Personal access tokens → Tokens (classic)\n` +
+                  `3. 点击 Generate new token\n` +
+                  `4. 设置备注，选择过期时间（建议1年）\n` +
+                  `5. 勾选 repo 权限（完整控制私有仓库）\n` +
+                  `6. 生成令牌并复制保存\n\n` +
+                  `💡 重要提示：\n` +
+                  `• 这个功能完全免费\n` +
+                  `• 不会产生任何费用\n` +
+                  `• 令牌只保存在您的浏览器本地\n` +
+                  `• 可以随时在 GitHub 上撤销令牌`);
+        }
+
+        // ArrayBuffer 转 Base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // 同步数据到Excel
+        async function syncDataToExcel() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
                 return;
             }
-            
-            if (id) {
-                // 编辑模式
-                const item = tableData.find(item => item.id === id);
-                if (item) {
-                    modalTitle.textContent = '编辑条目';
-                    editId.value = item.id;
-                    itemTitle.value = item.title;
-                    // 找到对应的分类ID
-                    const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
-                    itemCategory.value = categoryEntry ? categoryEntry[0] : '';
-                    itemPath.value = item.path;
-                    itemNote.value = item.note;
-                    
-                    // 设置路径类型
-                    currentPathType = item.type;
-                    pathTypeButtons.forEach(btn => {
-                        btn.classList.toggle('active', btn.dataset.type === item.type);
-                    });
-                    updatePathExample();
-                }
-            } else {
-                // 添加模式
-                modalTitle.textContent = '添加新条目';
-                itemForm.reset();
-                editId.value = '';
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                document.getElementById('githubToken').focus();
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
+
+                const fileInfo = await gitHubService.getFileContent('table.xlsx');
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
                 
-                // 重置路径类型为URL
-                currentPathType = 'url';
-                pathTypeButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.type === 'url');
+                tableData.forEach(item => {
+                    const row = [
+                        item.id,
+                        item.category,
+                        item.title,
+                        item.path,
+                        item.type,
+                        item.note
+                    ];
+                    excelData.push(row);
                 });
-                updatePathExample();
+
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                const colWidths = [
+                    { wch: 8 },  // 序号
+                    { wch: 15 }, // 分类
+                    { wch: 30 }, // 标题
+                    { wch: 40 }, // 地址
+                    { wch: 12 }, // 地址类型
+                    { wch: 25 }  // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                await gitHubService.updateFileContent(
+                    'table.xlsx',
+                    excelBase64,
+                    fileInfo.sha,
+                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
+                );
+
+                hideLoadingIndicator();
+                alert('✅ 数据已成功同步到 GitHub Excel 文件！\n页面将在3秒后刷新...');
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+
+            } catch (error) {
+                console.error('同步到 Excel 失败:', error);
+                hideLoadingIndicator();
+                alert(`同步失败: ${error.message}`);
             }
-            
-            itemModal.style.display = 'flex';
         }
 
-        // 关闭模态框
-        function closeModalFunc() {
-            itemModal.style.display = 'none';
-            itemForm.reset();
+        // 下载Excel文件
+        function downloadExcel() {
+            try {
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                tableData.forEach(item => {
+                    const row = [
+                        item.id,
+                        item.category,
+                        item.title,
+                        item.path,
+                        item.type,
+                        item.note
+                    ];
+                    excelData.push(row);
+                });
+
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                const colWidths = [
+                    { wch: 8 },  // 序号
+                    { wch: 15 }, // 分类
+                    { wch: 30 }, // 标题
+                    { wch: 40 }, // 地址
+                    { wch: 12 }, // 地址类型
+                    { wch: 25 }  // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
+                
+                alert('Excel文件下载成功！');
+                
+            } catch (error) {
+                console.error('下载Excel失败:', error);
+                alert('下载Excel文件失败: ' + error.message);
+            }
         }
 
-        // 保存条目（添加或更新）- 修复分类处理
-        function saveItem() {
-            if (!isLoggedIn) {
-                alert('请先登录管理员账户');
+        // 配置 GitHub 同步
+        async function setupGitHubSync() {
+            const token = document.getElementById('githubToken').value.trim();
+            
+            if (!token) {
+                alert('请输入 GitHub 个人访问令牌');
                 return;
             }
-            
-            // 表单验证
-            if (!itemTitle.value.trim() || !itemCategory.value || !itemPath.value.trim()) {
-                alert('请填写所有必填字段！');
-                return;
-            }
-            
-            // 自动检测路径类型
-            const pathValue = itemPath.value.trim();
-            let detectedType = currentPathType;
-            
-            // 如果用户没有明确选择类型，尝试自动检测
-            if (pathValue.startsWith('http://') || pathValue.startsWith('https://')) {
-                detectedType = 'url';
-            } else if (pathValue.startsWith('\\\\')) {
-                detectedType = 'network';
-            } else if (pathValue.includes(':\\')) {
-                detectedType = 'folder';
-            }
-            
-            const id = editId.value ? parseInt(editId.value) : generateId();
-            const selectedCategory = categoryList.find(cat => cat.id === itemCategory.value);
-            const categoryName = selectedCategory ? selectedCategory.name : '未分类';
-            
-            const newItem = {
-                id: id,
-                category: categoryName,  // 使用分类名称而不是ID
-                title: itemTitle.value.trim(),
-                path: pathValue,
-                type: detectedType,
-                note: itemNote.value.trim()
-            };
-            
-            if (editId.value) {
-                // 更新现有条目
-                const index = tableData.findIndex(item => item.id === id);
-                if (index !== -1) {
-                    tableData[index] = newItem;
+
+            try {
+                showLoadingIndicator('正在验证 GitHub 令牌...');
+                gitHubService = new GitHubService(token);
+                const authResult = await gitHubService.checkAuth();
+                
+                if (authResult.authenticated) {
+                    localStorage.setItem('githubToken', token);
+                    document.getElementById('githubToken').value = '';
+                    document.getElementById('githubStatus').innerHTML = 
+                        `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
+                    
+                    hideLoadingIndicator();
+                    alert('GitHub 令牌配置成功！现在可以同步数据到 Excel 文件了。');
+                } else {
+                    throw new Error('GitHub 令牌验证失败');
                 }
-            } else {
-                // 添加新条目
-                tableData.push(newItem);
                 
-                // 如果选择了新分类，添加到分类列表（确保唯一性）
-                if (categoryName && !categoryList.find(cat => cat.name === categoryName)) {
-                    const categoryId = `category${categoryList.length + 1}`;
-                    const newCategory = {
-                        id: categoryId,
-                        name: categoryName
-                    };
-                    categoryList.push(newCategory);
-                    categoryMap[categoryId] = categoryName;
-                    updateCategoryFilters();
-                    updateCategorySelect();
-                }
-            }
-            
-            // 保存到本地存储
-            saveDataToStorage();
-            
-            // 重新应用当前筛选条件
-            const searchTerm = searchInput.value.toLowerCase();
-            const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
-            filterTable(searchTerm, activeCategory);
-            
-            closeModalFunc();
-        }
-
-        // 生成新ID
-        function generateId() {
-            return tableData.length > 0 ? Math.max(...tableData.map(item => item.id)) + 1 : 1;
-        }
-
-        // 删除条目
-        function deleteItem(id) {
-            if (!isLoggedIn) {
-                alert('请先登录管理员账户');
-                return;
-            }
-            
-            if (confirm('确定要删除这个条目吗？')) {
-                tableData = tableData.filter(item => item.id !== id);
-                
-                // 保存到本地存储
-                saveDataToStorage();
-                
-                // 重新应用当前筛选条件
-                const searchTerm = searchInput.value.toLowerCase();
-                const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
-                filterTable(searchTerm, activeCategory);
+            } catch (error) {
+                console.error('GitHub 配置失败:', error);
+                hideLoadingIndicator();
+                alert(`GitHub 配置失败: ${error.message}\n\n请检查：\n1. 令牌是否正确\n2. 令牌是否具有 repo 权限\n3. 网络连接是否正常`);
             }
         }
 
-        // 导出数据
-        function exportData() {
-            const dataStr = JSON.stringify(tableData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = 'h5-index-data.json';
-            link.click();
+        // 加载保存的 GitHub 令牌
+        function loadGitHubToken() {
+            const savedToken = localStorage.getItem('githubToken');
+            if (savedToken) {
+                gitHubService = new GitHubService(savedToken);
+                gitHubService.checkAuth().then(authResult => {
+                    if (authResult.authenticated) {
+                        document.getElementById('githubStatus').innerHTML = 
+                            `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
+                    } else {
+                        localStorage.removeItem('githubToken');
+                        gitHubService = null;
+                    }
+                });
+            }
         }
 
         // 生成并下载更新后的HTML文件
@@ -2397,10 +2274,7 @@
                 return;
             }
             
-            // 创建更新后的HTML内容
             const updatedHTML = generateUpdatedHTML();
-            
-            // 创建下载链接
             const blob = new Blob([updatedHTML], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2416,20 +2290,13 @@
 
         // 生成包含当前数据的HTML
         function generateUpdatedHTML() {
-            // 获取当前页面的HTML内容
             const currentHTML = document.documentElement.outerHTML;
-            
-            // 找到tableData的定义位置并替换为当前数据
             const dataRegex = /let tableData = \[[\s\S]*?\];/;
             const newDataDefinition = `let tableData = ${JSON.stringify(tableData, null, 8)};`;
-            
-            // 替换数据定义
             let updatedHTML = currentHTML.replace(dataRegex, newDataDefinition);
             
-            // 找到tablebody并清空其内容，只保留注释
             const tableBodyRegex = /<tbody id="tableBody">[\s\S]*?<\/tbody>/;
             const emptyTableBody = `<tbody id="tableBody">\n                    <!-- 表格内容将通过JavaScript动态生成 -->\n                </tbody>`;
-            
             updatedHTML = updatedHTML.replace(tableBodyRegex, emptyTableBody);
             
             return updatedHTML;
@@ -2443,7 +2310,6 @@
             }
             
             if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub配置的数据。')) {
-                // 重新加载GitHub配置
                 loadConfigFromGitHub();
                 localStorage.removeItem('h5IndexData');
                 alert('数据已重置为GitHub配置的初始状态');
