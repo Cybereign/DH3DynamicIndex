@@ -1173,7 +1173,7 @@
         // ========== 核心功能函数 ==========
 
         // 修复的打开文件夹路径函数 - 基于您提供的有效代码
-        function openFolder(path) {
+        /*function openFolder(path) {
             // 解码路径（将\\\\恢复为\\）
             const decodedPath = path.replace(/\\\\/g, '\\');
             
@@ -1212,7 +1212,39 @@
                 }
             }
             return false;
-        }
+        }*/
+        function openFolder(path) {
+    const decodedPath = path.replace(/\\\\/g, '\\');
+    const hostname = window.location.hostname;
+    
+    let platformInfo = '';
+    
+    // 根据托管平台提供特定提示
+    if (hostname.includes('netlify')) {
+        platformInfo = '（Netlify 托管的网页无法直接访问本地文件系统）';
+    } else if (hostname.includes('github.io')) {
+        platformInfo = '（GitHub Pages 托管的网页无法直接访问本地文件系统）';
+    } else if (window.location.protocol === 'file:') {
+        platformInfo = '（本地文件可能受浏览器安全策略限制）';
+    }
+    
+    const message = `无法直接打开文件夹 ${platformInfo}
+
+请复制以下路径，然后在文件资源管理器中粘贴：
+
+${decodedPath}
+
+是否复制到剪贴板？`;
+    
+    if (confirm(message)) {
+        copyToClipboard(decodedPath).then(() => {
+            showToast('✅ 路径已复制！粘贴到文件资源管理器即可打开', 'success');
+        }).catch(err => {
+            fallbackCopy(decodedPath);
+        });
+    }
+    return false;
+}
 
         // 复制到剪贴板
         async function copyToClipboard(text) {
