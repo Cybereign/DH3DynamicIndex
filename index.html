@@ -1485,93 +1485,117 @@
             }
         }
 
-        // 渲染表格
-        function renderTable(data) {
-            if (data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
-                return;
-            }
-            
-            tableBody.innerHTML = data.map(item => {
-                const isUrl = item.type === 'url';
-                const linkClass = isUrl ? 'link' : 'link folder-link';
-                const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
-                const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
-                const badgeText = isUrl ? '网页' : '文件夹';
-                const categoryName = item.category || `分类${item.id}`;
-                const categoryClass = `category-${(item.id % 10) || 1}`;
-                
-                if (isUrl) {
-                    return `
-                    <tr>
-                        <td>${item.id}</td>
-                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
-                        <td>
-                            <a href="${item.path}" target="_blank" class="${linkClass}">
-                                <i class="${iconClass} link-icon"></i> 
-                                ${item.title}
-                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
-                            </a>
-                            <div class="path-display">${item.path}</div>
-                        </td>
-                        <td class="note">${item.note}</td>
-                        <td class="action-cell">
-                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    `;
-                } else {
-                    return `
-                    <tr>
-                        <td>${item.id}</td>
-                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
-                        <td>
-                            <a href="#" class="${linkClass}" onclick="return openFolder('${item.path.replace(/\\/g, '\\\\')}')">
-                                <i class="${iconClass} link-icon"></i> 
-                                ${item.title}
-                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
-                            </a>
-                            <div class="path-display">${item.path}</div>
-                        </td>
-                        <td class="note">${item.note}</td>
-                        <td class="action-cell">
-                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    `;
-                }
-            }).join('');
-            
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                if (!btn.disabled) {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        openModal(id);
-                    });
-                }
-            });
-            
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                if (!btn.disabled) {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        deleteItem(id);
-                    });
-                }
-            });
-            
-            updateStats();
+        // 渲染表格 - 修复版本
+function renderTable(data) {
+    if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
+        return;
+    }
+    
+    // 创建分类颜色映射
+    const categoryColorMap = createCategoryColorMap();
+    
+    tableBody.innerHTML = data.map(item => {
+        const isUrl = item.type === 'url';
+        const linkClass = isUrl ? 'link' : 'link folder-link';
+        const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
+        const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
+        const badgeText = isUrl ? '网页' : '文件夹';
+        const categoryName = item.category || `分类${item.id}`;
+        
+        // 修复：使用分类名称计算颜色，确保相同分类颜色一致
+        const categoryClass = categoryColorMap[categoryName] || 'category-1';
+        
+        if (isUrl) {
+            return `
+            <tr>
+                <td>${item.id}</td>
+                <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                <td>
+                    <a href="${item.path}" target="_blank" class="${linkClass}">
+                        <i class="${iconClass} link-icon"></i> 
+                        ${item.title}
+                        <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                    </a>
+                    <div class="path-display">${item.path}</div>
+                </td>
+                <td class="note">${item.note}</td>
+                <td class="action-cell">
+                    <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
+        } else {
+            return `
+            <tr>
+                <td>${item.id}</td>
+                <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                <td>
+                    <a href="#" class="${linkClass}" onclick="return openFolder('${item.path.replace(/\\/g, '\\\\')}')">
+                        <i class="${iconClass} link-icon"></i> 
+                        ${item.title}
+                        <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                    </a>
+                    <div class="path-display">${item.path}</div>
+                </td>
+                <td class="note">${item.note}</td>
+                <td class="action-cell">
+                    <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
         }
+    }).join('');
+    
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        if (!btn.disabled) {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.currentTarget.dataset.id);
+                openModal(id);
+            });
+        }
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        if (!btn.disabled) {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.currentTarget.dataset.id);
+                deleteItem(id);
+            });
+        }
+    });
+    
+    updateStats();
+}
+
+// 新增：创建分类颜色映射函数
+function createCategoryColorMap() {
+    const colorMap = {};
+    const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
+    
+    uniqueCategories.forEach((category, index) => {
+        // 使用分类名称的简单哈希算法确保相同分类获得相同颜色
+        let hash = 0;
+        for (let i = 0; i < category.length; i++) {
+            hash = ((hash << 5) - hash) + category.charCodeAt(i);
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        const colorIndex = Math.abs(hash) % 10 + 1; // 1-10
+        colorMap[category] = `category-${colorIndex}`;
+    });
+    
+    return colorMap;
+}
 
         // ========== 修复的Excel同步功能 ==========
 
