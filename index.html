@@ -1185,10 +1185,13 @@
             
             // 创建测试链接检查协议支持 - 这是关键差异
             const testLink = document.createElement('a');
+            console.log('当前协议:', window.location.protocol);
+            console.log('测试协议:', testLink.protocol);
             testLink.href = 'file:///';
             
             if (testLink.protocol === 'file:') {
                 // 尝试在新标签页中打开
+                console.log('测试协议进入:', testLink.protocol);
                 window.open(fileUrl, '_blank');
                 showToast('正在尝试打开文件夹...', 'info');
             } else {
