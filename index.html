@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DH3项目HelpMe索引表 - 修复版</title>
+    <title>DH3项目HelpMe索引表</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 样式保持不变 */
         * {
             margin: 0;
             padding: 0;
@@ -685,7 +684,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>DH3项目HelpMe索引表 - 修复版</h1>
+            <h1>DH3项目HelpMe索引表</h1>
             <div class="admin-indicator" id="adminIndicator" style="display: none;">
                 <i class="fas fa-user-shield"></i> 管理员模式
             </div>
@@ -1396,6 +1395,9 @@
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
                 
+                // 修复：更新配置版本显示
+                updateConfigVersionInfo(config);
+                
                 console.log('✅ GitHub配置和Excel表格数据加载成功');
                 hideLoadingIndicator();
                 return true;
@@ -1485,117 +1487,113 @@
             }
         }
 
-        // 渲染表格 - 修复版本
-function renderTable(data) {
-    if (data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
-        return;
-    }
-    
-    // 创建分类颜色映射
-    const categoryColorMap = createCategoryColorMap();
-    
-    tableBody.innerHTML = data.map(item => {
-        const isUrl = item.type === 'url';
-        const linkClass = isUrl ? 'link' : 'link folder-link';
-        const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
-        const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
-        const badgeText = isUrl ? '网页' : '文件夹';
-        const categoryName = item.category || `分类${item.id}`;
-        
-        // 修复：使用分类名称计算颜色，确保相同分类颜色一致
-        const categoryClass = categoryColorMap[categoryName] || 'category-1';
-        
-        if (isUrl) {
-            return `
-            <tr>
-                <td>${item.id}</td>
-                <td><span class="category ${categoryClass}">${categoryName}</span></td>
-                <td>
-                    <a href="${item.path}" target="_blank" class="${linkClass}">
-                        <i class="${iconClass} link-icon"></i> 
-                        ${item.title}
-                        <span class="path-type-badge ${badgeClass}">${badgeText}</span>
-                    </a>
-                    <div class="path-display">${item.path}</div>
-                </td>
-                <td class="note">${item.note}</td>
-                <td class="action-cell">
-                    <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-            `;
-        } else {
-            return `
-            <tr>
-                <td>${item.id}</td>
-                <td><span class="category ${categoryClass}">${categoryName}</span></td>
-                <td>
-                    <a href="#" class="${linkClass}" onclick="return openFolder('${item.path.replace(/\\/g, '\\\\')}')">
-                        <i class="${iconClass} link-icon"></i> 
-                        ${item.title}
-                        <span class="path-type-badge ${badgeClass}">${badgeText}</span>
-                    </a>
-                    <div class="path-display">${item.path}</div>
-                </td>
-                <td class="note">${item.note}</td>
-                <td class="action-cell">
-                    <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-            `;
-        }
-    }).join('');
-    
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-        if (!btn.disabled) {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(e.currentTarget.dataset.id);
-                openModal(id);
+        // 创建分类颜色映射函数
+        function createCategoryColorMap() {
+            const colorMap = {};
+            const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
+            
+            uniqueCategories.forEach(category => {
+                // 使用分类名称的第一个字符的字符码来计算颜色
+                const charCode = category.charCodeAt(0) || 0;
+                const colorIndex = (charCode % 10) + 1; // 1-10
+                colorMap[category] = `category-${colorIndex}`;
             });
+            
+            return colorMap;
         }
-    });
-    
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        if (!btn.disabled) {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(e.currentTarget.dataset.id);
-                deleteItem(id);
-            });
-        }
-    });
-    
-    updateStats();
-}
 
-// 新增：创建分类颜色映射函数
-function createCategoryColorMap() {
-    const colorMap = {};
-    const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
-    
-    uniqueCategories.forEach((category, index) => {
-        // 使用分类名称的简单哈希算法确保相同分类获得相同颜色
-        let hash = 0;
-        for (let i = 0; i < category.length; i++) {
-            hash = ((hash << 5) - hash) + category.charCodeAt(i);
-            hash = hash & hash; // Convert to 32bit integer
+        // 渲染表格 - 修复版本（相同分类相同颜色）
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
+                return;
+            }
+            
+            // 创建分类颜色映射
+            const categoryColorMap = createCategoryColorMap();
+            
+            tableBody.innerHTML = data.map(item => {
+                const isUrl = item.type === 'url';
+                const linkClass = isUrl ? 'link' : 'link folder-link';
+                const iconClass = isUrl ? 'fas fa-external-link-alt' : 'fas fa-folder-open';
+                const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
+                const badgeText = isUrl ? '网页' : '文件夹';
+                const categoryName = item.category || `分类${item.id}`;
+                
+                // 修复：使用分类名称计算颜色，确保相同分类颜色一致
+                const categoryClass = categoryColorMap[categoryName] || 'category-1';
+                
+                if (isUrl) {
+                    return `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                        <td>
+                            <a href="${item.path}" target="_blank" class="${linkClass}">
+                                <i class="${iconClass} link-icon"></i> 
+                                ${item.title}
+                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                            </a>
+                            <div class="path-display">${item.path}</div>
+                        </td>
+                        <td class="note">${item.note}</td>
+                        <td class="action-cell">
+                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                } else {
+                    return `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><span class="category ${categoryClass}">${categoryName}</span></td>
+                        <td>
+                            <a href="#" class="${linkClass}" onclick="return openFolder('${item.path.replace(/\\/g, '\\\\')}')">
+                                <i class="${iconClass} link-icon"></i> 
+                                ${item.title}
+                                <span class="path-type-badge ${badgeClass}">${badgeText}</span>
+                            </a>
+                            <div class="path-display">${item.path}</div>
+                        </td>
+                        <td class="note">${item.note}</td>
+                        <td class="action-cell">
+                            <button class="action-btn edit-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete-btn" data-id="${item.id}" ${isLoggedIn ? '' : 'disabled'}>
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                }
+            }).join('');
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        openModal(id);
+                    });
+                }
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        deleteItem(id);
+                    });
+                }
+            });
+            
+            updateStats();
         }
-        const colorIndex = Math.abs(hash) % 10 + 1; // 1-10
-        colorMap[category] = `category-${colorIndex}`;
-    });
-    
-    return colorMap;
-}
 
         // ========== 修复的Excel同步功能 ==========
 
@@ -1614,7 +1612,7 @@ function createCategoryColorMap() {
             }
         }
 
-        // 修复的Excel同步功能 - 彻底解决SHA冲突问题
+        // 修复的Excel同步功能 - 包含网页更新
         async function syncDataToExcel() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -1696,6 +1694,12 @@ function createCategoryColorMap() {
 
                 hideLoadingIndicator();
                 showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
+                
+                // 🎯 修复：同步成功后更新网页显示
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                filterTable(searchTerm, activeCategory);
+                updateConfigVersionInfo(appConfig);
                 
             } catch (error) {
                 console.error('同步到 Excel 失败:', error);
@@ -1883,7 +1887,9 @@ function createCategoryColorMap() {
             
             appConfig = {
                 autoLogout: 60,
-                maxLoginAttempts: 5
+                maxLoginAttempts: 5,
+                version: '1.0.0-default',
+                lastUpdated: new Date().toISOString().split('T')[0]
             };
             
             tableData = [
@@ -1925,10 +1931,25 @@ function createCategoryColorMap() {
                 "category3": "阶段评审"
             };
             
+            // 修复：更新默认配置的版本信息
+            updateConfigVersionInfo(appConfig);
+            
             updateCategoryFilters();
             updateCategorySelect();
             renderTable(tableData);
             updateStats();
+        }
+
+        // 更新配置版本信息函数
+        function updateConfigVersionInfo(config) {
+            const configVersionElement = document.getElementById('configVersion');
+            if (!configVersionElement) return;
+            
+            const version = config.version || '1.0.0';
+            const dataCount = tableData.length;
+            const currentTime = new Date().toLocaleString();
+            
+            configVersionElement.textContent = `配置版本: ${version} | 数据量: ${dataCount}条 | 加载时间: ${currentTime}`;
         }
 
         // 数据持久化函数
@@ -1991,6 +2012,9 @@ function createCategoryColorMap() {
 
             // 加载保存的 GitHub 令牌
             loadGitHubToken();
+
+            // 设置默认配置版本显示（在加载前显示）
+            document.getElementById('configVersion').textContent = '配置版本: 加载中...';
 
             // 从GitHub加载配置
             await loadConfigFromGitHub();
@@ -2470,7 +2494,7 @@ function createCategoryColorMap() {
             });
         }
 
-        // 新增：根据权限更新按钮显示状态
+        // 根据权限更新按钮显示状态
         function updateButtonVisibility() {
             if (!currentUser) {
                 // 未登录状态，只显示下载Excel和刷新配置按钮
