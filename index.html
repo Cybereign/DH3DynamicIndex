@@ -65,11 +65,14 @@
             padding: 15px 30px;
             background: #f8f9fa;
             border-bottom: 1px solid #eaeaea;
+        }
+        
+        .auth-main-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 40px;
+            width: 100%;
             flex-wrap: wrap;
-            gap: 10px;
         }
         
         .login-form {
@@ -123,6 +126,35 @@
             font-size: 0.8rem;
             color: #666;
             margin-left: 10px;
+        }
+        
+        /* GitHub令牌侧边布局 */
+        .github-auth-side {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            min-width: 500px;
+        }
+
+        .token-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .token-input {
+            width: 280px;
+            min-width: 250px;
+        }
+
+        .token-btn {
+            white-space: nowrap;
+        }
+
+        .token-hint {
+            flex-shrink: 0;
         }
         
         .controls {
@@ -351,13 +383,13 @@
             color: #218838;
         }
         
-.note {
-    color: #666;
-    font-size: 0.9rem;
-    white-space: pre-wrap; /* 关键属性：保留换行 */
-    word-break: break-word; /* 防止长文本溢出 */
-    line-height: 1.4; /* 改善可读性 */
-}
+        .note {
+            color: #666;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.4;
+        }
 
         .empty-row {
             text-align: center;
@@ -493,15 +525,15 @@
             border-color: #6a11cb;
             box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
         }
-/* 🆕 新增：备注文本域特殊样式 */
-#itemNote {
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.4;
-    min-height: 80px;
-    resize: vertical;
-    font-family: inherit;
-}
+        
+        #itemNote {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.4;
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
         
         .form-select {
             width: 100%;
@@ -658,6 +690,44 @@
             color: #212529;
         }
         
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .auth-main-row {
+                gap: 20px;
+            }
+            
+            .github-auth-side {
+                min-width: 450px;
+            }
+            
+            .token-input {
+                width: 240px;
+                min-width: 220px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .auth-main-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .github-auth-side {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .token-input-group {
+                width: 100%;
+            }
+            
+            .token-input {
+                flex: 1;
+                min-width: auto;
+            }
+        }
+        
         @media (max-width: 768px) {
             .controls {
                 flex-direction: column;
@@ -690,6 +760,40 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+            
+            .login-form {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .login-input {
+                width: 100%;
+            }
+            
+            .login-btn {
+                width: 100%;
+            }
+            
+            .github-auth-side {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .token-input-group {
+                flex-direction: column;
+            }
+            
+            .token-input {
+                width: 100%;
+            }
+            
+            .token-btn {
+                width: 100%;
+            }
+            
+            .token-hint {
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -704,22 +808,30 @@
         
         <div class="auth-section">
             <div id="loginSection" style="display: block;">
-                <div class="login-form">
-                    <input type="text" id="username" class="login-input" placeholder="用户名">
-                    <input type="password" id="password" class="login-input" placeholder="密码">
-                    <button class="login-btn" id="loginBtn">登录</button>
-                </div>
-                <div class="github-auth" style="margin-top: 10px;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                        <input type="password" id="githubToken" class="login-input" placeholder="GitHub个人访问令牌" style="width: 250px;">
-                        <button class="login-btn" id="setupGitHubBtn">配置GitHub同步</button>
+                <div class="auth-main-row">
+                    <!-- 登录表单 -->
+                    <div class="login-form">
+                        <input type="text" id="username" class="login-input" placeholder="用户名">
+                        <input type="password" id="password" class="login-input" placeholder="密码">
+                        <button class="login-btn" id="loginBtn">登录</button>
                     </div>
-                    <small style="color: #28a745; display: block;">
-                        <i class="fas fa-check-circle"></i> 此功能完全免费 - 
-                        <a href="javascript:void(0)" onclick="showGitHubTokenHelp()" style="color: #28a745;">如何获取免费令牌？</a>
-                    </small>
+                    
+                    <!-- GitHub令牌 - 右侧 -->
+                    <div class="github-auth-side">
+                        <div class="token-input-group">
+                            <input type="password" id="githubToken" class="login-input token-input" placeholder="GitHub个人访问令牌">
+                            <button class="login-btn token-btn" id="setupGitHubBtn">配置GitHub同步</button>
+                        </div>
+                        <div class="token-hint">
+                            <small style="color: #28a745;">
+                                <i class="fas fa-check-circle"></i> 完全免费 - 
+                                <a href="javascript:void(0)" onclick="showGitHubTokenHelp()" style="color: #28a745;">令牌帮助</a>
+                            </small>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
             <div id="userSection" style="display: none;">
                 <div class="user-info">
                     <span>欢迎, <strong id="userName">管理员</strong></span>
@@ -1189,6 +1301,7 @@
         const adminIndicator = document.getElementById('adminIndicator');
         const permissionHint = document.getElementById('permissionHint');
         const setupGitHubBtn = document.getElementById('setupGitHubBtn');
+        const githubTokenInput = document.getElementById('githubToken');
 
         // ========== 核心功能函数 ==========
 
@@ -1203,13 +1316,11 @@
             // 智能环境检测
             if (isLocalEnvironment()) {
                 // 本地环境：尝试直接打开
-                attemptDirectOpen(decodedPath);
+                return attemptDirectOpen(decodedPath);
             } else {
                 // 网络环境：使用复制方案
-                offerPathCopy(decodedPath, '由于网页安全限制，无法直接打开本地文件夹。');
+                return offerPathCopy(decodedPath, '由于网页安全限制，无法直接打开本地文件夹。');
             }
-            
-            return false;
         }
 
         // 检测是否为本地环境
@@ -1297,6 +1408,7 @@
                     fallbackCopy(decodedPath);
                 });
             }
+            return false;
         }
 
         // 复制到剪贴板
@@ -1390,36 +1502,30 @@
             showLoadingIndicator('正在从GitHub加载配置...');
             
             try {
-                const configResponse = await fetch(GITHUB_CONFIG_URL);
-                if (!configResponse.ok) {
-                    throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
-                }
+                const [configResponse, excelResponse] = await Promise.all([
+                    fetch(GITHUB_CONFIG_URL).catch(() => { throw new Error('无法连接到GitHub配置'); }),
+                    fetch(GITHUB_EXCEL_URL).catch(() => { throw new Error('无法连接到Excel文件'); })
+                ]);
+                
+                if (!configResponse.ok) throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
+                if (!excelResponse.ok) throw new Error(`Excel加载失败: HTTP ${excelResponse.status}`);
+                
                 const config = await configResponse.json();
-                
-                const excelResponse = await fetch(GITHUB_EXCEL_URL);
-                if (!excelResponse.ok) {
-                    throw new Error(`Excel表格加载失败: HTTP ${excelResponse.status}`);
-                }
-                
                 const arrayBuffer = await excelResponse.arrayBuffer();
-                await processExcelData(arrayBuffer);
                 
+                await processExcelData(arrayBuffer);
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
                 
-                // 修复：更新配置版本显示
                 updateConfigVersionInfo(config);
-                
-                console.log('✅ GitHub配置和Excel表格数据加载成功');
-                hideLoadingIndicator();
-                return true;
+                console.log('✅ GitHub配置和Excel数据加载成功');
                 
             } catch (error) {
                 console.error('❌ 配置加载失败:', error);
                 showErrorMessage(`配置加载失败: ${error.message}，使用默认配置`);
                 useDefaultConfig();
+            } finally {
                 hideLoadingIndicator();
-                return false;
             }
         }
 
@@ -1504,10 +1610,9 @@
             const colorMap = {};
             const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
             
-            uniqueCategories.forEach(category => {
-                // 使用分类名称的第一个字符的字符码来计算颜色
-                const charCode = category.charCodeAt(0) || 0;
-                const colorIndex = (charCode % 10) + 1; // 1-10
+            uniqueCategories.forEach((category, index) => {
+                // 使用索引而不是字符码，确保相同分类相同颜色
+                const colorIndex = (index % 10) + 1; // 1-10
                 colorMap[category] = `category-${colorIndex}`;
             });
             
@@ -1633,7 +1738,7 @@
 
             if (!gitHubService) {
                 alert('请先配置 GitHub 个人访问令牌');
-                document.getElementById('githubToken').focus();
+                githubTokenInput.focus();
                 return;
             }
 
@@ -1849,34 +1954,99 @@
         function updateCategoryFilters() {
             const filterBox = document.querySelector('.filter-box');
             const allButton = filterBox.querySelector('[data-category="all"]');
+            
+            // 清空现有分类按钮（保留"全部"按钮）
             filterBox.innerHTML = '';
             filterBox.appendChild(allButton);
             
-            const addedCategories = new Set();
+            // 去重分类列表
+            const uniqueCategories = [];
+            const addedNames = new Set();
+            
             categoryList.forEach(category => {
-                if (!addedCategories.has(category.name)) {
-                    const button = document.createElement('button');
-                    button.className = 'filter-btn';
-                    button.setAttribute('data-category', category.id);
-                    button.textContent = category.name;
-                    filterBox.appendChild(button);
-                    addedCategories.add(category.name);
+                if (!addedNames.has(category.name)) {
+                    uniqueCategories.push(category);
+                    addedNames.add(category.name);
                 }
             });
             
+            // 添加分类按钮
+            uniqueCategories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.setAttribute('data-category', category.id);
+                button.textContent = category.name;
+                filterBox.appendChild(button);
+            });
+            
+            // 重新设置事件监听
             setupFilterEvents();
+            
+            // 激活当前筛选状态
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category;
+            if (activeCategory) {
+                const activeBtn = filterBox.querySelector(`[data-category="${activeCategory}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                } else {
+                    allButton.classList.add('active');
+                }
+            } else {
+                allButton.classList.add('active');
+            }
         }
 
-        // 更新分类选择下拉框
+        // 增强的分类选择器更新函数
         function updateCategorySelect() {
             const categorySelect = document.getElementById('itemCategory');
-            categorySelect.innerHTML = '<option value="">选择分类</option>';
+            const currentValue = categorySelect.value; // 保存当前值
+            
+            categorySelect.innerHTML = `
+                <option value="">选择分类</option>
+                <option value="__new__">+ 添加新分类</option>
+            `;
             
             categoryList.forEach(category => {
                 const option = document.createElement('option');
                 option.value = category.id;
                 option.textContent = category.name;
                 categorySelect.appendChild(option);
+            });
+            
+            // 恢复之前的值（如果是编辑模式）
+            if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
+                categorySelect.value = currentValue;
+            }
+            
+            // 添加新分类的事件监听
+            categorySelect.addEventListener('change', function() {
+                if (this.value === '__new__') {
+                    const newCategoryName = prompt('请输入新分类名称:');
+                    if (newCategoryName && newCategoryName.trim()) {
+                        // 创建新分类
+                        const newCategoryId = `category${categoryList.length + 1}`;
+                        const newCategory = {
+                            id: newCategoryId,
+                            name: newCategoryName.trim()
+                        };
+                        
+                        // 添加到分类系统
+                        categoryList.push(newCategory);
+                        categoryMap[newCategoryId] = newCategoryName.trim();
+                        
+                        // 更新界面
+                        updateCategorySelect();
+                        updateCategoryFilters();
+                        
+                        // 选中新创建的分类
+                        categorySelect.value = newCategoryId;
+                        
+                        showToast(`新分类 "${newCategoryName}" 已创建！`, 'success');
+                    } else {
+                        // 用户取消或输入为空，重置选择
+                        this.value = '';
+                    }
+                }
             });
         }
 
@@ -1960,8 +2130,10 @@
             const version = config.version || '1.0.0';
             const dataCount = tableData.length;
             const currentTime = new Date().toLocaleString();
+            const source = config.lastUpdated ? 'GitHub' : '本地默认';
             
-            configVersionElement.textContent = `配置版本: ${version} | 数据量: ${dataCount}条 | 加载时间: ${currentTime}`;
+            configVersionElement.textContent = 
+                `配置版本: ${version} | 数据量: ${dataCount}条 | 来源: ${source} | 更新时间: ${currentTime}`;
         }
 
         // 数据持久化函数
@@ -2030,6 +2202,28 @@
 
             // 从GitHub加载配置
             await loadConfigFromGitHub();
+            
+            // 🎯 修复：确保分类系统正确初始化
+            if (categoryList.length === 0 && tableData.length > 0) {
+                // 从现有数据中提取分类
+                const uniqueCategories = new Map();
+                tableData.forEach(item => {
+                    if (item.category && !uniqueCategories.has(item.category)) {
+                        const categoryId = `category${uniqueCategories.size + 1}`;
+                        uniqueCategories.set(item.category, {
+                            id: categoryId,
+                            name: item.category
+                        });
+                    }
+                });
+                
+                categoryList = Array.from(uniqueCategories.values());
+                categoryList.forEach(category => {
+                    categoryMap[category.id] = category.name;
+                });
+                
+                console.log('从数据中提取的分类:', categoryList);
+            }
             
             // 加载本地数据
             const savedData = loadDataFromStorage();
@@ -2316,7 +2510,7 @@
             itemForm.reset();
         }
 
-        // 保存条目
+        // 修复后的保存条目函数
         function saveItem() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -2338,8 +2532,34 @@
             }
             
             const id = editId.value ? parseInt(editId.value) : generateId();
-            const selectedCategory = categoryList.find(cat => cat.id === itemCategory.value);
-            const categoryName = selectedCategory ? selectedCategory.name : '未分类';
+            
+            // 🎯 修复：正确处理新分类
+            let categoryName;
+            let categoryId = itemCategory.value;
+            
+            // 检查是否是现有分类
+            const existingCategory = categoryList.find(cat => cat.id === categoryId);
+            if (existingCategory) {
+                categoryName = existingCategory.name;
+            } else {
+                // 🆕 这是新分类，需要创建
+                categoryName = categoryId; // 用户输入的分类名称
+                categoryId = `category${categoryList.length + 1}`;
+                
+                // 添加到分类列表
+                const newCategory = {
+                    id: categoryId,
+                    name: categoryName
+                };
+                categoryList.push(newCategory);
+                categoryMap[categoryId] = categoryName;
+                
+                // 🎯 重要：更新分类筛选器和下拉框
+                updateCategoryFilters();
+                updateCategorySelect();
+                
+                console.log('✅ 新分类已添加:', newCategory);
+            }
             
             const newItem = {
                 id: id,
@@ -2357,27 +2577,16 @@
                 }
             } else {
                 tableData.push(newItem);
-                
-                if (categoryName && !categoryList.find(cat => cat.name === categoryName)) {
-                    const categoryId = `category${categoryList.length + 1}`;
-                    const newCategory = {
-                        id: categoryId,
-                        name: categoryName
-                    };
-                    categoryList.push(newCategory);
-                    categoryMap[categoryId] = categoryName;
-                    updateCategoryFilters();
-                    updateCategorySelect();
-                }
             }
             
             saveDataToStorage();
             
             const searchTerm = searchInput.value.toLowerCase();
-            const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
             
             closeModalFunc();
+            showToast('条目保存成功！', 'success');
         }
 
         // 生成新ID
@@ -2397,8 +2606,10 @@
                 saveDataToStorage();
                 
                 const searchTerm = searchInput.value.toLowerCase();
-                const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
                 filterTable(searchTerm, activeCategory);
+                
+                showToast('条目删除成功！', 'success');
             }
         }
 
@@ -2411,6 +2622,8 @@
             link.href = URL.createObjectURL(dataBlob);
             link.download = 'h5-index-data.json';
             link.click();
+            
+            showToast('数据导出成功！', 'success');
         }
 
         // 打开表头编辑模态框
@@ -2446,7 +2659,7 @@
             saveHeadersToStorage();
             updateTableHeaders();
             closeHeadersModalFunc();
-            alert('表头名称已更新！');
+            showToast('表头名称已更新！', 'success');
         }
 
         // 重置表头配置
@@ -2460,14 +2673,14 @@
             saveHeadersToStorage();
             updateTableHeaders();
             closeHeadersModalFunc();
-            alert('表头名称已重置为默认值！');
+            showToast('表头名称已重置为默认值！', 'success');
         }
 
         // 刷新配置
         async function refreshConfig() {
             const success = await loadConfigFromGitHub();
             if (success) {
-                alert('配置刷新成功！');
+                showToast('配置刷新成功！', 'success');
                 if (isLoggedIn && currentUser) {
                     const updatedUser = adminAccounts.find(acc => acc.username === currentUser.username);
                     if (updatedUser) {
@@ -2508,46 +2721,31 @@
 
         // 根据权限更新按钮显示状态
         function updateButtonVisibility() {
-            if (!currentUser) {
-                // 未登录状态，只显示下载Excel和刷新配置按钮
-                addBtn.style.display = 'none';
-                resetBtn.style.display = 'none';
-                exportBtn.style.display = 'none';
-                syncExcelBtn.style.display = 'none';
-                repairExcelBtn.style.display = 'none';
-                updateHTMLBtn.style.display = 'none';
-                editHeadersBtn.style.display = 'none';
-                downloadExcelBtn.style.display = 'flex';
-                refreshConfigBtn.style.display = 'flex';
-                return;
+            const buttons = {
+                addBtn: isLoggedIn && currentUser?.permissions?.includes('write'),
+                resetBtn: isLoggedIn && currentUser?.permissions?.includes('delete'),
+                exportBtn: isLoggedIn && currentUser?.permissions?.includes('export'),
+                syncExcelBtn: isLoggedIn && currentUser?.permissions?.includes('export') && gitHubService,
+                repairExcelBtn: isLoggedIn && currentUser?.permissions?.includes('export') && gitHubService,
+                updateHTMLBtn: isLoggedIn && currentUser?.permissions?.includes('export'),
+                editHeadersBtn: isLoggedIn && currentUser?.permissions?.includes('config'),
+                downloadExcelBtn: true, // 对所有用户可见
+                refreshConfigBtn: true  // 对所有用户可见
+            };
+            
+            Object.entries(buttons).forEach(([btnId, shouldShow]) => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.style.display = shouldShow ? 'flex' : 'none';
+                    btn.disabled = !shouldShow;
+                }
+            });
+            
+            // 更新权限提示
+            const permissionHint = document.getElementById('permissionHint');
+            if (permissionHint) {
+                permissionHint.style.display = isLoggedIn ? 'none' : 'flex';
             }
-            
-            const canWrite = currentUser.permissions.includes('write');
-            const canDelete = currentUser.permissions.includes('delete');
-            const canExport = currentUser.permissions.includes('export');
-            const canConfig = currentUser.permissions.includes('config');
-            
-            // 显示/隐藏按钮
-            addBtn.style.display = canWrite ? 'flex' : 'none';
-            resetBtn.style.display = canDelete ? 'flex' : 'none';
-            exportBtn.style.display = canExport ? 'flex' : 'none';
-            syncExcelBtn.style.display = canExport ? 'flex' : 'none';
-            repairExcelBtn.style.display = canExport ? 'flex' : 'none';
-            updateHTMLBtn.style.display = canExport ? 'flex' : 'none';
-            editHeadersBtn.style.display = canConfig ? 'flex' : 'none';
-            
-            // 下载Excel和刷新配置对所有登录用户可见
-            downloadExcelBtn.style.display = 'flex';
-            refreshConfigBtn.style.display = 'flex';
-            
-            // 同时更新禁用状态
-            addBtn.disabled = !canWrite;
-            resetBtn.disabled = !canDelete;
-            exportBtn.disabled = !canExport;
-            syncExcelBtn.disabled = !canExport;
-            repairExcelBtn.disabled = !canExport;
-            updateHTMLBtn.disabled = !canExport;
-            editHeadersBtn.disabled = !canConfig;
         }
 
         // 处理登录
@@ -2609,6 +2807,8 @@
             
             passwordInput.value = '';
             setupAutoLogout();
+            
+            showToast(`欢迎回来，${user.name}！`, 'success');
         }
 
         // 处理登出 - 修复版本
@@ -2637,6 +2837,8 @@
             localStorage.removeItem('h5IndexCurrentUser');
             usernameInput.value = '';
             passwordInput.value = '';
+            
+            showToast('您已成功退出登录', 'info');
         }
 
         // 更新统计数据
@@ -2690,7 +2892,7 @@
 
         // 配置 GitHub 同步
         async function setupGitHubSync() {
-            const token = document.getElementById('githubToken').value.trim();
+            const token = githubTokenInput.value.trim();
             
             if (!token) {
                 alert('请输入 GitHub 个人访问令牌');
@@ -2704,12 +2906,15 @@
                 
                 if (authResult.authenticated) {
                     localStorage.setItem('githubToken', token);
-                    document.getElementById('githubToken').value = '';
+                    githubTokenInput.value = '';
                     document.getElementById('githubStatus').innerHTML = 
                         `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
                     
                     hideLoadingIndicator();
-                    alert('GitHub 令牌配置成功！现在可以同步数据到 Excel 文件了。');
+                    showToast('GitHub 令牌配置成功！现在可以同步数据到 Excel 文件了。', 'success');
+                    
+                    // 更新按钮显示状态
+                    updateButtonVisibility();
                 } else {
                     throw new Error('GitHub 令牌验证失败');
                 }
@@ -2756,7 +2961,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            alert('更新后的HTML文件已生成并开始下载！');
+            showToast('更新后的HTML文件已生成并开始下载！', 'success');
         }
 
         // 生成包含当前数据的HTML
@@ -2783,8 +2988,18 @@
             if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub配置的数据。')) {
                 loadConfigFromGitHub();
                 localStorage.removeItem('h5IndexData');
-                alert('数据已重置为GitHub配置的初始状态');
+                showToast('数据已重置为GitHub配置的初始状态', 'success');
             }
+        }
+
+        // 调试函数
+        function debugCategorySystem() {
+            console.log('=== 分类系统调试信息 ===');
+            console.log('分类列表:', categoryList);
+            console.log('分类映射:', categoryMap);
+            console.log('表格数据分类:', [...new Set(tableData.map(item => item.category))]);
+            console.log('分类选择器选项:', document.getElementById('itemCategory').innerHTML);
+            console.log('分类筛选器按钮:', document.querySelectorAll('.filter-btn').length);
         }
     </script>
 </body>
