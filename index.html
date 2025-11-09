@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DH3项目HelpMe索引表 - 修复版</title>
+    <title>DH3项目HelpMe索引表</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -619,6 +619,14 @@
             align-items: center;
             gap: 10px;
             max-width: 400px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
         }
         
         .toast-success {
@@ -735,31 +743,31 @@
             </div>
             
             <div class="action-buttons">
-                <button class="btn btn-primary" id="addBtn" disabled>
+                <button class="btn btn-primary" id="addBtn" style="display: none;">
                     <i class="fas fa-plus"></i> 添加新条目
                 </button>
-                <button class="btn btn-success" id="exportBtn" disabled>
+                <button class="btn btn-success" id="exportBtn" style="display: none;">
                     <i class="fas fa-file-export"></i> 导出数据
                 </button>
-                <button class="btn btn-success" id="syncExcelBtn" disabled>
+                <button class="btn btn-success" id="syncExcelBtn" style="display: none;">
                     <i class="fas fa-sync"></i> 同步到 Excel
                 </button>
                 <button class="btn btn-success" id="downloadExcelBtn">
                     <i class="fas fa-download"></i> 下载 Excel
                 </button>
-                <button class="btn btn-warning" id="repairExcelBtn" disabled>
+                <button class="btn btn-warning" id="repairExcelBtn" style="display: none;">
                     <i class="fas fa-tools"></i> 修复Excel格式
                 </button>
-                <button class="btn btn-success" id="updateHTMLBtn" disabled>
+                <button class="btn btn-success" id="updateHTMLBtn" style="display: none;">
                     <i class="fas fa-download"></i> 更新HTML
                 </button>
-                <button class="btn btn-danger" id="resetBtn" disabled>
+                <button class="btn btn-danger" id="resetBtn" style="display: none;">
                     <i class="fas fa-redo"></i> 重置数据
                 </button>
                 <button class="btn btn-primary" id="refreshConfigBtn">
                     <i class="fas fa-sync-alt"></i> 刷新配置
                 </button>
-                <button class="btn btn-primary" id="editHeadersBtn" disabled>
+                <button class="btn btn-primary" id="editHeadersBtn" style="display: none;">
                     <i class="fas fa-edit"></i> 编辑表头
                 </button>
             </div>
@@ -1172,107 +1180,154 @@
 
         // ========== 核心功能函数 ==========
 
-        // 修复的打开文件夹路径函数 - 基于您提供的有效代码
-        /*function openFolder(path) {
-            // 解码路径（将\\\\恢复为\\）
+        // 优化后的 openFolder 函数
+        function openFolder(path) {
             const decodedPath = path.replace(/\\\\/g, '\\');
             
-            // 尝试使用file协议打开
+            console.log('原始路径:', path);
+            console.log('解码路径:', decodedPath);
+            console.log('当前环境协议:', window.location.protocol);
+            
+            // 智能环境检测
+            if (isLocalEnvironment()) {
+                // 本地环境：尝试直接打开
+                attemptDirectOpen(decodedPath);
+            } else {
+                // 网络环境：使用复制方案
+                offerPathCopy(decodedPath, '由于网页安全限制，无法直接打开本地文件夹。');
+            }
+            
+            return false;
+        }
+
+        // 检测是否为本地环境
+        function isLocalEnvironment() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            // 本地文件协议
+            if (protocol === 'file:') {
+                return true;
+            }
+            
+            // localhost 或本地 IP
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+                return true;
+            }
+            
+            // 本地网络 IP (192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x)
+            if (/^(192\.168|10|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(hostname)) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        // 尝试直接打开文件夹
+        function attemptDirectOpen(decodedPath) {
             const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
             
-            console.log('尝试打开路径:', decodedPath);
-            console.log('File URL:', fileUrl);
+            console.log('尝试直接打开 File URL:', fileUrl);
             
-            // 创建测试链接检查协议支持 - 这是关键差异
-            const testLink = document.createElement('a');
-            
-            
-            testLink.href = 'file:///';
-            console.log('当前协议:', window.location.protocol);
-            console.log('测试协议:', testLink.protocol);
-            if (testLink.protocol === 'file:') {
-                // 尝试在新标签页中打开
-                console.log('测试协议进入:', testLink.protocol);
-                window.open(fileUrl, '_blank');
-                showToast('正在尝试打开文件夹...', 'info');
-            } else {
-                // 如果不支持file协议，提供复制路径功能
-                if (confirm('由于浏览器安全限制，无法直接打开文件夹。是否复制路径到剪贴板？\n\n路径: ' + decodedPath)) {
-                    copyToClipboard(decodedPath).then(() => {
-                        showToast('文件夹路径已复制到剪贴板！您可以在文件资源管理器中粘贴此路径来打开文件夹。', 'success');
-                    }).catch(err => {
-                        // 备用复制方法
-                        const textArea = document.createElement('textarea');
-                        textArea.value = decodedPath;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        showToast('文件夹路径已复制到剪贴板！', 'success');
-                    });
+            // 方法1: 使用 window.open
+            try {
+                const newWindow = window.open(fileUrl, '_blank');
+                
+                // 检查是否打开成功（某些浏览器会返回 null 如果被阻止）
+                if (newWindow === null || newWindow.closed) {
+                    throw new Error('窗口打开被阻止');
                 }
+                
+                showToast('正在打开文件夹...', 'info');
+                return true;
+            } catch (error) {
+                console.log('方法1失败:', error.message);
             }
+            
+            // 方法2: 使用 a 标签点击
+            try {
+                const link = document.createElement('a');
+                link.href = fileUrl;
+                link.target = '_blank';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('正在尝试打开文件夹...', 'info');
+                
+                // 延迟检查是否真的打开了
+                setTimeout(() => {
+                    // 如果仍然需要复制功能，可以在这里提供
+                    offerPathCopy(decodedPath, '如果文件夹没有打开，请使用复制功能：');
+                }, 1000);
+                
+                return true;
+            } catch (error) {
+                console.log('方法2失败:', error.message);
+            }
+            
+            // 所有方法都失败，降级到复制方案
+            console.log('所有直接打开方法都失败，使用复制方案');
+            offerPathCopy(decodedPath, '直接打开失败，请使用复制功能：');
             return false;
-        }*/
-        /*function openFolder(path) {
-    const decodedPath = path.replace(/\\\\/g, '\\');
-    const hostname = window.location.hostname;
-    
-    let platformInfo = '';
-    
-    // 根据托管平台提供特定提示
-    if (hostname.includes('netlify')) {
-        platformInfo = '（Netlify 托管的网页无法直接访问本地文件系统）';
-    } else if (hostname.includes('github.io')) {
-        platformInfo = '（GitHub Pages 托管的网页无法直接访问本地文件系统）';
-    } else if (window.location.protocol === 'file:') {
-        platformInfo = '（本地文件可能受浏览器安全策略限制）';
-    }
-    
-    const message = `无法直接打开文件夹 ${platformInfo}
+        }
 
-请复制以下路径，然后在文件资源管理器中粘贴：
-
-${decodedPath}
-
-是否复制到剪贴板？`;
-    
-    if (confirm(message)) {
-        copyToClipboard(decodedPath).then(() => {
-            showToast('✅ 路径已复制！粘贴到文件资源管理器即可打开', 'success');
-        }).catch(err => {
-            fallbackCopy(decodedPath);
-        });
-    }
-    return false;
-}
+        // 提供路径复制功能
+        function offerPathCopy(decodedPath, reason = '') {
+            const message = reason + '\n\n是否将以下路径复制到剪贴板？\n\n路径: ' + decodedPath;
+            
+            if (confirm(message)) {
+                copyToClipboard(decodedPath).then(() => {
+                    showToast('✅ 路径已复制到剪贴板！', 'success');
+                }).catch(err => {
+                    // 备用复制方案
+                    fallbackCopy(decodedPath);
+                });
+            }
+        }
 
         // 复制到剪贴板
         async function copyToClipboard(text) {
-            try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(text);
-                    return true;
-                } else {
-                    // 降级方案
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } else {
+                // 降级方案
+                return fallbackCopy(text);
+            }
+        }
+
+        // 备用复制方法
+        function fallbackCopy(text) {
+            return new Promise((resolve, reject) => {
+                try {
                     const textArea = document.createElement('textarea');
                     textArea.value = text;
                     textArea.style.position = 'fixed';
                     textArea.style.opacity = '0';
+                    textArea.style.left = '-9999px';
                     document.body.appendChild(textArea);
                     textArea.select();
-                    document.execCommand('copy');
+                    textArea.setSelectionRange(0, 99999); // 移动设备支持
+                    
+                    const successful = document.execCommand('copy');
                     document.body.removeChild(textArea);
-                    return true;
+                    
+                    if (successful) {
+                        resolve(true);
+                    } else {
+                        reject(new Error('复制命令失败'));
+                    }
+                } catch (err) {
+                    reject(err);
                 }
-            } catch (err) {
-                console.error('复制到剪贴板失败:', err);
-                throw err;
-            }
+            });
         }
 
-        // 显示Toast消息
+        // 显示 Toast 消息
         function showToast(message, type = 'info') {
+            // 移除现有的 toast
             const existingToast = document.querySelector('.toast');
             if (existingToast) {
                 existingToast.remove();
@@ -1281,217 +1336,31 @@ ${decodedPath}
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             toast.innerHTML = `
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                <i class="fas ${getToastIcon(type)}"></i>
                 <span>${message}</span>
             `;
             
             document.body.appendChild(toast);
             
-            // 添加动画效果
+            // 添加动画
+            setTimeout(() => toast.classList.add('show'), 10);
             setTimeout(() => {
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0)';
-            }, 10);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-20px)';
+                toast.classList.remove('show');
                 setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.remove();
-                    }
+                    if (toast.parentNode) toast.remove();
                 }, 300);
             }, 3000);
-        }*/
-            // 优化后的 openFolder 函数
-function openFolder(path) {
-    const decodedPath = path.replace(/\\\\/g, '\\');
-    
-    console.log('原始路径:', path);
-    console.log('解码路径:', decodedPath);
-    console.log('当前环境协议:', window.location.protocol);
-    
-    // 智能环境检测
-    if (isLocalEnvironment()) {
-        // 本地环境：尝试直接打开
-        attemptDirectOpen(decodedPath);
-    } else {
-        // 网络环境：使用复制方案
-        offerPathCopy(decodedPath, '由于网页安全限制，无法直接打开本地文件夹。');
-    }
-    
-    return false;
-}
-
-// 检测是否为本地环境
-function isLocalEnvironment() {
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    
-    // 本地文件协议
-    if (protocol === 'file:') {
-        return true;
-    }
-    
-    // localhost 或本地 IP
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
-        return true;
-    }
-    
-    // 本地网络 IP (192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x)
-    if (/^(192\.168|10|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(hostname)) {
-        return true;
-    }
-    
-    return false;
-}
-
-// 尝试直接打开文件夹
-function attemptDirectOpen(decodedPath) {
-    const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
-    
-    console.log('尝试直接打开 File URL:', fileUrl);
-    
-    // 方法1: 使用 window.open
-    try {
-        const newWindow = window.open(fileUrl, '_blank');
-        
-        // 检查是否打开成功（某些浏览器会返回 null 如果被阻止）
-        if (newWindow === null || newWindow.closed) {
-            throw new Error('窗口打开被阻止');
         }
-        
-        showToast('正在打开文件夹...', 'info');
-        return true;
-    } catch (error) {
-        console.log('方法1失败:', error.message);
-    }
-    
-    // 方法2: 使用 a 标签点击
-    try {
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.target = '_blank';
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showToast('正在尝试打开文件夹...', 'info');
-        
-        // 延迟检查是否真的打开了
-        setTimeout(() => {
-            // 如果仍然需要复制功能，可以在这里提供
-            offerPathCopy(decodedPath, '如果文件夹没有打开，请使用复制功能：');
-        }, 1000);
-        
-        return true;
-    } catch (error) {
-        console.log('方法2失败:', error.message);
-    }
-    
-    // 方法3: 使用 location.href (不推荐，会离开当前页面)
-    // try {
-    //     window.location.href = fileUrl;
-    //     return true;
-    // } catch (error) {
-    //     console.log('方法3失败:', error.message);
-    // }
-    
-    // 所有方法都失败，降级到复制方案
-    console.log('所有直接打开方法都失败，使用复制方案');
-    offerPathCopy(decodedPath, '直接打开失败，请使用复制功能：');
-    return false;
-}
 
-// 提供路径复制功能
-function offerPathCopy(decodedPath, reason = '') {
-    const message = reason + '\n\n是否将以下路径复制到剪贴板？\n\n路径: ' + decodedPath;
-    
-    if (confirm(message)) {
-        copyToClipboard(decodedPath).then(() => {
-            showToast('✅ 路径已复制到剪贴板！', 'success');
-        }).catch(err => {
-            // 备用复制方案
-            fallbackCopy(decodedPath);
-        });
-    }
-}
-
-// 复制到剪贴板
-async function copyToClipboard(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } else {
-        // 降级方案
-        return fallbackCopy(text);
-    }
-}
-
-// 备用复制方法
-function fallbackCopy(text) {
-    return new Promise((resolve, reject) => {
-        try {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.opacity = '0';
-            textArea.style.left = '-9999px';
-            document.body.appendChild(textArea);
-            textArea.select();
-            textArea.setSelectionRange(0, 99999); // 移动设备支持
-            
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            if (successful) {
-                resolve(true);
-            } else {
-                reject(new Error('复制命令失败'));
-            }
-        } catch (err) {
-            reject(err);
+        function getToastIcon(type) {
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            return icons[type] || 'fa-info-circle';
         }
-    });
-}
-
-// 显示 Toast 消息
-function showToast(message, type = 'info') {
-    // 移除现有的 toast
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-        <i class="fas ${getToastIcon(type)}"></i>
-        <span>${message}</span>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // 添加动画
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            if (toast.parentNode) toast.remove();
-        }, 300);
-    }, 3000);
-}
-
-function getToastIcon(type) {
-    const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-times-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    };
-    return icons[type] || 'fa-info-circle';
-}
 
         // SHA-256哈希函数
         async function sha256(message) {
@@ -1978,6 +1847,12 @@ function getToastIcon(type) {
                     passwordHash: 'b107fce20b89ab22f4eb72843df4acc2628c88d38c54f56bdf3767f53238274f',
                     name: '管理员',
                     permissions: ['read', 'write', 'delete', 'export', 'config']
+                },
+                { 
+                    username: 'editor', 
+                    passwordHash: 'b107fce20b89ab22f4eb72843df4acc2628c88d38c54f56bdf3767f53238274f',
+                    name: '编辑员',
+                    permissions: ['read', 'write', 'export']
                 }
             ];
             
@@ -2107,6 +1982,9 @@ function getToastIcon(type) {
             setupEventListeners();
             checkLoginStatus();
             updateCategorySelect();
+            
+            // 设置按钮初始显示状态
+            updateButtonVisibility();
             
             // 设置用户活动监听器
             document.addEventListener('click', resetAutoLogoutTimer);
@@ -2534,6 +2412,7 @@ function getToastIcon(type) {
                     if (updatedUser) {
                         currentUser.permissions = updatedUser.permissions;
                         updateUIForPermissions();
+                        updateButtonVisibility();
                     }
                 }
             }
@@ -2564,6 +2443,50 @@ function getToastIcon(type) {
                     header.style.cursor = 'default';
                 }
             });
+        }
+
+        // 新增：根据权限更新按钮显示状态
+        function updateButtonVisibility() {
+            if (!currentUser) {
+                // 未登录状态，只显示下载Excel和刷新配置按钮
+                addBtn.style.display = 'none';
+                resetBtn.style.display = 'none';
+                exportBtn.style.display = 'none';
+                syncExcelBtn.style.display = 'none';
+                repairExcelBtn.style.display = 'none';
+                updateHTMLBtn.style.display = 'none';
+                editHeadersBtn.style.display = 'none';
+                downloadExcelBtn.style.display = 'flex';
+                refreshConfigBtn.style.display = 'flex';
+                return;
+            }
+            
+            const canWrite = currentUser.permissions.includes('write');
+            const canDelete = currentUser.permissions.includes('delete');
+            const canExport = currentUser.permissions.includes('export');
+            const canConfig = currentUser.permissions.includes('config');
+            
+            // 显示/隐藏按钮
+            addBtn.style.display = canWrite ? 'flex' : 'none';
+            resetBtn.style.display = canDelete ? 'flex' : 'none';
+            exportBtn.style.display = canExport ? 'flex' : 'none';
+            syncExcelBtn.style.display = canExport ? 'flex' : 'none';
+            repairExcelBtn.style.display = canExport ? 'flex' : 'none';
+            updateHTMLBtn.style.display = canExport ? 'flex' : 'none';
+            editHeadersBtn.style.display = canConfig ? 'flex' : 'none';
+            
+            // 下载Excel和刷新配置对所有登录用户可见
+            downloadExcelBtn.style.display = 'flex';
+            refreshConfigBtn.style.display = 'flex';
+            
+            // 同时更新禁用状态
+            addBtn.disabled = !canWrite;
+            resetBtn.disabled = !canDelete;
+            exportBtn.disabled = !canExport;
+            syncExcelBtn.disabled = !canExport;
+            repairExcelBtn.disabled = !canExport;
+            updateHTMLBtn.disabled = !canExport;
+            editHeadersBtn.disabled = !canConfig;
         }
 
         // 处理登录
@@ -2616,6 +2539,7 @@ function getToastIcon(type) {
             permissionHint.style.display = 'none';
             
             updateUIForPermissions();
+            updateButtonVisibility();
             renderTable(currentData);
             passwordInput.value = '';
             setupAutoLogout();
@@ -2636,13 +2560,8 @@ function getToastIcon(type) {
             adminIndicator.style.display = 'none';
             permissionHint.style.display = 'flex';
             
-            addBtn.disabled = true;
-            resetBtn.disabled = true;
-            exportBtn.disabled = true;
-            syncExcelBtn.disabled = true;
-            repairExcelBtn.disabled = true;
-            updateHTMLBtn.disabled = true;
-            editHeadersBtn.disabled = true;
+            // 更新按钮显示状态
+            updateButtonVisibility();
             
             localStorage.removeItem('h5IndexCurrentUser');
             renderTable(currentData);
