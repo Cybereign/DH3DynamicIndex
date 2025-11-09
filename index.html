@@ -1214,7 +1214,7 @@
             }
             return false;
         }*/
-        function openFolder(path) {
+        /*function openFolder(path) {
     const decodedPath = path.replace(/\\\\/g, '\\');
     const hostname = window.location.hostname;
     
@@ -1302,7 +1302,196 @@ ${decodedPath}
                     }
                 }, 300);
             }, 3000);
+        }*/
+            // 优化后的 openFolder 函数
+function openFolder(path) {
+    const decodedPath = path.replace(/\\\\/g, '\\');
+    
+    console.log('原始路径:', path);
+    console.log('解码路径:', decodedPath);
+    console.log('当前环境协议:', window.location.protocol);
+    
+    // 智能环境检测
+    if (isLocalEnvironment()) {
+        // 本地环境：尝试直接打开
+        attemptDirectOpen(decodedPath);
+    } else {
+        // 网络环境：使用复制方案
+        offerPathCopy(decodedPath, '由于网页安全限制，无法直接打开本地文件夹。');
+    }
+    
+    return false;
+}
+
+// 检测是否为本地环境
+function isLocalEnvironment() {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    
+    // 本地文件协议
+    if (protocol === 'file:') {
+        return true;
+    }
+    
+    // localhost 或本地 IP
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+        return true;
+    }
+    
+    // 本地网络 IP (192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x)
+    if (/^(192\.168|10|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(hostname)) {
+        return true;
+    }
+    
+    return false;
+}
+
+// 尝试直接打开文件夹
+function attemptDirectOpen(decodedPath) {
+    const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
+    
+    console.log('尝试直接打开 File URL:', fileUrl);
+    
+    // 方法1: 使用 window.open
+    try {
+        const newWindow = window.open(fileUrl, '_blank');
+        
+        // 检查是否打开成功（某些浏览器会返回 null 如果被阻止）
+        if (newWindow === null || newWindow.closed) {
+            throw new Error('窗口打开被阻止');
         }
+        
+        showToast('正在打开文件夹...', 'info');
+        return true;
+    } catch (error) {
+        console.log('方法1失败:', error.message);
+    }
+    
+    // 方法2: 使用 a 标签点击
+    try {
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.target = '_blank';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('正在尝试打开文件夹...', 'info');
+        
+        // 延迟检查是否真的打开了
+        setTimeout(() => {
+            // 如果仍然需要复制功能，可以在这里提供
+            offerPathCopy(decodedPath, '如果文件夹没有打开，请使用复制功能：');
+        }, 1000);
+        
+        return true;
+    } catch (error) {
+        console.log('方法2失败:', error.message);
+    }
+    
+    // 方法3: 使用 location.href (不推荐，会离开当前页面)
+    // try {
+    //     window.location.href = fileUrl;
+    //     return true;
+    // } catch (error) {
+    //     console.log('方法3失败:', error.message);
+    // }
+    
+    // 所有方法都失败，降级到复制方案
+    console.log('所有直接打开方法都失败，使用复制方案');
+    offerPathCopy(decodedPath, '直接打开失败，请使用复制功能：');
+    return false;
+}
+
+// 提供路径复制功能
+function offerPathCopy(decodedPath, reason = '') {
+    const message = reason + '\n\n是否将以下路径复制到剪贴板？\n\n路径: ' + decodedPath;
+    
+    if (confirm(message)) {
+        copyToClipboard(decodedPath).then(() => {
+            showToast('✅ 路径已复制到剪贴板！', 'success');
+        }).catch(err => {
+            // 备用复制方案
+            fallbackCopy(decodedPath);
+        });
+    }
+}
+
+// 复制到剪贴板
+async function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } else {
+        // 降级方案
+        return fallbackCopy(text);
+    }
+}
+
+// 备用复制方法
+function fallbackCopy(text) {
+    return new Promise((resolve, reject) => {
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            textArea.setSelectionRange(0, 99999); // 移动设备支持
+            
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            if (successful) {
+                resolve(true);
+            } else {
+                reject(new Error('复制命令失败'));
+            }
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+// 显示 Toast 消息
+function showToast(message, type = 'info') {
+    // 移除现有的 toast
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas ${getToastIcon(type)}"></i>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // 添加动画
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, 300);
+    }, 3000);
+}
+
+function getToastIcon(type) {
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    return icons[type] || 'fa-info-circle';
+}
 
         // SHA-256哈希函数
         async function sha256(message) {
