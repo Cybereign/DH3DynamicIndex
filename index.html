@@ -351,11 +351,13 @@
             color: #218838;
         }
         
-        .note {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
+.note {
+    color: #666;
+    font-size: 0.9rem;
+    white-space: pre-wrap; /* 关键属性：保留换行 */
+    word-break: break-word; /* 防止长文本溢出 */
+    line-height: 1.4; /* 改善可读性 */
+}
         .empty-row {
             text-align: center;
             padding: 40px;
