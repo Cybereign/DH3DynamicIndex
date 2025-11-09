@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DH3项目HelpMe索引表</title>
+    <title>DH3项目HelpMe索引表 - 修复版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 样式保持不变 */
         * {
             margin: 0;
             padding: 0;
@@ -684,7 +685,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>DH3项目HelpMe索引表</h1>
+            <h1>DH3项目HelpMe索引表 - 修复版</h1>
             <div class="admin-indicator" id="adminIndicator" style="display: none;">
                 <i class="fas fa-user-shield"></i> 管理员模式
             </div>
@@ -2527,7 +2528,7 @@
             }
         }
 
-        // 登录成功
+        // 登录成功 - 修复版本
         function loginSuccess(user) {
             isLoggedIn = true;
             currentUser = user;
@@ -2540,12 +2541,17 @@
             
             updateUIForPermissions();
             updateButtonVisibility();
-            renderTable(currentData);
+            
+            // 修复：登录后重新渲染表格，确保操作按钮状态正确
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+            filterTable(searchTerm, activeCategory);
+            
             passwordInput.value = '';
             setupAutoLogout();
         }
 
-        // 处理登出
+        // 处理登出 - 修复版本
         function handleLogout() {
             isLoggedIn = false;
             currentUser = null;
@@ -2563,8 +2569,12 @@
             // 更新按钮显示状态
             updateButtonVisibility();
             
+            // 修复：登出后重新渲染表格，禁用操作按钮
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+            filterTable(searchTerm, activeCategory);
+            
             localStorage.removeItem('h5IndexCurrentUser');
-            renderTable(currentData);
             usernameInput.value = '';
             passwordInput.value = '';
         }
