@@ -690,6 +690,66 @@
             color: #212529;
         }
         
+        /* 拖拽排序样式 */
+        .draggable-row {
+            cursor: move;
+            transition: all 0.2s ease;
+        }
+        
+        .draggable-row.dragging {
+            background: #f0f7ff !important;
+            box-shadow: 0 4px 12px rgba(106, 17, 203, 0.2);
+            opacity: 0.8;
+            border: 2px dashed #6a11cb;
+        }
+        
+        .draggable-row.drag-over {
+            border-top: 3px solid #2575fc;
+        }
+        
+        .drag-handle {
+            cursor: grab;
+            color: #6c757d;
+            padding: 0 8px;
+            margin-right: 8px;
+            transition: color 0.2s;
+        }
+        
+        .drag-handle:hover {
+            color: #6a11cb;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: 10px;
+        }
+        
+        .sort-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .sort-btn:hover {
+            background: #f8f9fa;
+            border-color: #6a11cb;
+        }
+        
+        .sort-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         /* 响应式设计 */
         @media (max-width: 1200px) {
             .auth-main-row {
@@ -870,6 +930,23 @@
                 <button class="btn btn-primary" id="addBtn" style="display: none;">
                     <i class="fas fa-plus"></i> 添加新条目
                 </button>
+                
+                <!-- 排序控制按钮 -->
+                <div class="sort-controls" id="sortControls" style="display: none;">
+                    <button class="sort-btn" id="enableSortBtn" title="启用拖拽排序">
+                        <i class="fas fa-arrows-alt"></i> 调整顺序
+                    </button>
+                    <button class="sort-btn" id="saveOrderBtn" title="保存顺序" style="display: none;">
+                        <i class="fas fa-save"></i> 保存顺序
+                    </button>
+                    <button class="sort-btn" id="cancelSortBtn" title="取消排序" style="display: none;">
+                        <i class="fas fa-times"></i> 取消
+                    </button>
+                    <button class="sort-btn" id="resetOrderBtn" title="重置为默认顺序">
+                        <i class="fas fa-undo"></i> 重置顺序
+                    </button>
+                </div>
+                
                 <button class="btn btn-success" id="exportBtn" style="display: none;">
                     <i class="fas fa-file-export"></i> 导出数据
                 </button>
@@ -1022,6 +1099,9 @@
 
     <!-- 引入SheetJS库用于处理Excel文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- 引入默认数据文件 -->
+    <script src="default-data.js"></script>
 
     <script>
         // 示例数据 - 将从GitHub配置加载
@@ -1051,6 +1131,11 @@
             path: '链接地址',
             note: '备注'
         };
+
+        // 拖拽排序相关变量
+        let isSortMode = false;
+        let dragSrcEl = null;
+        let originalOrder = [];
 
         // 修复的GitHub API 服务 - 处理SHA冲突问题
         class GitHubService {
@@ -1157,7 +1242,7 @@
                 }
             }
 
-            // 新增：强制创建新文件（忽略SHA冲突）
+            // 强制创建新文件（忽略SHA冲突）
             async forceCreateFile(filePath, content, commitMessage) {
                 try {
                     // 先尝试获取当前文件信息
@@ -1302,8 +1387,85 @@
         const permissionHint = document.getElementById('permissionHint');
         const setupGitHubBtn = document.getElementById('setupGitHubBtn');
         const githubTokenInput = document.getElementById('githubToken');
+        const enableSortBtn = document.getElementById('enableSortBtn');
+        const saveOrderBtn = document.getElementById('saveOrderBtn');
+        const cancelSortBtn = document.getElementById('cancelSortBtn');
+        const resetOrderBtn = document.getElementById('resetOrderBtn');
+        const sortControls = document.getElementById('sortControls');
 
         // ========== 核心功能函数 ==========
+
+        // 检查默认数据是否加载成功
+        function checkDefaultDataLoaded() {
+            if (typeof DEFAULT_TABLE_DATA === 'undefined') {
+                console.error('❌ 默认数据文件加载失败');
+                showErrorMessage('默认数据文件加载失败，请检查 default-data.js 文件是否存在');
+                return false;
+            }
+            console.log('✅ 默认数据文件加载成功');
+            return true;
+        }
+
+        // 从外部文件加载默认数据
+        function loadDefaultData() {
+            try {
+                // 检查外部数据文件是否成功加载
+                if (typeof DEFAULT_TABLE_DATA === 'undefined') {
+                    throw new Error('默认数据文件未加载，请检查 default-data.js 文件');
+                }
+                
+                // 使用外部文件中的默认数据（深拷贝）
+                tableData = JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
+                adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
+                appConfig = JSON.parse(JSON.stringify(DEFAULT_APP_CONFIG));
+                categoryList = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_LIST));
+                categoryMap = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_MAP));
+                
+                console.log('✅ 从外部文件加载默认数据成功');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 加载默认数据失败:', error);
+                showErrorMessage(`默认数据加载失败: ${error.message}`);
+                return false;
+            }
+        }
+
+        // 使用默认配置
+        function useDefaultConfig() {
+            try {
+                loadDefaultData();
+                
+                // 确保ID顺序正确
+                tableData.forEach((item, index) => {
+                    item.id = index + 1;
+                });
+                
+                updateConfigVersionInfo(appConfig);
+                updateCategoryFilters();
+                updateCategorySelect();
+                renderTable(tableData);
+                updateStats();
+                
+                if (isSortMode) {
+                    exitSortMode();
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('使用默认配置失败:', error);
+                showErrorMessage(`配置加载失败: ${error.message}`);
+                return false;
+            }
+        }
+
+        // 获取默认数据（用于重置功能）
+        function getDefaultTableData() {
+            if (typeof DEFAULT_TABLE_DATA === 'undefined') {
+                throw new Error('默认数据文件未加载');
+            }
+            return JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
+        }
 
         // 优化后的 openFolder 函数
         function openFolder(path) {
@@ -1691,6 +1853,11 @@
                 }
             }).join('');
             
+            // 如果处于排序模式，重新启用拖拽功能
+            if (isSortMode) {
+                makeRowsDraggable();
+            }
+            
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 if (!btn.disabled) {
                     btn.addEventListener('click', (e) => {
@@ -1712,491 +1879,262 @@
             updateStats();
         }
 
-        // ========== 修复的Excel同步功能 ==========
+        // ========== 拖拽排序功能 ==========
 
-        // 修复的ArrayBuffer转Base64函数
-        function arrayBufferToBase64(buffer) {
-            try {
-                const bytes = new Uint8Array(buffer);
-                let binary = '';
-                for (let i = 0; i < bytes.byteLength; i++) {
-                    binary += String.fromCharCode(bytes[i]);
-                }
-                return btoa(binary);
-            } catch (error) {
-                console.error('Base64转换失败:', error);
-                throw new Error('文件编码转换失败');
+        // 初始化排序功能
+        function initSorting() {
+            // 显示排序控制区域（仅管理员）
+            if (isLoggedIn && currentUser && currentUser.permissions.includes('write')) {
+                sortControls.style.display = 'flex';
             }
+
+            // 启用排序模式
+            enableSortBtn.addEventListener('click', enableSortMode);
+
+            // 保存顺序
+            saveOrderBtn.addEventListener('click', saveNewOrder);
+
+            // 取消排序
+            cancelSortBtn.addEventListener('click', cancelSortMode);
+
+            // 重置顺序
+            resetOrderBtn.addEventListener('click', resetToDefaultOrder);
         }
 
-        // 修复的Excel同步功能 - 包含网页更新
-        async function syncDataToExcel() {
+        // 启用排序模式
+        function enableSortMode() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
                 return;
             }
 
-            if (!gitHubService) {
-                alert('请先配置 GitHub 个人访问令牌');
-                githubTokenInput.focus();
+            isSortMode = true;
+            originalOrder = [...tableData]; // 保存原始顺序
+            
+            // 更新按钮状态
+            enableSortBtn.style.display = 'none';
+            saveOrderBtn.style.display = 'inline-block';
+            cancelSortBtn.style.display = 'inline-block';
+            
+            // 添加拖拽样式和功能
+            makeRowsDraggable();
+            
+            showToast('拖拽排序模式已启用，拖动行可以调整顺序', 'info');
+        }
+
+        // 使行可拖拽
+        function makeRowsDraggable() {
+            const rows = tableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                // 添加拖拽类名
+                row.classList.add('draggable-row');
+                
+                // 添加拖拽手柄到序号单元格
+                const idCell = row.cells[0];
+                if (!idCell.querySelector('.drag-handle')) {
+                    const dragHandle = document.createElement('span');
+                    dragHandle.className = 'drag-handle';
+                    dragHandle.innerHTML = '<i class="fas fa-arrows-alt"></i>';
+                    idCell.insertBefore(dragHandle, idCell.firstChild);
+                }
+                
+                // 设置拖拽属性
+                row.setAttribute('draggable', 'true');
+                
+                // 移除原有的事件监听器（避免重复绑定）
+                row.removeEventListener('dragstart', handleDragStart);
+                row.removeEventListener('dragover', handleDragOver);
+                row.removeEventListener('dragenter', handleDragEnter);
+                row.removeEventListener('dragleave', handleDragLeave);
+                row.removeEventListener('drop', handleDrop);
+                row.removeEventListener('dragend', handleDragEnd);
+                
+                // 添加拖拽事件
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('dragenter', handleDragEnter);
+                row.addEventListener('dragleave', handleDragLeave);
+                row.addEventListener('drop', handleDrop);
+                row.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        // 拖拽事件处理函数
+        function handleDragStart(e) {
+            if (!isSortMode) {
+                e.preventDefault();
                 return;
             }
+            
+            this.classList.add('dragging');
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
 
-            try {
-                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
+        function handleDragOver(e) {
+            if (!isSortMode) return;
+            
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
 
-                // 1. 获取当前 Excel 文件信息
-                let fileInfo;
-                try {
-                    fileInfo = await gitHubService.getFileContent('table.xlsx');
-                    if (!fileInfo) {
-                        console.log('文件不存在，将创建新文件');
-                        fileInfo = { sha: null, exists: false };
-                    }
-                } catch (error) {
-                    console.log('获取文件信息失败，将创建新文件:', error);
-                    fileInfo = { sha: null, exists: false };
-                }
-                
-                // 2. 准备数据
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                tableData.forEach(item => {
-                    const row = [
-                        item.id || '',
-                        item.category || '',
-                        item.title || '',
-                        item.path || '',
-                        item.type || 'url',
-                        item.note || ''
-                    ];
-                    excelData.push(row);
-                });
+        function handleDragEnter(e) {
+            if (!isSortMode) return;
+            
+            this.classList.add('drag-over');
+        }
 
-                // 3. 创建工作表
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                
-                // 4. 设置列宽
-                const colWidths = [
-                    { wch: 8 },   // 序号
-                    { wch: 15 },  // 分类
-                    { wch: 30 },  // 标题
-                    { wch: 50 },  // 地址
-                    { wch: 12 },  // 地址类型
-                    { wch: 25 }   // 备注
-                ];
-                worksheet['!cols'] = colWidths;
+        function handleDragLeave(e) {
+            if (!isSortMode) return;
+            
+            this.classList.remove('drag-over');
+        }
 
-                // 5. 创建工作簿
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+        function handleDrop(e) {
+            if (!isSortMode) return;
+            
+            e.stopPropagation();
+            e.preventDefault();
+            
+            if (dragSrcEl !== this) {
+                // 移动行
+                const allRows = Array.from(tableBody.querySelectorAll('tr'));
+                const srcIndex = allRows.indexOf(dragSrcEl);
+                const destIndex = allRows.indexOf(this);
                 
-                // 6. 生成 Excel 文件
-                const excelBuffer = XLSX.write(workbook, { 
-                    bookType: 'xlsx', 
-                    type: 'array',
-                    bookSST: false
-                });
-
-                // 7. 转换为 base64
-                const excelBase64 = arrayBufferToBase64(excelBuffer);
-
-                // 8. 上传到 GitHub - 使用强制创建方法解决SHA冲突
-                await gitHubService.forceCreateFile(
-                    'table.xlsx',
-                    excelBase64,
-                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
-                );
-
-                hideLoadingIndicator();
-                showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
-                
-                // 🎯 修复：同步成功后更新网页显示
-                const searchTerm = searchInput.value.toLowerCase();
-                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
-                filterTable(searchTerm, activeCategory);
-                updateConfigVersionInfo(appConfig);
-                
-            } catch (error) {
-                console.error('同步到 Excel 失败:', error);
-                hideLoadingIndicator();
-                
-                if (error.message.includes('文件版本冲突')) {
-                    showToast(`同步失败: ${error.message}\n\n请先点击"修复Excel格式"按钮，然后重试同步。`, 'error');
+                if (srcIndex < destIndex) {
+                    tableBody.insertBefore(dragSrcEl, this.nextSibling);
                 } else {
-                    showToast(`同步失败: ${error.message}`, 'error');
+                    tableBody.insertBefore(dragSrcEl, this);
                 }
+                
+                // 更新视觉顺序
+                updateRowNumbers();
             }
+            
+            this.classList.remove('drag-over');
+            return false;
         }
 
-        // 修复的下载Excel文件功能
-        function downloadExcel() {
-            try {
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                tableData.forEach(item => {
-                    const row = [
-                        item.id || '',
-                        item.category || '',
-                        item.title || '',
-                        item.path || '',
-                        item.type || 'url',
-                        item.note || ''
-                    ];
-                    excelData.push(row);
-                });
-
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                const colWidths = [
-                    { wch: 8 },   // 序号
-                    { wch: 15 },  // 分类
-                    { wch: 30 },  // 标题
-                    { wch: 50 },  // 地址
-                    { wch: 12 },  // 地址类型
-                    { wch: 25 }   // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
-                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
-                
-                showToast('Excel文件下载成功！', 'success');
-                
-            } catch (error) {
-                console.error('下载Excel失败:', error);
-                showToast('下载Excel文件失败: ' + error.message, 'error');
-            }
+        function handleDragEnd(e) {
+            if (!isSortMode) return;
+            
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                row.classList.remove('dragging');
+                row.classList.remove('drag-over');
+            });
         }
 
-        // 修复Excel文件格式功能 - 强制解决SHA冲突
-        async function repairExcelFormat() {
+        // 更新行号显示
+        function updateRowNumbers() {
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const idCell = row.cells[0];
+                const dragHandle = idCell.querySelector('.drag-handle');
+                idCell.innerHTML = '';
+                if (dragHandle) {
+                    idCell.appendChild(dragHandle);
+                }
+                idCell.appendChild(document.createTextNode(index + 1));
+            });
+        }
+
+        // 保存新顺序
+        function saveNewOrder() {
+            if (!isSortMode) return;
+            
+            // 获取新的顺序
+            const rows = tableBody.querySelectorAll('tr');
+            const newOrder = [];
+            
+            rows.forEach(row => {
+                const id = parseInt(row.querySelector('.edit-btn').dataset.id);
+                const item = tableData.find(item => item.id === id);
+                if (item) {
+                    newOrder.push(item);
+                }
+            });
+            
+            // 更新数据
+            tableData = newOrder;
+            
+            // 重新生成ID顺序
+            tableData.forEach((item, index) => {
+                item.id = index + 1;
+            });
+            
+            // 保存到本地存储
+            saveDataToStorage();
+            
+            // 退出排序模式
+            exitSortMode();
+            
+            showToast('顺序已保存！', 'success');
+        }
+
+        // 取消排序模式
+        function cancelSortMode() {
+            if (!isSortMode) return;
+            
+            // 恢复原始顺序
+            tableData = originalOrder;
+            
+            // 重新渲染表格
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+            filterTable(searchTerm, activeCategory);
+            
+            exitSortMode();
+            showToast('顺序调整已取消', 'info');
+        }
+
+        // 退出排序模式
+        function exitSortMode() {
+            isSortMode = false;
+            dragSrcEl = null;
+            originalOrder = [];
+            
+            // 更新按钮状态
+            enableSortBtn.style.display = 'inline-block';
+            saveOrderBtn.style.display = 'none';
+            cancelSortBtn.style.display = 'none';
+            
+            // 移除拖拽样式
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                row.classList.remove('draggable-row');
+                row.setAttribute('draggable', 'false');
+                
+                // 移除拖拽手柄
+                const dragHandle = row.querySelector('.drag-handle');
+                if (dragHandle) {
+                    dragHandle.remove();
+                }
+            });
+        }
+
+        // 重置为默认顺序
+        function resetToDefaultOrder() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
                 return;
             }
-
-            if (!gitHubService) {
-                alert('请先配置 GitHub 个人访问令牌');
+            
+            if (!confirm('确定要重置为默认顺序吗？这将丢失所有自定义排序。')) {
                 return;
             }
-
-            try {
-                showLoadingIndicator('正在修复 Excel 文件格式...');
-
-                // 创建全新的Excel文件结构
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                // 添加当前数据
-                tableData.forEach(item => {
-                    const row = [
-                        item.id || '',
-                        item.category || '',
-                        item.title || '',
-                        item.path || '',
-                        item.type || 'url',
-                        item.note || ''
-                    ];
-                    excelData.push(row);
-                });
-
-                // 创建工作表
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                
-                // 设置列宽
-                const colWidths = [
-                    { wch: 8 },   // 序号
-                    { wch: 15 },  // 分类
-                    { wch: 30 },  // 标题
-                    { wch: 50 },  // 地址
-                    { wch: 12 },  // 地址类型
-                    { wch: 25 }   // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                // 创建工作簿
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
-                
-                // 生成 Excel 文件
-                const excelBuffer = XLSX.write(workbook, { 
-                    bookType: 'xlsx', 
-                    type: 'array',
-                    bookSST: false
-                });
-
-                // 转换为 base64
-                const excelBase64 = arrayBufferToBase64(excelBuffer);
-
-                // 强制创建新文件，解决SHA冲突
-                await gitHubService.forceCreateNewFile(
-                    'table.xlsx',
-                    excelBase64,
-                    `修复Excel文件格式 - ${new Date().toLocaleString()}`
-                );
-
-                hideLoadingIndicator();
-                showToast('✅ Excel文件格式修复完成！SHA冲突已解决。现在可以正常使用同步功能。', 'success');
-                
-            } catch (error) {
-                console.error('修复Excel格式失败:', error);
-                hideLoadingIndicator();
-                showToast(`修复失败: ${error.message}`, 'error');
-            }
+            
+            // 重新加载默认配置
+            useDefaultConfig();
+            
+            showToast('已重置为默认顺序', 'success');
         }
 
-        // ========== 其他功能函数 ==========
-
-        // 更新分类筛选器
-        function updateCategoryFilters() {
-            const filterBox = document.querySelector('.filter-box');
-            const allButton = filterBox.querySelector('[data-category="all"]');
-            
-            // 清空现有分类按钮（保留"全部"按钮）
-            filterBox.innerHTML = '';
-            filterBox.appendChild(allButton);
-            
-            // 去重分类列表
-            const uniqueCategories = [];
-            const addedNames = new Set();
-            
-            categoryList.forEach(category => {
-                if (!addedNames.has(category.name)) {
-                    uniqueCategories.push(category);
-                    addedNames.add(category.name);
-                }
-            });
-            
-            // 添加分类按钮
-            uniqueCategories.forEach(category => {
-                const button = document.createElement('button');
-                button.className = 'filter-btn';
-                button.setAttribute('data-category', category.id);
-                button.textContent = category.name;
-                filterBox.appendChild(button);
-            });
-            
-            // 重新设置事件监听
-            setupFilterEvents();
-            
-            // 激活当前筛选状态
-            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category;
-            if (activeCategory) {
-                const activeBtn = filterBox.querySelector(`[data-category="${activeCategory}"]`);
-                if (activeBtn) {
-                    activeBtn.classList.add('active');
-                } else {
-                    allButton.classList.add('active');
-                }
-            } else {
-                allButton.classList.add('active');
-            }
-        }
-
-        // 增强的分类选择器更新函数
-        function updateCategorySelect() {
-            const categorySelect = document.getElementById('itemCategory');
-            const currentValue = categorySelect.value; // 保存当前值
-            
-            categorySelect.innerHTML = `
-                <option value="">选择分类</option>
-                <option value="__new__">+ 添加新分类</option>
-            `;
-            
-            categoryList.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                categorySelect.appendChild(option);
-            });
-            
-            // 恢复之前的值（如果是编辑模式）
-            if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
-                categorySelect.value = currentValue;
-            }
-            
-            // 添加新分类的事件监听
-            categorySelect.addEventListener('change', function() {
-                if (this.value === '__new__') {
-                    const newCategoryName = prompt('请输入新分类名称:');
-                    if (newCategoryName && newCategoryName.trim()) {
-                        // 创建新分类
-                        const newCategoryId = `category${categoryList.length + 1}`;
-                        const newCategory = {
-                            id: newCategoryId,
-                            name: newCategoryName.trim()
-                        };
-                        
-                        // 添加到分类系统
-                        categoryList.push(newCategory);
-                        categoryMap[newCategoryId] = newCategoryName.trim();
-                        
-                        // 更新界面
-                        updateCategorySelect();
-                        updateCategoryFilters();
-                        
-                        // 选中新创建的分类
-                        categorySelect.value = newCategoryId;
-                        
-                        showToast(`新分类 "${newCategoryName}" 已创建！`, 'success');
-                    } else {
-                        // 用户取消或输入为空，重置选择
-                        this.value = '';
-                    }
-                }
-            });
-        }
-
-        // 使用默认配置
-        function useDefaultConfig() {
-            adminAccounts = [
-                { 
-                    username: 'admin', 
-                    passwordHash: 'b107fce20b89ab22f4eb72843df4acc2628c88d38c54f56bdf3767f53238274f',
-                    name: '管理员',
-                    permissions: ['read', 'write', 'delete', 'export', 'config']
-                },
-                { 
-                    username: 'editor', 
-                    passwordHash: 'b107fce20b89ab22f4eb72843df4acc2628c88d38c54f56bdf3767f53238274f',
-                    name: '编辑员',
-                    permissions: ['read', 'write', 'export']
-                }
-            ];
-            
-            appConfig = {
-                autoLogout: 60,
-                maxLoginAttempts: 5,
-                version: 'Local Default',
-                lastUpdated: new Date().toISOString().split('T')[0]
-            };
-            
-            tableData = [
-                {
-    "id": 1,
-    "category": "开发计划",
-    "title": "DH3项目主计划",
-    "path": "https://acndoaymjsa1.feishu.cn/slides/QCyasDe1zlyqN1d1kJAcX753n2d",
-    "type": "url",
-    "note": "【飞书】DH3项目主计划\n10月9日版本"
-  },
-  {
-    "id": 2,
-    "category": "设计评审",
-    "title": "DH3电子电气拓扑图",
-    "path": "w:\\yling",
-    "type": "folder",
-    "note": "【内网】w:\\yling\n请确保你的账号已经切换到内网"
-  },
-  {
-    "id": 3,
-    "category": "阶段评审",
-    "title": "DH3项目J2阶段评审材料输入信息",
-    "path": "\\\\10.4.9.25\\Project\\DH系列\\060-整车开发\\DH3\\J2评审输入",
-    "type": "folder",
-    "note": "【外网】J2阶段输入物数据库"
-  },
-  {
-    "id": 4,
-    "category": "阶段评审",
-    "title": "DH3项目J2阶段评审材料归档路径",
-    "path": "\\\\10.4.9.25\\Project\\DH系列\\130-智能软件\\DH3\\130100_ 阶段评审材料\\130102_ J2阶段评审材料及会议纪要",
-    "type": "folder",
-    "note": "【外网】请大家把J2材料及会议纪要放入此文件夹"
-  },
-  {
-    "id": 5,
-    "category": "开发计划",
-    "title": "DH3项目智软控制器开发计划",
-    "path": "https://acndoaymjsa1.feishu.cn/file/K8KlbxqKmoZV2HxoG94ccLotnne",
-    "type": "url",
-    "note": "【飞书】请大家在此更新各自开发计划"
-  },
-	{
-    "id": 6,
-    "category": "联系信息",
-    "title": "DH项目整体联系人清单",
-    "path": "https://acndoaymjsa1.feishu.cn/sheets/Gbh8sTDmdhMD9DtZcC2c7trunRe",
-    "type": "url",
-    "note": "【飞书】包含DH1，DH3各业务板块联系人信息"
-  },
-  {
-    "id": 7,
-    "category": "联系信息",
-    "title": "DH3项目华为接口联系人清单",
-    "path": "https://acndoaymjsa1.feishu.cn/file/NI95bmHjpoopKBxVGhrc7S9SnUc",
-    "type": "url",
-    "note": "【飞书】包含华为座舱、智驾、网联相关接口人信息"
-  },
-  {
-    "id": 8,
-    "category": "联系信息",
-    "title": "DH3项目研发总院智软内部责任分工",
-    "path": "https://acndoaymjsa1.feishu.cn/wiki/YyMcwejHNifAkfk0aEXcjdeQnTb?table=tbltH0YNXCFoOxNm&view=vewS54CcOf",
-    "type": "url",
-    "note": "【飞书】仅包含东风研发总院智软内部相关责任人分工，仅智软群成员可访问"
-  },
-	{
-    "id": 9,
-    "category": "再发防止",
-    "title": "DH3不满再发防止-整车级",
-    "path": "https://acndoaymjsa1.feishu.cn/file/BzEsbuCLCowqs2xT1y0cRe1JnSb",
-    "type": "url",
-    "note": "【飞书】DH3不满再发防止-整车级"
-  },
-		{
-    "id": 10,
-    "category": "再发防止",
-    "title": "DH3 LLR和PRC再发防止 - 总院级",
-    "path": "https://doc.weixin.qq.com/sheet/e3_AKkAcQbnAKcCNoUhJadOcRr27t3Mb?scode=AGwAPQeYAA0i5kLUWBAbgALQaUAJ8&version=5.0.0.8619&platform=win&tab=mfripw",
-    "type": "url",
-    "note": "【企微】DH3 LLR和PRC再发防止 - 总院级"
-  }
-            ];
-            
-            categoryList = [
-                { id: "category1", name: "开发计划" },
-                { id: "category2", name: "设计评审" },
-                { id: "category3", name: "阶段评审" },
-				{ id: "category4", name: "联系信息" },
-				{ id: "category5", name: "再发防止" },
-				{ id: "category6", name: "其他" }
-            ];
-            
-            categoryMap = {
-                "category1": "开发计划",
-                "category2": "设计评审",
-                "category3": "阶段评审",
-				"category4": "联系信息",
-				"category5": "再发防止",
-				"category6": "其他"
-            };
-            
-            // 修复：更新默认配置的版本信息
-            updateConfigVersionInfo(appConfig);
-            
-            updateCategoryFilters();
-            updateCategorySelect();
-            renderTable(tableData);
-            updateStats();
-        }
-
-        // 更新配置版本信息函数
-        function updateConfigVersionInfo(config) {
-            const configVersionElement = document.getElementById('configVersion');
-            if (!configVersionElement) return;
-            
-            const version = config.version || '1.0.0';
-            const dataCount = tableData.length;
-            const currentTime = new Date().toLocaleString();
-            const source = config.lastUpdated ? 'GitHub' : '本地默认';
-            
-            configVersionElement.textContent = 
-                `配置版本: ${version} | 数据量: ${dataCount}条 | 来源: ${source} | 更新时间: ${currentTime}`;
-        }
+        // ========== 数据管理函数 ==========
 
         // 数据持久化函数
         function saveDataToStorage() {
@@ -2249,6 +2187,12 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', async () => {
+            // 首先检查默认数据是否加载成功
+            if (!checkDefaultDataLoaded()) {
+                // 如果默认数据加载失败，显示错误但继续初始化
+                console.warn('默认数据加载失败，但继续初始化流程');
+            }
+            
             // 加载表头配置
             const savedHeaders = loadHeadersFromStorage();
             if (savedHeaders) {
@@ -2262,8 +2206,14 @@
             // 设置默认配置版本显示（在加载前显示）
             document.getElementById('configVersion').textContent = '配置版本: 加载中...';
 
-            // 从GitHub加载配置
-            await loadConfigFromGitHub();
+            try {
+                // 从GitHub加载配置
+                await loadConfigFromGitHub();
+            } catch (error) {
+                console.error('GitHub配置加载失败，使用默认配置:', error);
+                // GitHub加载失败时使用默认配置
+                useDefaultConfig();
+            }
             
             // 🎯 修复：确保分类系统正确初始化
             if (categoryList.length === 0 && tableData.length > 0) {
@@ -2287,20 +2237,26 @@
                 console.log('从数据中提取的分类:', categoryList);
             }
             
-            // 加载本地数据
+            // 加载本地数据（如果有）
             const savedData = loadDataFromStorage();
             if (savedData && savedData.length > 0) {
+                console.log('使用本地存储的数据');
                 tableData = savedData;
                 currentData = [...tableData];
                 renderTable(currentData);
                 updateStats();
-				appConfig.version='Local Storage';
+                appConfig.version = 'Local Storage';
+            } else if (tableData.length === 0) {
+                // 如果没有数据，使用默认配置
+                console.log('没有数据，使用默认配置');
+                useDefaultConfig();
             }
             
             setupEventListeners();
             checkLoginStatus();
             updateCategorySelect();
             updateConfigVersionInfo(appConfig);
+            
             // 设置按钮初始显示状态
             updateButtonVisibility();
             
@@ -2308,6 +2264,9 @@
             document.addEventListener('click', resetAutoLogoutTimer);
             document.addEventListener('keypress', resetAutoLogoutTimer);
             document.addEventListener('mousemove', resetAutoLogoutTimer);
+            
+            // 初始化排序功能
+            initSorting();
         });
 
         // 更新表格表头显示
@@ -2401,6 +2360,9 @@
 
             // 表头点击编辑
             setupHeaderEditListeners();
+            
+            // 筛选事件
+            setupFilterEvents();
         }
 
         // 设置表头编辑事件
@@ -2573,7 +2535,7 @@
             itemForm.reset();
         }
 
-        // 修复后的保存条目函数
+        // 保存条目
         function saveItem() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -2596,7 +2558,7 @@
             
             const id = editId.value ? parseInt(editId.value) : generateId();
             
-            // 🎯 修复：正确处理新分类
+            // 正确处理新分类
             let categoryName;
             let categoryId = itemCategory.value;
             
@@ -2605,7 +2567,7 @@
             if (existingCategory) {
                 categoryName = existingCategory.name;
             } else {
-                // 🆕 这是新分类，需要创建
+                // 这是新分类，需要创建
                 categoryName = categoryId; // 用户输入的分类名称
                 categoryId = `category${categoryList.length + 1}`;
                 
@@ -2617,7 +2579,7 @@
                 categoryList.push(newCategory);
                 categoryMap[categoryId] = categoryName;
                 
-                // 🎯 重要：更新分类筛选器和下拉框
+                // 更新分类筛选器和下拉框
                 updateCategoryFilters();
                 updateCategorySelect();
                 
@@ -2804,6 +2766,11 @@
                 }
             });
             
+            // 更新排序控制显示
+            if (sortControls) {
+                sortControls.style.display = (isLoggedIn && currentUser?.permissions?.includes('write')) ? 'flex' : 'none';
+            }
+            
             // 更新权限提示
             const permissionHint = document.getElementById('permissionHint');
             if (permissionHint) {
@@ -2849,7 +2816,7 @@
             }
         }
 
-        // 登录成功 - 修复版本
+        // 登录成功
         function loginSuccess(user) {
             isLoggedIn = true;
             currentUser = user;
@@ -2863,7 +2830,7 @@
             updateUIForPermissions();
             updateButtonVisibility();
             
-            // 修复：登录后重新渲染表格，确保操作按钮状态正确
+            // 登录后重新渲染表格，确保操作按钮状态正确
             const searchTerm = searchInput.value.toLowerCase();
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
@@ -2874,7 +2841,7 @@
             showToast(`欢迎回来，${user.name}！`, 'success');
         }
 
-        // 处理登出 - 修复版本
+        // 处理登出
         function handleLogout() {
             isLoggedIn = false;
             currentUser = null;
@@ -2892,7 +2859,7 @@
             // 更新按钮显示状态
             updateButtonVisibility();
             
-            // 修复：登出后重新渲染表格，禁用操作按钮
+            // 登出后重新渲染表格，禁用操作按钮
             const searchTerm = searchInput.value.toLowerCase();
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
@@ -2902,6 +2869,106 @@
             passwordInput.value = '';
             
             showToast('您已成功退出登录', 'info');
+        }
+
+        // 更新分类筛选器
+        function updateCategoryFilters() {
+            const filterBox = document.querySelector('.filter-box');
+            const allButton = filterBox.querySelector('[data-category="all"]');
+            
+            // 清空现有分类按钮（保留"全部"按钮）
+            filterBox.innerHTML = '';
+            filterBox.appendChild(allButton);
+            
+            // 去重分类列表
+            const uniqueCategories = [];
+            const addedNames = new Set();
+            
+            categoryList.forEach(category => {
+                if (!addedNames.has(category.name)) {
+                    uniqueCategories.push(category);
+                    addedNames.add(category.name);
+                }
+            });
+            
+            // 添加分类按钮
+            uniqueCategories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.setAttribute('data-category', category.id);
+                button.textContent = category.name;
+                filterBox.appendChild(button);
+            });
+            
+            // 重新设置事件监听
+            setupFilterEvents();
+            
+            // 激活当前筛选状态
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category;
+            if (activeCategory) {
+                const activeBtn = filterBox.querySelector(`[data-category="${activeCategory}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                } else {
+                    allButton.classList.add('active');
+                }
+            } else {
+                allButton.classList.add('active');
+            }
+        }
+
+        // 增强的分类选择器更新函数
+        function updateCategorySelect() {
+            const categorySelect = document.getElementById('itemCategory');
+            const currentValue = categorySelect.value; // 保存当前值
+            
+            categorySelect.innerHTML = `
+                <option value="">选择分类</option>
+                <option value="__new__">+ 添加新分类</option>
+            `;
+            
+            categoryList.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+            
+            // 恢复之前的值（如果是编辑模式）
+            if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
+                categorySelect.value = currentValue;
+            }
+            
+            // 添加新分类的事件监听
+            categorySelect.addEventListener('change', function() {
+                if (this.value === '__new__') {
+                    const newCategoryName = prompt('请输入新分类名称:');
+                    if (newCategoryName && newCategoryName.trim()) {
+                        // 创建新分类
+                        const newCategoryId = `category${categoryList.length + 1}`;
+                        const newCategory = {
+                            id: newCategoryId,
+                            name: newCategoryName.trim()
+                        };
+                        
+                        // 添加到分类系统
+                        categoryList.push(newCategory);
+                        categoryMap[newCategoryId] = newCategoryName.trim();
+                        
+                        // 更新界面
+                        updateCategorySelect();
+                        updateCategoryFilters();
+                        
+                        // 选中新创建的分类
+                        categorySelect.value = newCategoryId;
+                        
+                        showToast(`新分类 "${newCategoryName}" 已创建！`, 'success');
+                    } else {
+                        // 用户取消或输入为空，重置选择
+                        this.value = '';
+                    }
+                }
+            });
         }
 
         // 更新统计数据
@@ -2934,6 +3001,20 @@
                 errorText.textContent = message;
                 errorDiv.style.display = 'flex';
             }
+        }
+
+        // 更新配置版本信息函数
+        function updateConfigVersionInfo(config) {
+            const configVersionElement = document.getElementById('configVersion');
+            if (!configVersionElement) return;
+            
+            const version = config.version || '1.0.0';
+            const dataCount = tableData.length;
+            const currentTime = new Date().toLocaleString();
+            const source = config.lastUpdated ? 'GitHub' : '本地默认';
+            
+            configVersionElement.textContent = 
+                `配置版本: ${version} | 数据量: ${dataCount}条 | 来源: ${source} | 更新时间: ${currentTime}`;
         }
 
         // GitHub相关功能
@@ -3006,6 +3087,240 @@
             }
         }
 
+        // 修复的ArrayBuffer转Base64函数
+        function arrayBufferToBase64(buffer) {
+            try {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary);
+            } catch (error) {
+                console.error('Base64转换失败:', error);
+                throw new Error('文件编码转换失败');
+            }
+        }
+
+        // 修复的Excel同步功能 - 包含网页更新
+        async function syncDataToExcel() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                githubTokenInput.focus();
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
+
+                // 1. 获取当前 Excel 文件信息
+                let fileInfo;
+                try {
+                    fileInfo = await gitHubService.getFileContent('table.xlsx');
+                    if (!fileInfo) {
+                        console.log('文件不存在，将创建新文件');
+                        fileInfo = { sha: null, exists: false };
+                    }
+                } catch (error) {
+                    console.log('获取文件信息失败，将创建新文件:', error);
+                    fileInfo = { sha: null, exists: false };
+                }
+                
+                // 2. 准备数据
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                tableData.forEach(item => {
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                // 3. 创建工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                // 4. 设置列宽
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 5. 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                
+                // 6. 生成 Excel 文件
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                // 7. 转换为 base64
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 8. 上传到 GitHub - 使用强制创建方法解决SHA冲突
+                await gitHubService.forceCreateFile(
+                    'table.xlsx',
+                    excelBase64,
+                    `自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
+                );
+
+                hideLoadingIndicator();
+                showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
+                
+                // 同步成功后更新网页显示
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                filterTable(searchTerm, activeCategory);
+                updateConfigVersionInfo(appConfig);
+                
+            } catch (error) {
+                console.error('同步到 Excel 失败:', error);
+                hideLoadingIndicator();
+                
+                if (error.message.includes('文件版本冲突')) {
+                    showToast(`同步失败: ${error.message}\n\n请先点击"修复Excel格式"按钮，然后重试同步。`, 'error');
+                } else {
+                    showToast(`同步失败: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // 修复的下载Excel文件功能
+        function downloadExcel() {
+            try {
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                tableData.forEach(item => {
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                XLSX.writeFile(workbook, 'DH3项目HelpMe索引表.xlsx');
+                
+                showToast('Excel文件下载成功！', 'success');
+                
+            } catch (error) {
+                console.error('下载Excel失败:', error);
+                showToast('下载Excel文件失败: ' + error.message, 'error');
+            }
+        }
+
+        // 修复Excel文件格式功能 - 强制解决SHA冲突
+        async function repairExcelFormat() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                return;
+            }
+
+            try {
+                showLoadingIndicator('正在修复 Excel 文件格式...');
+
+                // 创建全新的Excel文件结构
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                // 添加当前数据
+                tableData.forEach(item => {
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                // 创建工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                // 设置列宽
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
+                
+                // 生成 Excel 文件
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                // 转换为 base64
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 强制创建新文件，解决SHA冲突
+                await gitHubService.forceCreateNewFile(
+                    'table.xlsx',
+                    excelBase64,
+                    `修复Excel文件格式 - ${new Date().toLocaleString()}`
+                );
+
+                hideLoadingIndicator();
+                showToast('✅ Excel文件格式修复完成！SHA冲突已解决。现在可以正常使用同步功能。', 'success');
+                
+            } catch (error) {
+                console.error('修复Excel格式失败:', error);
+                hideLoadingIndicator();
+                showToast(`修复失败: ${error.message}`, 'error');
+            }
+        }
+
         // 生成并下载更新后的HTML文件
         function downloadUpdatedHTML() {
             if (!isLoggedIn) {
@@ -3053,16 +3368,6 @@
                 localStorage.removeItem('h5IndexData');
                 showToast('数据已重置为GitHub配置的初始状态', 'success');
             }
-        }
-
-        // 调试函数
-        function debugCategorySystem() {
-            console.log('=== 分类系统调试信息 ===');
-            console.log('分类列表:', categoryList);
-            console.log('分类映射:', categoryMap);
-            console.log('表格数据分类:', [...new Set(tableData.map(item => item.category))]);
-            console.log('分类选择器选项:', document.getElementById('itemCategory').innerHTML);
-            console.log('分类筛选器按钮:', document.querySelectorAll('.filter-btn').length);
         }
     </script>
 </body>
