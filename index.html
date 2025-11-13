@@ -907,12 +907,12 @@
         <!-- 配置加载状态指示器 -->
         <div class="loading-indicator" id="loadingIndicator" style="display: none;">
             <i class="fas fa-sync fa-spin"></i>
-            <span>正在从GitHub加载配置...</span>
+            <span>正在从GitHub securityconfig加载配置...</span>
         </div>
         
         <div class="error-message" id="errorMessage" style="display: none;">
             <i class="fas fa-exclamation-triangle"></i>
-            <span id="errorText">配置加载失败，使用默认配置</span>
+            <span id="errorText">配置加载失败，使用备用数据</span>
         </div>
         
         <div class="controls">
@@ -1402,7 +1402,7 @@
                 showErrorMessage('默认数据文件加载失败，请检查 default-data.js 文件是否存在');
                 return false;
             }
-            console.log('✅ 默认数据文件加载成功');
+            console.log('✅ 默认数据文件加载成功（备用数据）');
             return true;
         }
 
@@ -1467,13 +1467,225 @@
             return JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
         }
 
+        // 从数据中初始化分类系统
+        function initializeCategoriesFromData() {
+            const uniqueCategories = new Map();
+            tableData.forEach(item => {
+                if (item.category && !uniqueCategories.has(item.category)) {
+                    const categoryId = `category${uniqueCategories.size + 1}`;
+                    uniqueCategories.set(item.category, {
+                        id: categoryId,
+                        name: item.category
+                    });
+                }
+            });
+            
+            categoryList = Array.from(uniqueCategories.values());
+            categoryList.forEach(category => {
+                categoryMap[category.id] = category.name;
+            });
+            
+            console.log('从数据中提取的分类:', categoryList);
+            updateCategoryFilters();
+        }
+
+        // 修复的从GitHub加载配置函数
+        async function loadConfigFromGitHub() {
+            showLoadingIndicator('正在从GitHub securityconfig加载配置...');
+            
+            try {
+                const [configResponse, excelResponse] = await Promise.all([
+                    fetch(GITHUB_CONFIG_URL).catch(() => { throw new Error('无法连接到GitHub配置'); }),
+                    fetch(GITHUB_EXCEL_URL).catch(() => { throw new Error('无法连接到Excel文件'); })
+                ]);
+                
+                if (!configResponse.ok) throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
+                if (!excelResponse.ok) throw new Error(`Excel加载失败: HTTP ${excelResponse.status}`);
+                
+                const config = await configResponse.json();
+                const arrayBuffer = await excelResponse.arrayBuffer();
+                
+                // 🎯 重要：处理Excel数据时会覆盖现有的tableData
+                await processExcelData(arrayBuffer);
+                adminAccounts = config.users || [];
+                appConfig = config.settings || {};
+                
+                updateConfigVersionInfo(config);
+                console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
+                
+                // 更新分类系统
+                if (categoryList.length === 0 && tableData.length > 0) {
+                    initializeCategoriesFromData();
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ GitHub配置加载失败:', error);
+                showErrorMessage(`GitHub securityconfig配置加载失败: ${error.message}，使用备用数据`);
+                return false;
+            } finally {
+                hideLoadingIndicator();
+            }
+        }
+
+        // 处理Excel数据
+        async function processExcelData(arrayBuffer) {
+            try {
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { 
+                    type: 'array',
+                    cellText: false,
+                    cellDates: true,
+                    raw: false
+                });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: '',
+                    blankrows: false
+                });
+                
+                if (excelData.length < 2) {
+                    throw new Error('Excel文件为空或格式不正确');
+                }
+                
+                const headers = excelData[0];
+                console.log('Excel表头结构:', headers);
+                
+                // 🎯 重要：清空现有数据，使用GitHub数据
+                tableData = [];
+                categoryMap = {};
+                categoryList = [];
+                const uniqueCategories = new Map();
+                
+                for (let i = 1; i < excelData.length; i++) {
+                    const row = excelData[i];
+                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
+                    
+                    const item = {
+                        id: parseInt(row[0]) || i,
+                        category: String(row[1] || '').trim(),
+                        title: String(row[2] || '').trim(),
+                        path: String(row[3] || '').trim(),
+                        type: String(row[4] || 'url').toLowerCase().trim(),
+                        note: String(row[5] || '').trim()
+                    };
+                    
+                    if (!item.title && !item.path) continue;
+                    
+                    tableData.push(item);
+                    
+                    if (item.category && !uniqueCategories.has(item.category)) {
+                        const categoryId = `category${uniqueCategories.size + 1}`;
+                        uniqueCategories.set(item.category, {
+                            id: categoryId,
+                            name: item.category
+                        });
+                    }
+                }
+                
+                categoryList = Array.from(uniqueCategories.values());
+                categoryList.forEach(category => {
+                    categoryMap[category.id] = category.name;
+                });
+                
+                console.log('从GitHub securityconfig处理后的数据:', tableData);
+                console.log('从GitHub securityconfig去重后的分类列表:', categoryList);
+                
+                updateCategoryFilters();
+                renderTable(tableData);
+                updateStats();
+                
+            } catch (error) {
+                console.error('Excel数据处理失败:', error);
+                throw new Error(`Excel文件处理失败: ${error.message}`);
+            }
+        }
+
+        // 修复的初始化流程
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 首先检查默认数据是否加载成功（仅作为备用）
+            checkDefaultDataLoaded();
+            
+            // 加载表头配置
+            const savedHeaders = loadHeadersFromStorage();
+            if (savedHeaders) {
+                headerConfig = savedHeaders;
+            }
+            updateTableHeaders();
+
+            // 加载保存的 GitHub 令牌
+            loadGitHubToken();
+
+            // 设置默认配置版本显示
+            document.getElementById('configVersion').textContent = '配置版本: 加载中...';
+
+            let githubDataLoaded = false;
+            
+            try {
+                // 优先从GitHub加载配置
+                console.log('正在从GitHub securityconfig加载数据...');
+                await loadConfigFromGitHub();
+                githubDataLoaded = true;
+                console.log('✅ 成功从GitHub securityconfig加载数据');
+                
+            } catch (error) {
+                console.error('❌ GitHub配置加载失败:', error);
+                showErrorMessage(`GitHub配置加载失败: ${error.message}，使用备用数据`);
+                githubDataLoaded = false;
+            }
+            
+            // 🎯 修复：只有在GitHub加载失败且没有本地数据时，才使用默认数据
+            const savedData = loadDataFromStorage();
+            
+            if (githubDataLoaded) {
+                // GitHub数据加载成功，使用GitHub数据
+                console.log('使用GitHub securityconfig数据');
+                appConfig.version = 'GitHub SecurityConfig';
+                
+            } else if (savedData && savedData.length > 0) {
+                // GitHub加载失败，但有本地数据，使用本地数据
+                console.log('使用本地存储的数据');
+                tableData = savedData;
+                currentData = [...tableData];
+                renderTable(currentData);
+                updateStats();
+                appConfig.version = 'Local Storage';
+                
+                // 确保分类系统正确初始化
+                if (categoryList.length === 0 && tableData.length > 0) {
+                    initializeCategoriesFromData();
+                }
+                
+            } else {
+                // GitHub加载失败且没有本地数据，使用默认数据
+                console.log('使用默认数据');
+                useDefaultConfig();
+                appConfig.version = 'Default Data';
+            }
+            
+            setupEventListeners();
+            checkLoginStatus();
+            updateCategorySelect();
+            updateConfigVersionInfo(appConfig);
+            updateButtonVisibility();
+            
+            // 设置用户活动监听器
+            document.addEventListener('click', resetAutoLogoutTimer);
+            document.addEventListener('keypress', resetAutoLogoutTimer);
+            document.addEventListener('mousemove', resetAutoLogoutTimer);
+            
+            // 初始化排序功能
+            initSorting();
+        });
+
         // 优化后的 openFolder 函数
         function openFolder(path) {
             const decodedPath = path.replace(/\\\\/g, '\\');
-            
-            console.log('原始路径:', path);
-            console.log('解码路径:', decodedPath);
-            console.log('当前环境协议:', window.location.protocol);
             
             // 智能环境检测
             if (isLocalEnvironment()) {
@@ -1511,8 +1723,6 @@
         // 尝试直接打开文件夹
         function attemptDirectOpen(decodedPath) {
             const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
-            
-            console.log('尝试直接打开 File URL:', fileUrl);
             
             // 方法1: 使用 window.open
             try {
@@ -1657,114 +1867,6 @@
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
             return hashHex;
-        }
-
-        // 从GitHub加载配置和Excel表格数据
-        async function loadConfigFromGitHub() {
-            showLoadingIndicator('正在从GitHub加载配置...');
-            
-            try {
-                const [configResponse, excelResponse] = await Promise.all([
-                    fetch(GITHUB_CONFIG_URL).catch(() => { throw new Error('无法连接到GitHub配置'); }),
-                    fetch(GITHUB_EXCEL_URL).catch(() => { throw new Error('无法连接到Excel文件'); })
-                ]);
-                
-                if (!configResponse.ok) throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
-                if (!excelResponse.ok) throw new Error(`Excel加载失败: HTTP ${excelResponse.status}`);
-                
-                const config = await configResponse.json();
-                const arrayBuffer = await excelResponse.arrayBuffer();
-                
-                await processExcelData(arrayBuffer);
-                adminAccounts = config.users || [];
-                appConfig = config.settings || {};
-                
-                updateConfigVersionInfo(config);
-                console.log('✅ GitHub配置和Excel数据加载成功');
-                
-            } catch (error) {
-                console.error('❌ 配置加载失败:', error);
-                showErrorMessage(`配置加载失败: ${error.message}，使用默认配置`);
-                useDefaultConfig();
-            } finally {
-                hideLoadingIndicator();
-            }
-        }
-
-        // 处理Excel数据
-        async function processExcelData(arrayBuffer) {
-            try {
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { 
-                    type: 'array',
-                    cellText: false,
-                    cellDates: true,
-                    raw: false
-                });
-                
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
-                    header: 1,
-                    defval: '',
-                    blankrows: false
-                });
-                
-                if (excelData.length < 2) {
-                    throw new Error('Excel文件为空或格式不正确');
-                }
-                
-                const headers = excelData[0];
-                console.log('Excel表头结构:', headers);
-                
-                tableData = [];
-                categoryMap = {};
-                categoryList = [];
-                const uniqueCategories = new Map();
-                
-                for (let i = 1; i < excelData.length; i++) {
-                    const row = excelData[i];
-                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
-                    
-                    const item = {
-                        id: parseInt(row[0]) || i,
-                        category: String(row[1] || '').trim(),
-                        title: String(row[2] || '').trim(),
-                        path: String(row[3] || '').trim(),
-                        type: String(row[4] || 'url').toLowerCase().trim(),
-                        note: String(row[5] || '').trim()
-                    };
-                    
-                    if (!item.title && !item.path) continue;
-                    
-                    tableData.push(item);
-                    
-                    if (item.category && !uniqueCategories.has(item.category)) {
-                        const categoryId = `category${uniqueCategories.size + 1}`;
-                        uniqueCategories.set(item.category, {
-                            id: categoryId,
-                            name: item.category
-                        });
-                    }
-                }
-                
-                categoryList = Array.from(uniqueCategories.values());
-                categoryList.forEach(category => {
-                    categoryMap[category.id] = category.name;
-                });
-                
-                console.log('处理后的数据:', tableData);
-                console.log('去重后的分类列表:', categoryList);
-                
-                updateCategoryFilters();
-                renderTable(tableData);
-                updateStats();
-                
-            } catch (error) {
-                console.error('Excel数据处理失败:', error);
-                throw new Error(`Excel文件处理失败: ${error.message}`);
-            }
         }
 
         // 创建分类颜色映射函数
@@ -2184,90 +2286,6 @@
                 setupAutoLogout();
             }
         }
-
-        // 初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 首先检查默认数据是否加载成功
-            if (!checkDefaultDataLoaded()) {
-                // 如果默认数据加载失败，显示错误但继续初始化
-                console.warn('默认数据加载失败，但继续初始化流程');
-            }
-            
-            // 加载表头配置
-            const savedHeaders = loadHeadersFromStorage();
-            if (savedHeaders) {
-                headerConfig = savedHeaders;
-            }
-            updateTableHeaders();
-
-            // 加载保存的 GitHub 令牌
-            loadGitHubToken();
-
-            // 设置默认配置版本显示（在加载前显示）
-            document.getElementById('configVersion').textContent = '配置版本: 加载中...';
-
-            try {
-                // 从GitHub加载配置
-                await loadConfigFromGitHub();
-            } catch (error) {
-                console.error('GitHub配置加载失败，使用默认配置:', error);
-                // GitHub加载失败时使用默认配置
-                useDefaultConfig();
-            }
-            
-            // 🎯 修复：确保分类系统正确初始化
-            if (categoryList.length === 0 && tableData.length > 0) {
-                // 从现有数据中提取分类
-                const uniqueCategories = new Map();
-                tableData.forEach(item => {
-                    if (item.category && !uniqueCategories.has(item.category)) {
-                        const categoryId = `category${uniqueCategories.size + 1}`;
-                        uniqueCategories.set(item.category, {
-                            id: categoryId,
-                            name: item.category
-                        });
-                    }
-                });
-                
-                categoryList = Array.from(uniqueCategories.values());
-                categoryList.forEach(category => {
-                    categoryMap[category.id] = category.name;
-                });
-                
-                console.log('从数据中提取的分类:', categoryList);
-            }
-            
-            // 加载本地数据（如果有）
-            const savedData = loadDataFromStorage();
-            if (savedData && savedData.length > 0) {
-                console.log('使用本地存储的数据');
-                tableData = savedData;
-                currentData = [...tableData];
-                renderTable(currentData);
-                updateStats();
-                appConfig.version = 'Local Storage';
-            } else if (tableData.length === 0) {
-                // 如果没有数据，使用默认配置
-                console.log('没有数据，使用默认配置');
-                useDefaultConfig();
-            }
-            
-            setupEventListeners();
-            checkLoginStatus();
-            updateCategorySelect();
-            updateConfigVersionInfo(appConfig);
-            
-            // 设置按钮初始显示状态
-            updateButtonVisibility();
-            
-            // 设置用户活动监听器
-            document.addEventListener('click', resetAutoLogoutTimer);
-            document.addEventListener('keypress', resetAutoLogoutTimer);
-            document.addEventListener('mousemove', resetAutoLogoutTimer);
-            
-            // 初始化排序功能
-            initSorting();
-        });
 
         // 更新表格表头显示
         function updateTableHeaders() {
@@ -3011,7 +3029,7 @@
             const version = config.version || '1.0.0';
             const dataCount = tableData.length;
             const currentTime = new Date().toLocaleString();
-            const source = config.lastUpdated ? 'GitHub' : '本地默认';
+            const source = config.lastUpdated ? 'GitHub SecurityConfig' : '本地数据';
             
             configVersionElement.textContent = 
                 `配置版本: ${version} | 数据量: ${dataCount}条 | 来源: ${source} | 更新时间: ${currentTime}`;
@@ -3356,17 +3374,23 @@
             return updatedHTML;
         }
 
-        // 重置数据
+        // 修复的重置数据功能
         function resetData() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
                 return;
             }
             
-            if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub配置的数据。')) {
-                loadConfigFromGitHub();
-                localStorage.removeItem('h5IndexData');
-                showToast('数据已重置为GitHub配置的初始状态', 'success');
+            if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub securityconfig的数据。')) {
+                // 重新从GitHub加载数据
+                loadConfigFromGitHub().then(success => {
+                    if (success) {
+                        localStorage.removeItem('h5IndexData');
+                        showToast('数据已重置为GitHub securityconfig的初始状态', 'success');
+                    } else {
+                        showToast('GitHub数据加载失败，请检查网络连接', 'error');
+                    }
+                });
             }
         }
     </script>
