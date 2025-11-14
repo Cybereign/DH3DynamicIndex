@@ -120,6 +120,7 @@ const DEFAULT_ADMIN_ACCOUNTS = [
 const DEFAULT_APP_CONFIG = {
     autoLogout: 60,
     maxLoginAttempts: 5,
-    version: 'Local Default',
+    version: 'Draft',
+    source: 'Builtin',
     lastUpdated: new Date().toISOString().split('T')[0]
 };
