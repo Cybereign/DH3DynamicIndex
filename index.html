@@ -1646,7 +1646,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (githubDataLoaded) {
             console.log('✅ 成功从GitHub securityconfig加载数据');
-            dataSource = 'GitHub SecurityConfig';
+            //dataSource = 'GitHub SecurityConfig';
             appConfig.source = 'GitHub SecurityConfig';
         } else {
             console.log('❌ GitHub配置加载失败，尝试其他数据源');
@@ -1663,7 +1663,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (githubDataLoaded) {
         // 情况1: GitHub数据加载成功，使用GitHub数据
         console.log('✅ 使用GitHub securityconfig数据');
-        dataSource = 'GitHub SecurityConfig';
+        //dataSource = 'GitHub SecurityConfig';
         appConfig.source = 'GitHub SecurityConfig';
         
     } else if (savedData && savedData.length > 0) {
@@ -1709,7 +1709,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initSorting();
     
     // 显示初始化完成状态
-    showToast(`系统初始化完成，数据来源: ${dataSource}`, 'success');
+    showToast(`系统初始化完成，数据来源: ${appConfig.source}`, 'success');
 });
 		
        /* // 修复的初始化流程
