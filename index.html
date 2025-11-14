@@ -1522,7 +1522,7 @@
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
                 
-                updateConfigVersionInfo(appConfig);
+                updateConfigVersionInfo(config);
                 console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
                 
                 // 更新分类系统
@@ -1666,7 +1666,7 @@
                 currentData = [...tableData];
                 renderTable(currentData);
                 updateStats();
-				//appConfig.version='Temp';
+				appConfig.version='Temp';
                 appConfig.source = 'Cache';
                 
                 // 确保分类系统正确初始化
