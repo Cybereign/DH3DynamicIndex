@@ -730,7 +730,7 @@
             margin-left: 10px;
         }
         
-        .sort-btn {
+        /*.sort-btn {
             padding: 6px 12px;
             background: white;
             border: 1px solid #ddd;
@@ -738,6 +738,17 @@
             cursor: pointer;
             font-size: 0.8rem;
             transition: all 0.2s;
+        }*/
+        .sort-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .sort-btn:hover {
@@ -932,17 +943,17 @@
                 </button>
                 
                 <!-- 排序控制按钮 -->
-                <div class="btn sort-controls" id="sortControls" style="display: none;">
+                <div class="sort-controls" id="sortControls" style="display: none;">
                     <button class="sort-btn" id="enableSortBtn" title="启用拖拽排序">
                         <i class="fas fa-arrows-alt"></i> 调整顺序
                     </button>
-                    <button class="btn sort-btn" id="saveOrderBtn" title="保存顺序" style="display: none;">
+                    <button class="sort-btn" id="saveOrderBtn" title="保存顺序" style="display: none;">
                         <i class="fas fa-save"></i> 保存顺序
                     </button>
-                    <button class="btn sort-btn" id="cancelSortBtn" title="取消排序" style="display: none;">
+                    <button class="sort-btn" id="cancelSortBtn" title="取消排序" style="display: none;">
                         <i class="fas fa-times"></i> 取消
                     </button>
-                    <button class="btn sort-btn" id="resetOrderBtn" title="重置为默认顺序">
+                    <button class="sort-btn" id="resetOrderBtn" title="重置为默认顺序">
                         <i class="fas fa-undo"></i> 重置顺序
                     </button>
                 </div>
