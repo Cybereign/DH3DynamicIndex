@@ -753,7 +753,7 @@
         }
         
         .sort-btn:hover {
-            background: #red;
+            background: red;
             border-color: #6a11cb;
         }
         
@@ -1657,7 +1657,7 @@
             if (githubDataLoaded) {
                 // GitHub数据加载成功，使用GitHub数据
                 console.log('使用GitHub securityconfig数据');
-                appConfig.version = 'GitHub SecurityConfig';
+                appConfig.source = 'GitHub';
                 
             } else if (savedData && savedData.length > 0) {
                 // GitHub加载失败，但有本地数据，使用本地数据
@@ -1666,7 +1666,7 @@
                 currentData = [...tableData];
                 renderTable(currentData);
                 updateStats();
-                appConfig.version = 'Local Storage';
+                appConfig.source = 'Cache';
                 
                 // 确保分类系统正确初始化
                 if (categoryList.length === 0 && tableData.length > 0) {
@@ -1677,7 +1677,8 @@
                 // GitHub加载失败且没有本地数据，使用默认数据
                 console.log('使用默认数据');
                 useDefaultConfig();
-                appConfig.version = 'Default Data';
+                appConfig.version = 'Default';
+				appConfig.source = 'Builtin';
             }
             
             setupEventListeners();
@@ -3041,7 +3042,8 @@
             const version = config.version || '1.0.0';
             const dataCount = tableData.length;
             const currentTime = new Date().toLocaleString();
-            const source = config.lastUpdated ? 'GitHub SecurityConfig' : '本地数据';
+            //const source = config.lastUpdated ? 'GitHub SecurityConfig' : '本地数据';
+			const source = config.source;
             
             configVersionElement.textContent = 
                 `配置版本: ${version} | 数据量: ${dataCount}条 | 来源: ${source} | 更新时间: ${currentTime}`;
