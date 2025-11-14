@@ -1637,7 +1637,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('configVersion').textContent = '配置版本: 加载中...';
 
     let githubDataLoaded = false;
-    let dataSource = '';
+    //let dataSource = '';
     
     try {
         // 优先从GitHub加载配置
@@ -1691,7 +1691,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // 显示最终数据来源信息
-    console.log(`🎯 最终数据来源: ${dataSource}`);
+    //console.log(`🎯 最终数据来源: ${dataSource}`);
     console.log(`📊 数据量: ${tableData.length} 条记录`);
     
     setupEventListeners();
