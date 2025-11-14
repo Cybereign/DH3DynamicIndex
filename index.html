@@ -1617,8 +1617,101 @@
                 throw new Error(`Excel文件处理失败: ${error.message}`);
             }
         }
+	// 修复的初始化流程
+document.addEventListener('DOMContentLoaded', async () => {
+    // 首先检查默认数据是否加载成功（仅作为备用）
+    checkDefaultDataLoaded();
+    
+    // 加载表头配置
+    const savedHeaders = loadHeadersFromStorage();
+    if (savedHeaders) {
+        headerConfig = savedHeaders;
+    }
+    updateTableHeaders();
 
-        // 修复的初始化流程
+    // 加载保存的 GitHub 令牌
+    loadGitHubToken();
+
+    // 设置默认配置版本显示
+    document.getElementById('configVersion').textContent = '配置版本: 加载中...';
+
+    let githubDataLoaded = false;
+    let dataSource = '';
+    
+    try {
+        // 优先从GitHub加载配置
+        console.log('🔄 正在从GitHub securityconfig加载数据...');
+        githubDataLoaded = await loadConfigFromGitHub();
+        
+        if (githubDataLoaded) {
+            console.log('✅ 成功从GitHub securityconfig加载数据');
+            dataSource = 'GitHub SecurityConfig';
+            appConfig.source = 'GitHub SecurityConfig';
+        } else {
+            console.log('❌ GitHub配置加载失败，尝试其他数据源');
+        }
+        
+    } catch (error) {
+        console.error('❌ GitHub配置加载异常:', error);
+        githubDataLoaded = false;
+    }
+    
+    // 🎯 修复：清晰的数据源选择逻辑
+    const savedData = loadDataFromStorage();
+    
+    if (githubDataLoaded) {
+        // 情况1: GitHub数据加载成功，使用GitHub数据
+        console.log('✅ 使用GitHub securityconfig数据');
+        dataSource = 'GitHub SecurityConfig';
+        appConfig.source = 'GitHub SecurityConfig';
+        
+    } else if (savedData && savedData.length > 0) {
+        // 情况2: GitHub加载失败，但有本地数据，使用本地数据
+        console.log('🔄 GitHub加载失败，使用本地存储的数据');
+        tableData = savedData;
+        currentData = [...tableData];
+        renderTable(currentData);
+        updateStats();
+        //appConfig.version = 'Temp';
+        appConfig.source = 'Cache';
+        //dataSource = '本地缓存';
+        
+        // 确保分类系统正确初始化
+        if (categoryList.length === 0 && tableData.length > 0) {
+            initializeCategoriesFromData();
+        }
+        
+    } else {
+        // 情况3: GitHub加载失败且没有本地数据，使用默认数据
+        console.log('🔄 GitHub加载失败且无本地数据，使用默认数据');
+        useDefaultConfig();
+        appConfig.source = 'Builtin';
+        //dataSource = '内置默认';
+    }
+    
+    // 显示最终数据来源信息
+    console.log(`🎯 最终数据来源: ${dataSource}`);
+    console.log(`📊 数据量: ${tableData.length} 条记录`);
+    
+    setupEventListeners();
+    checkLoginStatus();
+    updateCategorySelect();
+    updateConfigVersionInfo(appConfig);
+    updateButtonVisibility();
+    
+    // 设置用户活动监听器
+    document.addEventListener('click', resetAutoLogoutTimer);
+    document.addEventListener('keypress', resetAutoLogoutTimer);
+    document.addEventListener('mousemove', resetAutoLogoutTimer);
+    
+    // 初始化排序功能
+    initSorting();
+    
+    // 显示初始化完成状态
+    showToast(`系统初始化完成，数据来源: ${dataSource}`, 'success');
+});
+		
+       /* // 修复的初始化流程
         document.addEventListener('DOMContentLoaded', async () => {
             // 首先检查默认数据是否加载成功（仅作为备用）
             checkDefaultDataLoaded();
@@ -1695,7 +1788,7 @@
             
             // 初始化排序功能
             initSorting();
-        });
+        });*/
 
         // 优化后的 openFolder 函数
         function openFolder(path) {
