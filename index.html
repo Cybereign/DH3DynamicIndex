@@ -1535,7 +1535,7 @@
                 
             } catch (error) {
                 console.error('❌ GitHub配置加载失败:', error);
-                showErrorMessage(`GitHub securityconfig配置加载失败: ${error.message}，使用备用数据`);
+                showErrorMessage(`GitHub securityconfig配置加载失败: ${error.message}，使用备用或缓存数据`);
                 return false;
             } finally {
                 hideLoadingIndicator();
