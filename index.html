@@ -1629,13 +1629,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerConfig = savedHeaders;
     }
     updateTableHeaders();
-	useDefaultConfig();
+	
     // 加载保存的 GitHub 令牌
     loadGitHubToken();
 
     // 设置默认配置版本显示
     document.getElementById('configVersion').textContent = '配置版本: 加载中...';
-
+	useDefaultConfig();
     let githubDataLoaded = false;
     //let dataSource = '';
     
