@@ -1452,7 +1452,7 @@
                 tableData.forEach((item, index) => {
                     item.id = index + 1;
                 });
-                
+                appConfig.source = 'Builtin';
                 updateConfigVersionInfo(appConfig);
                 updateCategoryFilters();
                 updateCategorySelect();
@@ -1629,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerConfig = savedHeaders;
     }
     updateTableHeaders();
-
+	useDefaultConfig();
     // 加载保存的 GitHub 令牌
     loadGitHubToken();
 
@@ -1686,7 +1686,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 情况3: GitHub加载失败且没有本地数据，使用默认数据
         console.log('🔄 GitHub加载失败且无本地数据，使用默认数据');
         useDefaultConfig();
-        appConfig.source = 'Builtin';
+        
         //dataSource = '内置默认';
     }
     
