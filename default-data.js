@@ -10,17 +10,24 @@ const DEFAULT_TABLE_DATA = [
         "type": "url",
         "note": "【飞书】DH3项目主计划\n12月8日版本"
     },
-        {
+       {
         "id": 2,
+        "category": "开发计划",
+        "title": "DH3软件基线策划与控制器开发计划汇总",
+        "path": "https://acndoaymjsa1.feishu.cn/slides/Rdl4sdsJslhCQRd7eGbclVidnxe",
+        "type": "url",
+        "note": "【飞书】请大家在此更新各自开发计划"
+    }, 
+           {
+        "id": 3,
         "category": "整车配置",
         "title": "DH3整车配置清单",
         "path": "https://acndoaymjsa1.feishu.cn/file/OIj0bkDXboXH3ExfXg7cbTzOnAh",
         "type": "url",
         "note": "【飞书】DH3整车配置表\n12月3日版本"
     },
-    
         {
-        "id": 3,
+        "id": 4,
         "category": "联系信息",
         "title": "DH项目整体联系人清单",
         "path": "https://acndoaymjsa1.feishu.cn/sheets/Gbh8sTDmdhMD9DtZcC2c7trunRe",
@@ -28,7 +35,7 @@ const DEFAULT_TABLE_DATA = [
         "note": "【飞书】包含DH1，DH3各业务板块联系人信息"
     },
     {
-        "id": 4,
+        "id": 5,
         "category": "设计评审",
         "title": "DH3电子电气拓扑图",
         "path": "w:\\yling",
@@ -36,7 +43,7 @@ const DEFAULT_TABLE_DATA = [
         "note": "【内网】w:\\yling\n请确保你的账号已经切换到内网"
     },
     {
-        "id": 5,
+        "id": 6,
         "category": "阶段评审",
         "title": "DH3项目J2阶段评审材料输入信息",
         "path": "\\\\10.4.9.25\\Project\\DH系列\\060-整车开发\\DH3\\J2评审输入",
@@ -44,21 +51,14 @@ const DEFAULT_TABLE_DATA = [
         "note": "【外网】J2阶段输入物数据库"
     },
     {
-        "id": 6,
+        "id": 7,
         "category": "阶段评审",
         "title": "DH3项目J2阶段评审材料归档路径",
         "path": "\\\\10.4.9.25\\Project\\DH系列\\130-智能软件\\DH3\\130100_ 阶段评审材料\\130102_ J2阶段评审材料及会议纪要",
         "type": "folder",
         "note": "【外网】请大家把J2材料及会议纪要放入此文件夹"
     },
-    {
-        "id": 7,
-        "category": "开发计划",
-        "title": "DH3项目智软控制器开发计划",
-        "path": "https://acndoaymjsa1.feishu.cn/file/K8KlbxqKmoZV2HxoG94ccLotnne",
-        "type": "url",
-        "note": "【飞书】请大家在此更新各自开发计划"
-    },
+
     {
         "id": 8,
         "category": "联系信息",
