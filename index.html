@@ -1053,6 +1053,10 @@
                 <button class="btn btn-primary" id="editHeadersBtn" style="display: none;">
                     <i class="fas fa-edit"></i> 编辑表头
                 </button>
+                <!-- 调试按钮 -->
+                <button class="btn btn-warning" id="debugBtn" style="display: none;">
+                    <i class="fas fa-bug"></i> 调试系统
+                </button>
             </div>
         </div>
         
@@ -1439,6 +1443,7 @@
         const resetBtn = document.getElementById('resetBtn');
         const refreshConfigBtn = document.getElementById('refreshConfigBtn');
         const editHeadersBtn = document.getElementById('editHeadersBtn');
+        const debugBtn = document.getElementById('debugBtn');
         const itemModal = document.getElementById('itemModal');
         const headersModal = document.getElementById('headersModal');
         const modalTitle = document.getElementById('modalTitle');
@@ -1483,12 +1488,16 @@
 
         // 检查默认数据是否加载成功
         function checkDefaultDataLoaded() {
-            if (typeof DEFAULT_TABLE_DATA === 'undefined') {
+            if (typeof DEFAULT_TABLE_DATA === 'undefined' || typeof DEFAULT_ADMIN_ACCOUNTS === 'undefined') {
                 console.error('❌ 默认数据文件加载失败');
+                console.log('DEFAULT_TABLE_DATA:', typeof DEFAULT_TABLE_DATA);
+                console.log('DEFAULT_ADMIN_ACCOUNTS:', typeof DEFAULT_ADMIN_ACCOUNTS);
                 updateStatus('error', '默认数据文件加载失败，请检查 default-data.js 文件是否存在');
                 return false;
             }
             console.log('✅ 默认数据文件加载成功（备用数据）');
+            console.log('默认管理员账户数量:', DEFAULT_ADMIN_ACCOUNTS.length);
+            console.log('默认管理员账户:', DEFAULT_ADMIN_ACCOUNTS);
             return true;
         }
 
@@ -1496,7 +1505,7 @@
         function loadDefaultData() {
             try {
                 // 检查外部数据文件是否成功加载
-                if (typeof DEFAULT_TABLE_DATA === 'undefined') {
+                if (typeof DEFAULT_TABLE_DATA === 'undefined' || typeof DEFAULT_ADMIN_ACCOUNTS === 'undefined') {
                     throw new Error('默认数据文件未加载，请检查 default-data.js 文件');
                 }
                 
@@ -1508,6 +1517,7 @@
                 categoryMap = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_MAP));
                 
                 console.log('✅ 从外部文件加载默认数据成功');
+                console.log('管理员账户:', adminAccounts);
                 return true;
                 
             } catch (error) {
@@ -1576,7 +1586,7 @@
             updateCategoryFilters();
         }
 
-        // 从GitHub加载配置函数
+        // 从GitHub加载配置函数 - 修复版本
         async function loadConfigFromGitHub() {
             showLoadingIndicator('正在从GitHub securityconfig加载配置...');
             updateStatus('info', '正在从GitHub securityconfig加载配置...');
@@ -1595,7 +1605,21 @@
                 
                 // 处理Excel数据
                 await processExcelData(arrayBuffer);
+                
+                // 🎯 关键修复：确保管理员账户正确加载
                 adminAccounts = config.users || [];
+                
+                // 如果没有管理员账户，使用默认账户
+                if (adminAccounts.length === 0) {
+                    console.warn('GitHub配置中没有管理员账户，使用默认账户');
+                    if (typeof DEFAULT_ADMIN_ACCOUNTS !== 'undefined') {
+                        adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
+                        console.log('✅ 使用默认管理员账户:', adminAccounts);
+                    }
+                }
+                
+                console.log('✅ 管理员账户加载成功:', adminAccounts);
+                
                 appConfig = config.settings || {};
                 
                 updateConfigVersionInfo(config);
@@ -1617,6 +1641,12 @@
                 
             } catch (error) {
                 console.error('❌ GitHub配置加载失败:', error);
+                
+                // 🎯 关键修复：如果GitHub加载失败，使用默认管理员账户
+                if (typeof DEFAULT_ADMIN_ACCOUNTS !== 'undefined') {
+                    adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
+                    console.log('✅ GitHub加载失败，使用默认管理员账户:', adminAccounts);
+                }
                 
                 // 根据是否有本地数据更新状态
                 const savedData = loadDataFromStorage();
@@ -1727,6 +1757,12 @@
             // 设置默认配置版本显示
             configVersion.textContent = '配置版本: 加载中...';
             
+            // 🎯 关键修复：先确保有默认管理员账户可用
+            if (typeof DEFAULT_ADMIN_ACCOUNTS !== 'undefined' && adminAccounts.length === 0) {
+                adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
+                console.log('✅ 初始化时加载默认管理员账户:', adminAccounts);
+            }
+            
             let githubDataLoaded = false;
             
             try {
@@ -1776,6 +1812,7 @@
             }
             
             console.log(`📊 数据量: ${tableData.length} 条记录`);
+            console.log(`👤 管理员账户数量: ${adminAccounts.length}`);
             
             setupEventListeners();
             setupAuthEvents();
@@ -1794,6 +1831,11 @@
             
             // 显示初始化完成状态
             showToast(`系统初始化完成，数据来源: ${appConfig.source}`, 'success');
+            
+            // 显示调试信息
+            setTimeout(() => {
+                debugSystemStatus();
+            }, 1000);
         });
 
         // ========== 认证面板功能 ==========
@@ -1819,14 +1861,52 @@
                 });
             });
             
-            // 登录按钮
+            // 登录按钮 - 修复版本
             authLoginBtn.addEventListener('click', handleAuthLogin);
             
-            // 测试账号按钮
-            testAccountBtn.addEventListener('click', () => {
-                authUsername.value = 'admin';
-                authPassword.value = 'admin123';
-                showAuthStatus('loginStatus', '已填充测试账号，点击登录按钮即可', 'info');
+            // 测试账号按钮 - 修复版本
+            testAccountBtn.addEventListener('click', async () => {
+                // 首先确保有默认账户可用
+                if (typeof DEFAULT_ADMIN_ACCOUNTS === 'undefined') {
+                    showAuthStatus('loginStatus', '默认账户数据未加载', 'error');
+                    return;
+                }
+                
+                // 使用第一个默认账户作为测试账户
+                const testAccount = DEFAULT_ADMIN_ACCOUNTS[0];
+                if (!testAccount) {
+                    showAuthStatus('loginStatus', '未找到测试账户', 'error');
+                    return;
+                }
+                
+                authUsername.value = testAccount.username;
+                authPassword.value = 'admin123'; // 默认密码
+                
+                // 自动登录
+                setTimeout(async () => {
+                    try {
+                        const passwordHash = await sha256('admin123');
+                        console.log('测试账户信息:', {
+                            username: testAccount.username,
+                            expectedHash: testAccount.passwordHash,
+                            calculatedHash: passwordHash,
+                            match: testAccount.passwordHash === passwordHash
+                        });
+                        
+                        if (testAccount.passwordHash === passwordHash) {
+                            showAuthStatus('loginStatus', '测试账户已填充，正在登录...', 'info');
+                            // 模拟点击登录按钮
+                            setTimeout(() => {
+                                handleAuthLogin();
+                            }, 500);
+                        } else {
+                            showAuthStatus('loginStatus', '测试账户密码不匹配', 'error');
+                        }
+                    } catch (error) {
+                        console.error('测试账户登录出错:', error);
+                        showAuthStatus('loginStatus', '测试账户登录失败', 'error');
+                    }
+                }, 100);
             });
             
             // GitHub配置按钮
@@ -1928,7 +2008,7 @@
             }
         }
 
-        // 处理认证登录
+        // 处理认证登录 - 修复版本
         async function handleAuthLogin() {
             const username = authUsername.value.trim();
             const password = authPassword.value.trim();
@@ -1944,23 +2024,57 @@
                 return;
             }
             
-            const passwordHash = await sha256(password);
-            const user = adminAccounts.find(acc => 
-                acc.username === username && acc.passwordHash === passwordHash
-            );
-            
-            if (user) {
-                loginAttempts = 0;
-                loginSuccess(user);
-                hideAuthPanel();
-                authPassword.value = '';
-                showAuthStatus('loginStatus', '登录成功！', 'success');
-            } else {
-                loginAttempts++;
-                const remainingAttempts = maxAttempts - loginAttempts;
-                showAuthStatus('loginStatus', `用户名或密码错误，剩余尝试次数：${remainingAttempts}`, 'error');
-                authPassword.value = '';
-                authPassword.focus();
+            try {
+                // 🎯 关键修复：确保 adminAccounts 已加载
+                if (adminAccounts.length === 0) {
+                    // 如果还没有加载管理员账户，尝试加载
+                    if (typeof DEFAULT_ADMIN_ACCOUNTS !== 'undefined') {
+                        adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
+                        console.log('登录时加载默认管理员账户:', adminAccounts);
+                    } else {
+                        showAuthStatus('loginStatus', '系统配置加载中，请稍后重试', 'error');
+                        return;
+                    }
+                }
+                
+                // 计算密码哈希
+                const passwordHash = await sha256(password);
+                console.log('登录尝试:', { username, passwordHash });
+                console.log('可用的管理员账户:', adminAccounts);
+                
+                // 查找匹配的用户
+                const user = adminAccounts.find(acc => {
+                    console.log('检查账户:', { 
+                        username: acc.username, 
+                        inputUsername: username,
+                        match: acc.username === username 
+                    });
+                    return acc.username === username && acc.passwordHash === passwordHash;
+                });
+                
+                if (user) {
+                    loginAttempts = 0;
+                    console.log('登录成功:', user);
+                    loginSuccess(user);
+                    hideAuthPanel();
+                    authPassword.value = '';
+                    showAuthStatus('loginStatus', '登录成功！', 'success');
+                } else {
+                    loginAttempts++;
+                    const remainingAttempts = maxAttempts - loginAttempts;
+                    console.log('登录失败:', { 
+                        username, 
+                        loginAttempts, 
+                        remainingAttempts,
+                        availableUsernames: adminAccounts.map(a => a.username)
+                    });
+                    showAuthStatus('loginStatus', `用户名或密码错误，剩余尝试次数：${remainingAttempts}`, 'error');
+                    authPassword.value = '';
+                    authPassword.focus();
+                }
+            } catch (error) {
+                console.error('登录过程中出错:', error);
+                showAuthStatus('loginStatus', `登录失败: ${error.message}`, 'error');
             }
         }
 
@@ -2485,6 +2599,9 @@
             // 编辑表头
             editHeadersBtn.addEventListener('click', openHeadersModal);
             
+            // 调试按钮
+            debugBtn.addEventListener('click', debugSystemStatus);
+            
             // 模态框控制
             closeModal.addEventListener('click', closeModalFunc);
             closeHeadersModal.addEventListener('click', closeHeadersModalFunc);
@@ -2886,7 +3003,8 @@
                 updateHTMLBtn: isLoggedIn && currentUser?.permissions?.includes('export'),
                 editHeadersBtn: isLoggedIn && currentUser?.permissions?.includes('config'),
                 downloadExcelBtn: true,
-                refreshConfigBtn: true
+                refreshConfigBtn: true,
+                debugBtn: true // 显示调试按钮
             };
             
             Object.entries(buttons).forEach(([btnId, shouldShow]) => {
@@ -3097,6 +3215,25 @@
                     }
                 });
             }
+        }
+
+        // 调试系统状态
+        function debugSystemStatus() {
+            console.log('=== 系统状态调试信息 ===');
+            console.log('1. 管理员账户数量:', adminAccounts.length);
+            console.log('2. 管理员账户详情:', adminAccounts);
+            console.log('3. 表格数据数量:', tableData.length);
+            console.log('4. 登录状态:', isLoggedIn);
+            console.log('5. 当前用户:', currentUser);
+            console.log('6. GitHub服务:', gitHubService ? '已配置' : '未配置');
+            console.log('7. 默认数据是否加载:', typeof DEFAULT_TABLE_DATA !== 'undefined' ? '是' : '否');
+            console.log('8. 默认管理员是否加载:', typeof DEFAULT_ADMIN_ACCOUNTS !== 'undefined' ? '是' : '否');
+            console.log('9. 默认管理员账户列表:', DEFAULT_ADMIN_ACCOUNTS);
+            console.log('10. 当前管理员账户列表:', adminAccounts);
+            console.log('========================');
+            
+            // 显示调试信息
+            showToast('系统状态已记录到控制台，请按F12查看', 'info');
         }
 
         // 修复的ArrayBuffer转Base64函数
