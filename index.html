@@ -29,97 +29,267 @@
             overflow: hidden;
         }
         
+        /* Header样式 - 更新部分 */
         header {
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             padding: 25px 30px;
-            text-align: center;
             position: relative;
         }
         
-        .admin-indicator {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
+        .header-content {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
+            margin-bottom: 10px;
+            position: relative;
+            padding-right: 50px; /* 为按钮留出空间 */
         }
         
         h1 {
             font-size: 2.2rem;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             font-weight: 600;
         }
         
-        .subtitle {
-            font-size: 1rem;
-            opacity: 0.9;
+        /* Header状态栏 */
+        .header-status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 36px;
+            min-width: 200px;
+            flex-shrink: 0;
         }
         
-        .auth-section {
-            padding: 15px 30px;
+        .header-status i {
+            font-size: 0.9rem;
+        }
+        
+        .status-warning {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+        
+        .status-success {
+            background: rgba(40, 167, 69, 0.15);
+            color: #28a745;
+        }
+        
+        .status-error {
+            background: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+        }
+        
+        .status-info {
+            background: rgba(23, 162, 184, 0.15);
+            color: #17a2b8;
+        }
+        
+        /* 管理员按钮样式 */
+        .admin-toggle-btn {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .admin-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .admin-toggle-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 认证面板 */
+        .auth-panel {
+            position: absolute;
+            top: 75px;
+            right: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .auth-panel.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .auth-tabs {
+            display: flex;
             background: #f8f9fa;
             border-bottom: 1px solid #eaeaea;
         }
         
-        .auth-main-row {
-            display: flex;
-            align-items: center;
-            gap: 40px;
+        .auth-tab {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #666;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .auth-tab.active {
+            color: #6a11cb;
+            border-bottom-color: #6a11cb;
+            background: white;
+            font-weight: 600;
+        }
+        
+        .auth-tab-content {
+            padding: 25px;
+        }
+        
+        .auth-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .auth-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .auth-input {
             width: 100%;
-            flex-wrap: wrap;
-        }
-        
-        .login-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .login-input {
-            padding: 8px 12px;
+            padding: 10px 15px;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 0.9rem;
+            transition: all 0.3s;
         }
         
-        .login-btn {
-            padding: 8px 15px;
-            background: #6a11cb;
-            color: white;
+        .auth-input:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
             border: none;
             border-radius: 6px;
+            font-size: 0.95rem;
             cursor: pointer;
-            font-size: 0.9rem;
+            transition: all 0.2s;
+            margin-top: 10px;
         }
         
-        .login-btn:hover {
+        .auth-btn-primary {
+            background: #6a11cb;
+            color: white;
+        }
+        
+        .auth-btn-primary:hover {
             background: #5a0db5;
         }
         
-        .logout-btn {
-            padding: 8px 15px;
-            background: #dc3545;
+        .auth-btn-success {
+            background: #28a745;
             color: white;
-            border: none;
+        }
+        
+        .auth-btn-success:hover {
+            background: #218838;
+        }
+        
+        .auth-btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .auth-btn-info:hover {
+            background: #138496;
+        }
+        
+        .auth-status {
+            margin-top: 15px;
+            padding: 10px;
             border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            display: none;
         }
         
-        .logout-btn:hover {
-            background: #c82333;
+        .auth-status.show {
+            display: block;
         }
         
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .github-info {
+            background: #e8f5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .github-info p {
+            margin: 5px 0;
+            font-size: 0.85rem;
+            color: #388e3c;
+        }
+        
+        .github-info i {
+            margin-right: 8px;
         }
         
         .config-info {
@@ -128,33 +298,13 @@
             margin-left: 10px;
         }
         
-        /* GitHub令牌侧边布局 */
-        .github-auth-side {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex: 1;
-            min-width: 500px;
+        /* 隐藏原来的认证部分 */
+        .auth-section {
+            display: none !important;
         }
-
-        .token-input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .token-input {
-            width: 280px;
-            min-width: 250px;
-        }
-
-        .token-btn {
-            white-space: nowrap;
-        }
-
-        .token-hint {
-            flex-shrink: 0;
+        
+        .permission-hint {
+            display: none !important;
         }
         
         .controls {
@@ -593,18 +743,6 @@
             color: #666;
         }
         
-        .permission-hint {
-            padding: 10px 15px;
-            background: #fff3cd;
-            border-radius: 6px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-            color: #856404;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
         .loading-indicator {
             padding: 10px 15px;
             background: #d1ecf1;
@@ -618,15 +756,7 @@
         }
         
         .error-message {
-            padding: 10px 15px;
-            background: #f8d7da;
-            border-radius: 6px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-            color: #721c24;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: none; /* 隐藏原来的错误提示 */
         }
         
         .path-display {
@@ -730,15 +860,6 @@
             margin-left: 10px;
         }
         
-        /*.sort-btn {
-            padding: 6px 12px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-        }*/
         .sort-btn {
             padding: 10px 18px;
             background: orange;
@@ -763,44 +884,25 @@
         }
         
         /* 响应式设计 */
-        @media (max-width: 1200px) {
-            .auth-main-row {
-                gap: 20px;
-            }
-            
-            .github-auth-side {
-                min-width: 450px;
-            }
-            
-            .token-input {
-                width: 240px;
-                min-width: 220px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .auth-main-row {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
-            }
-            
-            .github-auth-side {
-                min-width: auto;
-                width: 100%;
-            }
-            
-            .token-input-group {
-                width: 100%;
-            }
-            
-            .token-input {
-                flex: 1;
-                min-width: auto;
-            }
-        }
-        
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding-right: 50px;
+            }
+            
+            .header-status {
+                width: 100%;
+            }
+            
+            .auth-panel {
+                width: calc(100% - 60px);
+                right: 15px;
+                left: 15px;
+                margin: 0 auto;
+            }
+            
             .controls {
                 flex-direction: column;
             }
@@ -827,104 +929,72 @@
                 flex-direction: column;
                 gap: 10px;
             }
-            
-            .auth-section {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .login-form {
-                flex-direction: column;
-                width: 100%;
-            }
-            
-            .login-input {
-                width: 100%;
-            }
-            
-            .login-btn {
-                width: 100%;
-            }
-            
-            .github-auth-side {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .token-input-group {
-                flex-direction: column;
-            }
-            
-            .token-input {
-                width: 100%;
-            }
-            
-            .token-btn {
-                width: 100%;
-            }
-            
-            .token-hint {
-                text-align: center;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>DH3项目HelpMe索引表</h1>
-            <div class="admin-indicator" id="adminIndicator" style="display: none;">
-                <i class="fas fa-user-shield"></i> 管理员模式
-            </div>
-        </header>
-        
-        <div class="auth-section">
-            <div id="loginSection" style="display: block;">
-                <div class="auth-main-row">
-                    <!-- 登录表单 -->
-                    <div class="login-form">
-                        <input type="text" id="username" class="login-input" placeholder="用户名">
-                        <input type="password" id="password" class="login-input" placeholder="密码">
-                        <button class="login-btn" id="loginBtn">登录</button>
-                    </div>
-                    
-                    <!-- GitHub令牌 - 右侧 -->
-                    <div class="github-auth-side">
-                        <div class="token-input-group">
-                            <input type="password" id="githubToken" class="login-input token-input" placeholder="GitHub个人访问令牌">
-                            <button class="login-btn token-btn" id="setupGitHubBtn">配置GitHub同步</button>
-                        </div>
-                        <div class="token-hint">
-                            <small style="color: #28a745;">
-                                <i class="fas fa-check-circle"></i> 完全免费 - 
-                                <a href="javascript:void(0)" onclick="showGitHubTokenHelp()" style="color: #28a745;">令牌帮助</a>
-                            </small>
-                        </div>
+            <div class="header-content">
+                <div>
+                    <h1>DH3项目HelpMe索引表</h1>
+                    <div class="header-status" id="headerStatus">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="statusText">正在加载配置...</span>
                     </div>
                 </div>
             </div>
             
-            <div id="userSection" style="display: none;">
-                <div class="user-info">
-                    <span>欢迎, <strong id="userName">管理员</strong></span>
-                    <span id="githubStatus" class="config-info" style="color: #28a745; margin-left: 10px;">
-                        <i class="fas fa-check-circle"></i> GitHub已连接
-                    </span>
-                    <span class="config-info" id="configInfo"></span>
-                    <button class="logout-btn" id="logoutBtn">退出登录</button>
+            <!-- 管理员按钮 -->
+            <button class="admin-toggle-btn" id="adminToggleBtn" title="管理员登录/配置">
+                <i class="fas fa-user-cog"></i>
+            </button>
+            
+            <!-- 认证面板 -->
+            <div class="auth-panel" id="authPanel">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">管理员登录</button>
+                    <button class="auth-tab" data-tab="github">GitHub配置</button>
+                </div>
+                
+                <div class="auth-tab-content" id="loginTab">
+                    <div class="auth-form-group">
+                        <label for="authUsername">用户名</label>
+                        <input type="text" id="authUsername" class="auth-input" placeholder="输入用户名">
+                    </div>
+                    <div class="auth-form-group">
+                        <label for="authPassword">密码</label>
+                        <input type="password" id="authPassword" class="auth-input" placeholder="输入密码">
+                    </div>
+                    <button class="auth-btn auth-btn-primary" id="authLoginBtn">登录</button>
+                    <button class="auth-btn auth-btn-info" id="testAccountBtn">使用测试账号</button>
+                    <div class="auth-status" id="loginStatus"></div>
+                </div>
+                
+                <div class="auth-tab-content" id="githubTab" style="display: none;">
+                    <div class="auth-form-group">
+                        <label for="authGithubToken">GitHub个人访问令牌</label>
+                        <input type="password" id="authGithubToken" class="auth-input" placeholder="输入GitHub令牌">
+                        <div class="github-info">
+                            <p><i class="fas fa-check-circle"></i> 完全免费 - 不会产生任何费用</p>
+                            <p><i class="fas fa-shield-alt"></i> 令牌仅保存在您的浏览器本地</p>
+                            <p><i class="fas fa-question-circle"></i> 
+                                <a href="javascript:void(0)" onclick="showGitHubTokenHelp()" style="color: #388e3c; text-decoration: underline;">
+                                    如何获取令牌？
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    <button class="auth-btn auth-btn-success" id="authSetupGithubBtn">配置GitHub同步</button>
+                    <div class="auth-status" id="githubStatus"></div>
                 </div>
             </div>
-        </div>
+        </header>
         
         <!-- 配置加载状态指示器 -->
         <div class="loading-indicator" id="loadingIndicator" style="display: none;">
             <i class="fas fa-sync fa-spin"></i>
             <span>正在从GitHub securityconfig加载配置...</span>
-        </div>
-        
-        <div class="error-message" id="errorMessage" style="display: none;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span id="errorText">配置加载失败，使用备用数据</span>
         </div>
         
         <div class="controls">
@@ -984,11 +1054,6 @@
                     <i class="fas fa-edit"></i> 编辑表头
                 </button>
             </div>
-        </div>
-        
-        <div class="permission-hint" id="permissionHint" style="display: flex;">
-            <i class="fas fa-info-circle"></i>
-            <span>您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。</span>
         </div>
         
         <div class="table-container">
@@ -1355,6 +1420,13 @@
         let isLoggedIn = false;
         let currentUser = null;
 
+        // 页面状态
+        let currentStatus = {
+            type: 'info', // info, success, warning, error
+            message: '正在加载配置...',
+            showLoginHint: true
+        };
+
         // DOM元素
         const tableBody = document.getElementById('tableBody');
         const searchInput = document.getElementById('searchInput');
@@ -1386,24 +1458,26 @@
         const resetHeadersBtn = document.getElementById('resetHeadersBtn');
         const totalCount = document.getElementById('totalCount');
         const filteredCount = document.getElementById('filteredCount');
+        const configVersion = document.getElementById('configVersion');
         const pathTypeButtons = document.querySelectorAll('.path-type-btn');
         const pathExample = document.getElementById('pathExample');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const loginSection = document.getElementById('loginSection');
-        const userSection = document.getElementById('userSection');
-        const userName = document.getElementById('userName');
-        const adminIndicator = document.getElementById('adminIndicator');
-        const permissionHint = document.getElementById('permissionHint');
-        const setupGitHubBtn = document.getElementById('setupGitHubBtn');
-        const githubTokenInput = document.getElementById('githubToken');
-        const enableSortBtn = document.getElementById('enableSortBtn');
-        const saveOrderBtn = document.getElementById('saveOrderBtn');
-        const cancelSortBtn = document.getElementById('cancelSortBtn');
-        const resetOrderBtn = document.getElementById('resetOrderBtn');
-        const sortControls = document.getElementById('sortControls');
+        
+        // 新增的认证相关DOM元素
+        const adminToggleBtn = document.getElementById('adminToggleBtn');
+        const authPanel = document.getElementById('authPanel');
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const loginTab = document.getElementById('loginTab');
+        const githubTab = document.getElementById('githubTab');
+        const authUsername = document.getElementById('authUsername');
+        const authPassword = document.getElementById('authPassword');
+        const authLoginBtn = document.getElementById('authLoginBtn');
+        const testAccountBtn = document.getElementById('testAccountBtn');
+        const authGithubToken = document.getElementById('authGithubToken');
+        const authSetupGithubBtn = document.getElementById('authSetupGithubBtn');
+        const loginStatus = document.getElementById('loginStatus');
+        const githubStatus = document.getElementById('githubStatus');
+        const headerStatus = document.getElementById('headerStatus');
+        const statusText = document.getElementById('statusText');
 
         // ========== 核心功能函数 ==========
 
@@ -1411,7 +1485,7 @@
         function checkDefaultDataLoaded() {
             if (typeof DEFAULT_TABLE_DATA === 'undefined') {
                 console.error('❌ 默认数据文件加载失败');
-                showErrorMessage('默认数据文件加载失败，请检查 default-data.js 文件是否存在');
+                updateStatus('error', '默认数据文件加载失败，请检查 default-data.js 文件是否存在');
                 return false;
             }
             console.log('✅ 默认数据文件加载成功（备用数据）');
@@ -1438,7 +1512,7 @@
                 
             } catch (error) {
                 console.error('❌ 加载默认数据失败:', error);
-                showErrorMessage(`默认数据加载失败: ${error.message}`);
+                updateStatus('error', `默认数据加载失败: ${error.message}`);
                 return false;
             }
         }
@@ -1463,10 +1537,11 @@
                     exitSortMode();
                 }
                 
+                updateStatus('success', '已加载内置默认配置');
                 return true;
             } catch (error) {
                 console.error('使用默认配置失败:', error);
-                showErrorMessage(`配置加载失败: ${error.message}`);
+                updateStatus('error', `配置加载失败: ${error.message}`);
                 return false;
             }
         }
@@ -1501,9 +1576,10 @@
             updateCategoryFilters();
         }
 
-        // 修复的从GitHub加载配置函数
+        // 从GitHub加载配置函数
         async function loadConfigFromGitHub() {
             showLoadingIndicator('正在从GitHub securityconfig加载配置...');
+            updateStatus('info', '正在从GitHub securityconfig加载配置...');
             
             try {
                 const [configResponse, excelResponse] = await Promise.all([
@@ -1517,7 +1593,7 @@
                 const config = await configResponse.json();
                 const arrayBuffer = await excelResponse.arrayBuffer();
                 
-                // 🎯 重要：处理Excel数据时会覆盖现有的tableData
+                // 处理Excel数据
                 await processExcelData(arrayBuffer);
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
@@ -1530,12 +1606,26 @@
                     initializeCategoriesFromData();
                 }
                 
-        		return true;  // 🎯 明确返回成功
-        
+                // 更新状态显示
+                if (isLoggedIn) {
+                    updateStatus('success', '已加载GitHub配置，您当前是管理员模式');
+                } else {
+                    updateStatus('warning', '已加载GitHub配置，您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。');
+                }
+                
+                return true;
                 
             } catch (error) {
                 console.error('❌ GitHub配置加载失败:', error);
-                showErrorMessage(`GitHub securityconfig配置加载失败: ${error.message}，使用备用或缓存数据`);
+                
+                // 根据是否有本地数据更新状态
+                const savedData = loadDataFromStorage();
+                if (savedData && savedData.length > 0) {
+                    updateStatus('warning', `GitHub配置加载失败: ${error.message}，使用本地缓存数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
+                } else {
+                    updateStatus('warning', `GitHub配置加载失败: ${error.message}，使用内置默认数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
+                }
+                
                 return false;
             } finally {
                 hideLoadingIndicator();
@@ -1569,7 +1659,7 @@
                 const headers = excelData[0];
                 console.log('Excel表头结构:', headers);
                 
-                // 🎯 重要：清空现有数据，使用GitHub数据
+                // 清空现有数据，使用GitHub数据
                 tableData = [];
                 categoryMap = {};
                 categoryList = [];
@@ -1618,101 +1708,8 @@
                 throw new Error(`Excel文件处理失败: ${error.message}`);
             }
         }
-	// 修复的初始化流程
-document.addEventListener('DOMContentLoaded', async () => {
-    // 首先检查默认数据是否加载成功（仅作为备用）
-    checkDefaultDataLoaded();
-    
-    // 加载表头配置
-    const savedHeaders = loadHeadersFromStorage();
-    if (savedHeaders) {
-        headerConfig = savedHeaders;
-    }
-    updateTableHeaders();
-	
-    // 加载保存的 GitHub 令牌
-    loadGitHubToken();
 
-    // 设置默认配置版本显示
-    document.getElementById('configVersion').textContent = '配置版本: 加载中...';
-	useDefaultConfig();
-    let githubDataLoaded = false;
-    //let dataSource = '';
-    
-    try {
-        // 优先从GitHub加载配置
-        console.log('🔄 正在从GitHub securityconfig加载数据...');
-        githubDataLoaded = await loadConfigFromGitHub();
-        
-        if (githubDataLoaded) {
-            console.log('✅ 成功从GitHub securityconfig加载数据');
-            //dataSource = 'GitHub SecurityConfig';
-            appConfig.source = 'GitHub SecurityConfig';
-        } else {
-            console.log('❌ GitHub配置加载失败，尝试其他数据源');
-        }
-        
-    } catch (error) {
-        console.error('❌ GitHub配置加载异常:', error);
-        githubDataLoaded = false;
-    }
-    
-    // 🎯 修复：清晰的数据源选择逻辑
-    const savedData = loadDataFromStorage();
-    
-    if (githubDataLoaded) {
-        // 情况1: GitHub数据加载成功，使用GitHub数据
-        console.log('✅ 使用GitHub securityconfig数据');
-        //dataSource = 'GitHub SecurityConfig';
-        appConfig.source = 'GitHub SecurityConfig';
-        
-    } else if (savedData && savedData.length > 0) {
-        // 情况2: GitHub加载失败，但有本地数据，使用本地数据
-        console.log('🔄 GitHub加载失败，使用本地存储的数据');
-        tableData = savedData;
-        currentData = [...tableData];
-        renderTable(currentData);
-        updateStats();
-        appConfig.version = 'ver.temp';
-        appConfig.source = 'Cache';
-        //dataSource = '本地缓存';
-        
-        // 确保分类系统正确初始化
-        if (categoryList.length === 0 && tableData.length > 0) {
-            initializeCategoriesFromData();
-        }
-        
-    } else {
-        // 情况3: GitHub加载失败且没有本地数据，使用默认数据
-        console.log('🔄 GitHub加载失败且无本地数据，使用默认数据');
-        useDefaultConfig();
-        
-        //dataSource = '内置默认';
-    }
-    
-    // 显示最终数据来源信息
-    //console.log(`🎯 最终数据来源: ${dataSource}`);
-    console.log(`📊 数据量: ${tableData.length} 条记录`);
-    
-    setupEventListeners();
-    checkLoginStatus();
-    updateCategorySelect();
-    updateConfigVersionInfo(appConfig);
-    updateButtonVisibility();
-    
-    // 设置用户活动监听器
-    document.addEventListener('click', resetAutoLogoutTimer);
-    document.addEventListener('keypress', resetAutoLogoutTimer);
-    document.addEventListener('mousemove', resetAutoLogoutTimer);
-    
-    // 初始化排序功能
-    initSorting();
-    
-    // 显示初始化完成状态
-    showToast(`系统初始化完成，数据来源: ${appConfig.source}`, 'success');
-});
-		
-       /* // 修复的初始化流程
+        // 修复的初始化流程
         document.addEventListener('DOMContentLoaded', async () => {
             // 首先检查默认数据是否加载成功（仅作为备用）
             checkDefaultDataLoaded();
@@ -1723,44 +1720,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headerConfig = savedHeaders;
             }
             updateTableHeaders();
-
+            
             // 加载保存的 GitHub 令牌
             loadGitHubToken();
 
             // 设置默认配置版本显示
-            document.getElementById('configVersion').textContent = '配置版本: 加载中...';
-
+            configVersion.textContent = '配置版本: 加载中...';
+            
             let githubDataLoaded = false;
             
             try {
                 // 优先从GitHub加载配置
-                console.log('正在从GitHub securityconfig加载数据...');
-                await loadConfigFromGitHub();
-                githubDataLoaded = true;
-                console.log('✅ 成功从GitHub securityconfig加载数据');
+                console.log('🔄 正在从GitHub securityconfig加载数据...');
+                githubDataLoaded = await loadConfigFromGitHub();
+                
+                if (githubDataLoaded) {
+                    console.log('✅ 成功从GitHub securityconfig加载数据');
+                    appConfig.source = 'GitHub SecurityConfig';
+                } else {
+                    console.log('❌ GitHub配置加载失败，尝试其他数据源');
+                }
                 
             } catch (error) {
-                console.error('❌ GitHub配置加载失败:', error);
-                showErrorMessage(`GitHub配置加载失败: ${error.message}，使用备用数据`);
+                console.error('❌ GitHub配置加载异常:', error);
                 githubDataLoaded = false;
             }
             
-            // 🎯 修复：只有在GitHub加载失败且没有本地数据时，才使用默认数据
+            // 清晰的数据源选择逻辑
             const savedData = loadDataFromStorage();
             
             if (githubDataLoaded) {
-                // GitHub数据加载成功，使用GitHub数据
-                console.log('使用GitHub securityconfig数据');
-                appConfig.source = 'GitHub';
+                // 情况1: GitHub数据加载成功，使用GitHub数据
+                console.log('✅ 使用GitHub securityconfig数据');
+                appConfig.source = 'GitHub SecurityConfig';
                 
             } else if (savedData && savedData.length > 0) {
-                // GitHub加载失败，但有本地数据，使用本地数据
-                console.log('使用本地存储的数据');
+                // 情况2: GitHub加载失败，但有本地数据，使用本地数据
+                console.log('🔄 GitHub加载失败，使用本地存储的数据');
                 tableData = savedData;
                 currentData = [...tableData];
                 renderTable(currentData);
                 updateStats();
-				appConfig.version='Temp';
+                appConfig.version = 'ver.temp';
                 appConfig.source = 'Cache';
                 
                 // 确保分类系统正确初始化
@@ -1769,14 +1770,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 
             } else {
-                // GitHub加载失败且没有本地数据，使用默认数据
-                console.log('使用默认数据');
+                // 情况3: GitHub加载失败且没有本地数据，使用默认数据
+                console.log('🔄 GitHub加载失败且无本地数据，使用默认数据');
                 useDefaultConfig();
-                //appConfig.version = 'Default';
-				//appConfig.source = 'Builtin';
             }
             
+            console.log(`📊 数据量: ${tableData.length} 条记录`);
+            
             setupEventListeners();
+            setupAuthEvents();
             checkLoginStatus();
             updateCategorySelect();
             updateConfigVersionInfo(appConfig);
@@ -1789,182 +1791,239 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // 初始化排序功能
             initSorting();
-        });*/
+            
+            // 显示初始化完成状态
+            showToast(`系统初始化完成，数据来源: ${appConfig.source}`, 'success');
+        });
 
-        // 优化后的 openFolder 函数
-        function openFolder(path) {
-            const decodedPath = path.replace(/\\\\/g, '\\');
-            
-            // 智能环境检测
-            if (isLocalEnvironment()) {
-                // 本地环境：尝试直接打开
-                return attemptDirectOpen(path);
-            } else {
-                // 网络环境：使用复制方案
-                return offerPathCopy(path, '由于网页安全限制，无法直接打开本地文件夹。');
-            }
-        }
+        // ========== 认证面板功能 ==========
 
-        // 检测是否为本地环境
-        function isLocalEnvironment() {
-            const protocol = window.location.protocol;
-            const hostname = window.location.hostname;
+        // 设置认证面板事件
+        function setupAuthEvents() {
+            // 管理员按钮点击事件
+            adminToggleBtn.addEventListener('click', toggleAuthPanel);
             
-            // 本地文件协议
-            if (protocol === 'file:') {
-                return true;
-            }
-            
-            // localhost 或本地 IP
-            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
-                return true;
-            }
-            
-            // 本地网络 IP (192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x)
-            if (/^(192\.168|10|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(hostname)) {
-                return true;
-            }
-            
-            return false;
-        }
-
-        // 尝试直接打开文件夹
-        function attemptDirectOpen(decodedPath) {
-            const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
-            
-            // 方法1: 使用 window.open
-            try {
-                const newWindow = window.open(fileUrl, '_blank');
-                
-                // 检查是否打开成功（某些浏览器会返回 null 如果被阻止）
-                if (newWindow === null || newWindow.closed) {
-                    throw new Error('窗口打开被阻止');
-                }
-                
-                showToast('正在打开文件夹...', 'info');
-                return true;
-            } catch (error) {
-                console.log('方法1失败:', error.message);
-            }
-            
-            // 方法2: 使用 a 标签点击
-            try {
-                const link = document.createElement('a');
-                link.href = fileUrl;
-                link.target = '_blank';
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                showToast('正在尝试打开文件夹...', 'info');
-                
-                // 延迟检查是否真的打开了
-                setTimeout(() => {
-                    // 如果仍然需要复制功能，可以在这里提供
-                    offerPathCopy(decodedPath, '如果文件夹没有打开，请使用复制功能：');
-                }, 1000);
-                
-                return true;
-            } catch (error) {
-                console.log('方法2失败:', error.message);
-            }
-            
-            // 所有方法都失败，降级到复制方案
-            console.log('所有直接打开方法都失败，使用复制方案');
-            offerPathCopy(decodedPath, '直接打开失败，请使用复制功能：');
-            return false;
-        }
-
-        // 提供路径复制功能
-        function offerPathCopy(decodedPath, reason = '') {
-            const message = reason + '\n\n是否将以下路径复制到剪贴板？\n\n路径: ' + decodedPath;
-            
-            if (confirm(message)) {
-                copyToClipboard(decodedPath).then(() => {
-                    showToast('✅ 路径已复制到剪贴板！', 'success');
-                }).catch(err => {
-                    // 备用复制方案
-                    fallbackCopy(decodedPath);
-                });
-            }
-            return false;
-        }
-
-        // 复制到剪贴板
-        async function copyToClipboard(text) {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-                return true;
-            } else {
-                // 降级方案
-                return fallbackCopy(text);
-            }
-        }
-
-        // 备用复制方法
-        function fallbackCopy(text) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    textArea.style.position = 'fixed';
-                    textArea.style.opacity = '0';
-                    textArea.style.left = '-9999px';
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    textArea.setSelectionRange(0, 99999); // 移动设备支持
+            // 认证标签页切换
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
                     
-                    const successful = document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    
-                    if (successful) {
-                        resolve(true);
+                    if (tab.dataset.tab === 'login') {
+                        loginTab.style.display = 'block';
+                        githubTab.style.display = 'none';
                     } else {
-                        reject(new Error('复制命令失败'));
+                        loginTab.style.display = 'none';
+                        githubTab.style.display = 'block';
                     }
-                } catch (err) {
-                    reject(err);
+                });
+            });
+            
+            // 登录按钮
+            authLoginBtn.addEventListener('click', handleAuthLogin);
+            
+            // 测试账号按钮
+            testAccountBtn.addEventListener('click', () => {
+                authUsername.value = 'admin';
+                authPassword.value = 'admin123';
+                showAuthStatus('loginStatus', '已填充测试账号，点击登录按钮即可', 'info');
+            });
+            
+            // GitHub配置按钮
+            authSetupGithubBtn.addEventListener('click', handleAuthGithubSetup);
+            
+            // 回车登录
+            authPassword.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleAuthLogin();
+                }
+            });
+            
+            authGithubToken.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleAuthGithubSetup();
+                }
+            });
+            
+            // 点击页面其他地方关闭认证面板
+            document.addEventListener('click', (e) => {
+                if (!authPanel.contains(e.target) && !adminToggleBtn.contains(e.target)) {
+                    hideAuthPanel();
                 }
             });
         }
 
-        // 显示 Toast 消息
-        function showToast(message, type = 'info') {
-            // 移除现有的 toast
-            const existingToast = document.querySelector('.toast');
-            if (existingToast) {
-                existingToast.remove();
+        // 切换认证面板显示/隐藏
+        function toggleAuthPanel() {
+            if (authPanel.classList.contains('show')) {
+                hideAuthPanel();
+            } else {
+                showAuthPanel();
             }
-            
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `
-                <i class="fas ${getToastIcon(type)}"></i>
-                <span>${message}</span>
-            `;
-            
-            document.body.appendChild(toast);
-            
-            // 添加动画
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) toast.remove();
-                }, 300);
-            }, 3000);
         }
 
-        function getToastIcon(type) {
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-times-circle',
-                warning: 'fa-exclamation-triangle',
-                info: 'fa-info-circle'
-            };
-            return icons[type] || 'fa-info-circle';
+        // 显示认证面板
+        function showAuthPanel() {
+            authPanel.classList.add('show');
+            adminToggleBtn.classList.add('active');
+            
+            // 切换到登录标签页
+            authTabs.forEach(tab => tab.classList.remove('active'));
+            document.querySelector('[data-tab="login"]').classList.add('active');
+            loginTab.style.display = 'block';
+            githubTab.style.display = 'none';
+            
+            // 清空状态消息
+            clearAuthStatus();
+            
+            // 自动聚焦用户名输入框
+            setTimeout(() => authUsername.focus(), 100);
         }
+
+        // 隐藏认证面板
+        function hideAuthPanel() {
+            authPanel.classList.remove('show');
+            adminToggleBtn.classList.remove('active');
+            clearAuthStatus();
+        }
+
+        // 清空认证状态消息
+        function clearAuthStatus() {
+            loginStatus.innerHTML = '';
+            loginStatus.className = 'auth-status';
+            githubStatus.innerHTML = '';
+            githubStatus.className = 'auth-status';
+        }
+
+        // 显示认证状态消息
+        function showAuthStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = message;
+                element.className = `auth-status show status-${type}`;
+                
+                // 自动清除成功消息
+                if (type === 'success') {
+                    setTimeout(() => {
+                        element.innerHTML = '';
+                        element.className = 'auth-status';
+                    }, 3000);
+                }
+            }
+        }
+
+        // 更新页面状态显示
+        function updateStatus(type, message) {
+            currentStatus.type = type;
+            currentStatus.message = message;
+            
+            headerStatus.className = `header-status status-${type}`;
+            statusText.textContent = message;
+            
+            // 更新登录状态显示
+            if (isLoggedIn) {
+                currentStatus.showLoginHint = false;
+            } else {
+                currentStatus.showLoginHint = true;
+            }
+        }
+
+        // 处理认证登录
+        async function handleAuthLogin() {
+            const username = authUsername.value.trim();
+            const password = authPassword.value.trim();
+            
+            if (!username || !password) {
+                showAuthStatus('loginStatus', '请输入用户名和密码', 'error');
+                return;
+            }
+            
+            const maxAttempts = appConfig.maxLoginAttempts || 5;
+            if (loginAttempts >= maxAttempts) {
+                showAuthStatus('loginStatus', `登录尝试次数过多，请稍后再试。最大尝试次数：${maxAttempts}`, 'error');
+                return;
+            }
+            
+            const passwordHash = await sha256(password);
+            const user = adminAccounts.find(acc => 
+                acc.username === username && acc.passwordHash === passwordHash
+            );
+            
+            if (user) {
+                loginAttempts = 0;
+                loginSuccess(user);
+                hideAuthPanel();
+                authPassword.value = '';
+                showAuthStatus('loginStatus', '登录成功！', 'success');
+            } else {
+                loginAttempts++;
+                const remainingAttempts = maxAttempts - loginAttempts;
+                showAuthStatus('loginStatus', `用户名或密码错误，剩余尝试次数：${remainingAttempts}`, 'error');
+                authPassword.value = '';
+                authPassword.focus();
+            }
+        }
+
+        // 处理认证GitHub配置
+        async function handleAuthGithubSetup() {
+            const token = authGithubToken.value.trim();
+            
+            if (!token) {
+                showAuthStatus('githubStatus', '请输入GitHub令牌', 'error');
+                return;
+            }
+            
+            try {
+                showAuthStatus('githubStatus', '正在验证令牌...', 'info');
+                gitHubService = new GitHubService(token);
+                const authResult = await gitHubService.checkAuth();
+                
+                if (authResult.authenticated) {
+                    localStorage.setItem('githubToken', token);
+                    authGithubToken.value = '';
+                    showAuthStatus('githubStatus', `验证成功！用户: ${authResult.username}`, 'success');
+                    
+                    // 更新按钮显示状态
+                    updateButtonVisibility();
+                    
+                    // 如果是已登录管理员，更新状态
+                    if (isLoggedIn) {
+                        updateStatus('success', '已加载GitHub配置，您当前是管理员模式，GitHub已连接');
+                    }
+                } else {
+                    throw new Error('令牌验证失败');
+                }
+            } catch (error) {
+                console.error('GitHub配置失败:', error);
+                showAuthStatus('githubStatus', `配置失败: ${error.message}`, 'error');
+            }
+        }
+
+        // GitHub令牌帮助
+        function showGitHubTokenHelp() {
+            alert(`GitHub 个人访问令牌 - 完全免费\n\n` +
+                  `如何获取：\n` +
+                  `1. 登录 GitHub → Settings → Developer settings\n` +
+                  `2. 选择 Personal access tokens → Tokens (classic)\n` +
+                  `3. 点击 Generate new token\n` +
+                  `4. 设置备注，选择过期时间（建议1年）\n` +
+                  `5. 勾选 repo 权限（完整控制私有仓库）\n` +
+                  `6. 生成令牌并复制保存\n\n` +
+                  `💡 重要提示：\n` +
+                  `• 这个功能完全免费\n` +
+                  `• 不会产生任何费用\n` +
+                  `• 令牌只保存在您的浏览器本地\n` +
+                  `• 可以随时在 GitHub 上撤销令牌`);
+            
+            // 切换到GitHub标签页
+            authTabs.forEach(tab => tab.classList.remove('active'));
+            document.querySelector('[data-tab="github"]').classList.add('active');
+            loginTab.style.display = 'none';
+            githubTab.style.display = 'block';
+            authGithubToken.focus();
+        }
+
+        // ========== 核心功能函数（续） ==========
 
         // SHA-256哈希函数
         async function sha256(message) {
@@ -1983,22 +2042,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
             
             uniqueCategories.forEach((category, index) => {
-                // 使用索引而不是字符码，确保相同分类相同颜色
-                const colorIndex = (index % 10) + 1; // 1-10
+                const colorIndex = (index % 10) + 1;
                 colorMap[category] = `category-${colorIndex}`;
             });
             
             return colorMap;
         }
 
-        // 渲染表格 - 修复版本（相同分类相同颜色）
+        // 渲染表格
         function renderTable(data) {
             if (data.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
                 return;
             }
             
-            // 创建分类颜色映射
             const categoryColorMap = createCategoryColorMap();
             
             tableBody.innerHTML = data.map(item => {
@@ -2008,8 +2065,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const badgeClass = isUrl ? 'badge-url' : 'badge-folder';
                 const badgeText = isUrl ? '网页' : '文件夹';
                 const categoryName = item.category || `分类${item.id}`;
-                
-                // 修复：使用分类名称计算颜色，确保相同分类颜色一致
                 const categoryClass = categoryColorMap[categoryName] || 'category-1';
                 
                 if (isUrl) {
@@ -2119,14 +2174,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             isSortMode = true;
-            originalOrder = [...tableData]; // 保存原始顺序
+            originalOrder = [...tableData];
             
-            // 更新按钮状态
             enableSortBtn.style.display = 'none';
             saveOrderBtn.style.display = 'inline-block';
             cancelSortBtn.style.display = 'inline-block';
             
-            // 添加拖拽样式和功能
             makeRowsDraggable();
             
             showToast('拖拽排序模式已启用，拖动行可以调整顺序', 'info');
@@ -2137,10 +2190,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rows = tableBody.querySelectorAll('tr');
             
             rows.forEach(row => {
-                // 添加拖拽类名
                 row.classList.add('draggable-row');
                 
-                // 添加拖拽手柄到序号单元格
                 const idCell = row.cells[0];
                 if (!idCell.querySelector('.drag-handle')) {
                     const dragHandle = document.createElement('span');
@@ -2149,10 +2200,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     idCell.insertBefore(dragHandle, idCell.firstChild);
                 }
                 
-                // 设置拖拽属性
                 row.setAttribute('draggable', 'true');
                 
-                // 移除原有的事件监听器（避免重复绑定）
                 row.removeEventListener('dragstart', handleDragStart);
                 row.removeEventListener('dragover', handleDragOver);
                 row.removeEventListener('dragenter', handleDragEnter);
@@ -2160,7 +2209,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 row.removeEventListener('drop', handleDrop);
                 row.removeEventListener('dragend', handleDragEnd);
                 
-                // 添加拖拽事件
                 row.addEventListener('dragstart', handleDragStart);
                 row.addEventListener('dragover', handleDragOver);
                 row.addEventListener('dragenter', handleDragEnter);
@@ -2210,7 +2258,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             
             if (dragSrcEl !== this) {
-                // 移动行
                 const allRows = Array.from(tableBody.querySelectorAll('tr'));
                 const srcIndex = allRows.indexOf(dragSrcEl);
                 const destIndex = allRows.indexOf(this);
@@ -2221,7 +2268,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     tableBody.insertBefore(dragSrcEl, this);
                 }
                 
-                // 更新视觉顺序
                 updateRowNumbers();
             }
             
@@ -2257,7 +2303,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         function saveNewOrder() {
             if (!isSortMode) return;
             
-            // 获取新的顺序
             const rows = tableBody.querySelectorAll('tr');
             const newOrder = [];
             
@@ -2269,18 +2314,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
             
-            // 更新数据
             tableData = newOrder;
             
-            // 重新生成ID顺序
             tableData.forEach((item, index) => {
                 item.id = index + 1;
             });
             
-            // 保存到本地存储
             saveDataToStorage();
-            
-            // 退出排序模式
             exitSortMode();
             
             showToast('顺序已保存！', 'success');
@@ -2290,10 +2330,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         function cancelSortMode() {
             if (!isSortMode) return;
             
-            // 恢复原始顺序
             tableData = originalOrder;
             
-            // 重新渲染表格
             const searchTerm = searchInput.value.toLowerCase();
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
@@ -2308,18 +2346,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             dragSrcEl = null;
             originalOrder = [];
             
-            // 更新按钮状态
             enableSortBtn.style.display = 'inline-block';
             saveOrderBtn.style.display = 'none';
             cancelSortBtn.style.display = 'none';
             
-            // 移除拖拽样式
             const rows = tableBody.querySelectorAll('tr');
             rows.forEach(row => {
                 row.classList.remove('draggable-row');
                 row.setAttribute('draggable', 'false');
                 
-                // 移除拖拽手柄
                 const dragHandle = row.querySelector('.drag-handle');
                 if (dragHandle) {
                     dragHandle.remove();
@@ -2338,7 +2373,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
             
-            // 重新加载默认配置
             useDefaultConfig();
             
             showToast('已重置为默认顺序', 'success');
@@ -2451,9 +2485,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 编辑表头
             editHeadersBtn.addEventListener('click', openHeadersModal);
             
-            // GitHub 配置
-            setupGitHubBtn.addEventListener('click', setupGitHubSync);
-            
             // 模态框控制
             closeModal.addEventListener('click', closeModalFunc);
             closeHeadersModal.addEventListener('click', closeHeadersModalFunc);
@@ -2463,27 +2494,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             saveHeadersBtn.addEventListener('click', saveHeaders);
             resetHeadersBtn.addEventListener('click', resetHeaders);
             
-            // 登录/登出
-            loginBtn.addEventListener('click', handleLogin);
-            logoutBtn.addEventListener('click', handleLogout);
-            
-            // 点击模态框外部关闭
-            window.addEventListener('click', (e) => {
-                if (e.target === itemModal) {
-                    closeModalFunc();
-                }
-                if (e.target === headersModal) {
-                    closeHeadersModalFunc();
-                }
-            });
-            
-            // 回车登录
-            passwordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    handleLogin();
-                }
-            });
-
             // 表头点击编辑
             setupHeaderEditListeners();
             
@@ -2684,20 +2694,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const id = editId.value ? parseInt(editId.value) : generateId();
             
-            // 正确处理新分类
             let categoryName;
             let categoryId = itemCategory.value;
             
-            // 检查是否是现有分类
             const existingCategory = categoryList.find(cat => cat.id === categoryId);
             if (existingCategory) {
                 categoryName = existingCategory.name;
             } else {
-                // 这是新分类，需要创建
-                categoryName = categoryId; // 用户输入的分类名称
+                categoryName = categoryId;
                 categoryId = `category${categoryList.length + 1}`;
                 
-                // 添加到分类列表
                 const newCategory = {
                     id: categoryId,
                     name: categoryName
@@ -2705,7 +2711,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 categoryList.push(newCategory);
                 categoryMap[categoryId] = categoryName;
                 
-                // 更新分类筛选器和下拉框
                 updateCategoryFilters();
                 updateCategorySelect();
                 
@@ -2880,8 +2885,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 repairExcelBtn: isLoggedIn && currentUser?.permissions?.includes('export') && gitHubService,
                 updateHTMLBtn: isLoggedIn && currentUser?.permissions?.includes('export'),
                 editHeadersBtn: isLoggedIn && currentUser?.permissions?.includes('config'),
-                downloadExcelBtn: true, // 对所有用户可见
-                refreshConfigBtn: true  // 对所有用户可见
+                downloadExcelBtn: true,
+                refreshConfigBtn: true
             };
             
             Object.entries(buttons).forEach(([btnId, shouldShow]) => {
@@ -2892,53 +2897,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
             
-            // 更新排序控制显示
             if (sortControls) {
                 sortControls.style.display = (isLoggedIn && currentUser?.permissions?.includes('write')) ? 'flex' : 'none';
-            }
-            
-            // 更新权限提示
-            const permissionHint = document.getElementById('permissionHint');
-            if (permissionHint) {
-                permissionHint.style.display = isLoggedIn ? 'none' : 'flex';
-            }
-        }
-
-        // 处理登录
-        async function handleLogin() {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
-            
-            if (!username || !password) {
-                alert('请输入用户名和密码');
-                return;
-            }
-            
-            const maxAttempts = appConfig.maxLoginAttempts || 5;
-            if (loginAttempts >= maxAttempts) {
-                alert(`登录尝试次数过多，请稍后再试。最大尝试次数：${maxAttempts}`);
-                return;
-            }
-            
-            const passwordHash = await sha256(password);
-            const user = adminAccounts.find(acc => 
-                acc.username === username && acc.passwordHash === passwordHash
-            );
-            
-            if (user) {
-                loginAttempts = 0;
-                loginSuccess(user);
-                localStorage.setItem('h5IndexCurrentUser', JSON.stringify({
-                    username: user.username,
-                    name: user.name,
-                    permissions: user.permissions || ['read']
-                }));
-            } else {
-                loginAttempts++;
-                const remainingAttempts = maxAttempts - loginAttempts;
-                alert(`用户名或密码错误，剩余尝试次数：${remainingAttempts}`);
-                passwordInput.value = '';
-                passwordInput.focus();
             }
         }
 
@@ -2947,23 +2907,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             isLoggedIn = true;
             currentUser = user;
             
-            loginSection.style.display = 'none';
-            userSection.style.display = 'block';
-            userName.textContent = user.name;
-            adminIndicator.style.display = 'flex';
-            permissionHint.style.display = 'none';
+            localStorage.setItem('h5IndexCurrentUser', JSON.stringify({
+                username: user.username,
+                name: user.name,
+                permissions: user.permissions || ['read']
+            }));
+            
+            // 更新状态显示
+            if (gitHubService) {
+                updateStatus('success', '您当前是管理员模式，GitHub已连接');
+            } else {
+                updateStatus('success', '您当前是管理员模式');
+            }
             
             updateUIForPermissions();
             updateButtonVisibility();
             
-            // 登录后重新渲染表格，确保操作按钮状态正确
+            // 重新渲染表格
             const searchTerm = searchInput.value.toLowerCase();
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
             
-            passwordInput.value = '';
             setupAutoLogout();
-            
             showToast(`欢迎回来，${user.name}！`, 'success');
         }
 
@@ -2977,23 +2942,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 logoutTimer = null;
             }
             
-            loginSection.style.display = 'block';
-            userSection.style.display = 'none';
-            adminIndicator.style.display = 'none';
-            permissionHint.style.display = 'flex';
+            // 更新状态显示
+            updateStatus('warning', '您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。');
             
-            // 更新按钮显示状态
             updateButtonVisibility();
             
-            // 登出后重新渲染表格，禁用操作按钮
+            // 重新渲染表格
             const searchTerm = searchInput.value.toLowerCase();
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
             
             localStorage.removeItem('h5IndexCurrentUser');
-            usernameInput.value = '';
-            passwordInput.value = '';
-            
             showToast('您已成功退出登录', 'info');
         }
 
@@ -3002,11 +2961,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const filterBox = document.querySelector('.filter-box');
             const allButton = filterBox.querySelector('[data-category="all"]');
             
-            // 清空现有分类按钮（保留"全部"按钮）
             filterBox.innerHTML = '';
             filterBox.appendChild(allButton);
             
-            // 去重分类列表
             const uniqueCategories = [];
             const addedNames = new Set();
             
@@ -3017,7 +2974,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
             
-            // 添加分类按钮
             uniqueCategories.forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'filter-btn';
@@ -3026,10 +2982,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 filterBox.appendChild(button);
             });
             
-            // 重新设置事件监听
             setupFilterEvents();
             
-            // 激活当前筛选状态
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category;
             if (activeCategory) {
                 const activeBtn = filterBox.querySelector(`[data-category="${activeCategory}"]`);
@@ -3043,10 +2997,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // 增强的分类选择器更新函数
+        // 更新分类选择器
         function updateCategorySelect() {
             const categorySelect = document.getElementById('itemCategory');
-            const currentValue = categorySelect.value; // 保存当前值
+            const currentValue = categorySelect.value;
             
             categorySelect.innerHTML = `
                 <option value="">选择分类</option>
@@ -3060,37 +3014,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 categorySelect.appendChild(option);
             });
             
-            // 恢复之前的值（如果是编辑模式）
             if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
                 categorySelect.value = currentValue;
             }
             
-            // 添加新分类的事件监听
             categorySelect.addEventListener('change', function() {
                 if (this.value === '__new__') {
                     const newCategoryName = prompt('请输入新分类名称:');
                     if (newCategoryName && newCategoryName.trim()) {
-                        // 创建新分类
                         const newCategoryId = `category${categoryList.length + 1}`;
                         const newCategory = {
                             id: newCategoryId,
                             name: newCategoryName.trim()
                         };
                         
-                        // 添加到分类系统
                         categoryList.push(newCategory);
                         categoryMap[newCategoryId] = newCategoryName.trim();
                         
-                        // 更新界面
                         updateCategorySelect();
                         updateCategoryFilters();
                         
-                        // 选中新创建的分类
                         categorySelect.value = newCategoryId;
                         
                         showToast(`新分类 "${newCategoryName}" 已创建！`, 'success');
                     } else {
-                        // 用户取消或输入为空，重置选择
                         this.value = '';
                     }
                 }
@@ -3120,81 +3067,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        function showErrorMessage(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            if (errorDiv && errorText) {
-                errorText.textContent = message;
-                errorDiv.style.display = 'flex';
-            }
-        }
-
         // 更新配置版本信息函数
         function updateConfigVersionInfo(config) {
-            const configVersionElement = document.getElementById('configVersion');
-            if (!configVersionElement) return;
+            if (!configVersion) return;
             
             const version = config.version || '1.0.0';
             const dataCount = tableData.length;
             const currentTime = new Date().toLocaleString();
-            //const source = config.lastUpdated ? 'GitHub SecurityConfig' : '本地数据';
-			const source = config.source;
+            const source = config.source || '未知';
             
-            configVersionElement.textContent = 
+            configVersion.textContent = 
                 `配置版本: ${version} | 数据量: ${dataCount}条 | 来源: ${source} | 更新时间: ${currentTime}`;
-        }
-
-        // GitHub相关功能
-        function showGitHubTokenHelp() {
-            alert(`GitHub 个人访问令牌 - 完全免费\n\n` +
-                  `如何获取：\n` +
-                  `1. 登录 GitHub → Settings → Developer settings\n` +
-                  `2. 选择 Personal access tokens → Tokens (classic)\n` +
-                  `3. 点击 Generate new token\n` +
-                  `4. 设置备注，选择过期时间（建议1年）\n` +
-                  `5. 勾选 repo 权限（完整控制私有仓库）\n` +
-                  `6. 生成令牌并复制保存\n\n` +
-                  `💡 重要提示：\n` +
-                  `• 这个功能完全免费\n` +
-                  `• 不会产生任何费用\n` +
-                  `• 令牌只保存在您的浏览器本地\n` +
-                  `• 可以随时在 GitHub 上撤销令牌`);
-        }
-
-        // 配置 GitHub 同步
-        async function setupGitHubSync() {
-            const token = githubTokenInput.value.trim();
-            
-            if (!token) {
-                alert('请输入 GitHub 个人访问令牌');
-                return;
-            }
-
-            try {
-                showLoadingIndicator('正在验证 GitHub 令牌...');
-                gitHubService = new GitHubService(token);
-                const authResult = await gitHubService.checkAuth();
-                
-                if (authResult.authenticated) {
-                    localStorage.setItem('githubToken', token);
-                    githubTokenInput.value = '';
-                    document.getElementById('githubStatus').innerHTML = 
-                        `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
-                    
-                    hideLoadingIndicator();
-                    showToast('GitHub 令牌配置成功！现在可以同步数据到 Excel 文件了。', 'success');
-                    
-                    // 更新按钮显示状态
-                    updateButtonVisibility();
-                } else {
-                    throw new Error('GitHub 令牌验证失败');
-                }
-                
-            } catch (error) {
-                console.error('GitHub 配置失败:', error);
-                hideLoadingIndicator();
-                alert(`GitHub 配置失败: ${error.message}\n\n请检查：\n1. 令牌是否正确\n2. 令牌是否具有 repo 权限\n3. 网络连接是否正常`);
-            }
         }
 
         // 加载保存的 GitHub 令牌
@@ -3204,8 +3087,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 gitHubService = new GitHubService(savedToken);
                 gitHubService.checkAuth().then(authResult => {
                     if (authResult.authenticated) {
-                        document.getElementById('githubStatus').innerHTML = 
-                            `<i class="fas fa-check-circle"></i> GitHub已连接 (${authResult.username})`;
+                        console.log('GitHub令牌验证成功:', authResult.username);
+                        if (isLoggedIn) {
+                            updateStatus('success', '您当前是管理员模式，GitHub已连接');
+                        }
                     } else {
                         localStorage.removeItem('githubToken');
                         gitHubService = null;
@@ -3229,7 +3114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // 修复的Excel同步功能 - 包含网页更新
+        // 修复的Excel同步功能
         async function syncDataToExcel() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -3238,14 +3123,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (!gitHubService) {
                 alert('请先配置 GitHub 个人访问令牌');
-                githubTokenInput.focus();
+                showAuthPanel();
                 return;
             }
 
             try {
                 showLoadingIndicator('正在同步数据到 GitHub Excel 文件...');
 
-                // 1. 获取当前 Excel 文件信息
                 let fileInfo;
                 try {
                     fileInfo = await gitHubService.getFileContent('table.xlsx');
@@ -3258,7 +3142,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     fileInfo = { sha: null, exists: false };
                 }
                 
-                // 2. 准备数据
                 const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
                 const excelData = [headers];
                 
@@ -3274,10 +3157,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     excelData.push(row);
                 });
 
-                // 3. 创建工作表
                 const worksheet = XLSX.utils.aoa_to_sheet(excelData);
                 
-                // 4. 设置列宽
                 const colWidths = [
                     { wch: 8 },   // 序号
                     { wch: 15 },  // 分类
@@ -3288,21 +3169,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ];
                 worksheet['!cols'] = colWidths;
 
-                // 5. 创建工作簿
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
                 
-                // 6. 生成 Excel 文件
                 const excelBuffer = XLSX.write(workbook, { 
                     bookType: 'xlsx', 
                     type: 'array',
                     bookSST: false
                 });
 
-                // 7. 转换为 base64
                 const excelBase64 = arrayBufferToBase64(excelBuffer);
 
-                // 8. 上传到 GitHub - 使用强制创建方法解决SHA冲突
                 await gitHubService.forceCreateFile(
                     'table.xlsx',
                     excelBase64,
@@ -3312,7 +3189,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 hideLoadingIndicator();
                 showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
                 
-                // 同步成功后更新网页显示
                 const searchTerm = searchInput.value.toLowerCase();
                 const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
                 filterTable(searchTerm, activeCategory);
@@ -3371,7 +3247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // 修复Excel文件格式功能 - 强制解决SHA冲突
+        // 修复Excel文件格式功能
         async function repairExcelFormat() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -3386,11 +3262,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 showLoadingIndicator('正在修复 Excel 文件格式...');
 
-                // 创建全新的Excel文件结构
                 const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
                 const excelData = [headers];
                 
-                // 添加当前数据
                 tableData.forEach(item => {
                     const row = [
                         item.id || '',
@@ -3403,10 +3277,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     excelData.push(row);
                 });
 
-                // 创建工作表
                 const worksheet = XLSX.utils.aoa_to_sheet(excelData);
                 
-                // 设置列宽
                 const colWidths = [
                     { wch: 8 },   // 序号
                     { wch: 15 },  // 分类
@@ -3417,21 +3289,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ];
                 worksheet['!cols'] = colWidths;
 
-                // 创建工作簿
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'DH3项目索引表');
                 
-                // 生成 Excel 文件
                 const excelBuffer = XLSX.write(workbook, { 
                     bookType: 'xlsx', 
                     type: 'array',
                     bookSST: false
                 });
 
-                // 转换为 base64
                 const excelBase64 = arrayBufferToBase64(excelBuffer);
 
-                // 强制创建新文件，解决SHA冲突
                 await gitHubService.forceCreateNewFile(
                     'table.xlsx',
                     excelBase64,
@@ -3491,7 +3359,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub securityconfig的数据。')) {
-                // 重新从GitHub加载数据
                 loadConfigFromGitHub().then(success => {
                     if (success) {
                         localStorage.removeItem('h5IndexData');
@@ -3501,6 +3368,165 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             }
+        }
+
+        // 打开文件夹函数
+        function openFolder(path) {
+            const decodedPath = path.replace(/\\\\/g, '\\');
+            
+            if (isLocalEnvironment()) {
+                return attemptDirectOpen(path);
+            } else {
+                return offerPathCopy(path, '由于网页安全限制，无法直接打开本地文件夹。');
+            }
+        }
+
+        // 检测是否为本地环境
+        function isLocalEnvironment() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            if (protocol === 'file:') {
+                return true;
+            }
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+                return true;
+            }
+            
+            if (/^(192\.168|10|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(hostname)) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        // 尝试直接打开文件夹
+        function attemptDirectOpen(decodedPath) {
+            const fileUrl = `file:///${decodedPath.replace(/\\/g, '/')}`;
+            
+            try {
+                const newWindow = window.open(fileUrl, '_blank');
+                
+                if (newWindow === null || newWindow.closed) {
+                    throw new Error('窗口打开被阻止');
+                }
+                
+                showToast('正在打开文件夹...', 'info');
+                return true;
+            } catch (error) {
+                console.log('方法1失败:', error.message);
+            }
+            
+            try {
+                const link = document.createElement('a');
+                link.href = fileUrl;
+                link.target = '_blank';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('正在尝试打开文件夹...', 'info');
+                
+                setTimeout(() => {
+                    offerPathCopy(decodedPath, '如果文件夹没有打开，请使用复制功能：');
+                }, 1000);
+                
+                return true;
+            } catch (error) {
+                console.log('方法2失败:', error.message);
+            }
+            
+            console.log('所有直接打开方法都失败，使用复制方案');
+            offerPathCopy(decodedPath, '直接打开失败，请使用复制功能：');
+            return false;
+        }
+
+        // 提供路径复制功能
+        function offerPathCopy(decodedPath, reason = '') {
+            const message = reason + '\n\n是否将以下路径复制到剪贴板？\n\n路径: ' + decodedPath;
+            
+            if (confirm(message)) {
+                copyToClipboard(decodedPath).then(() => {
+                    showToast('✅ 路径已复制到剪贴板！', 'success');
+                }).catch(err => {
+                    fallbackCopy(decodedPath);
+                });
+            }
+            return false;
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } else {
+                return fallbackCopy(text);
+            }
+        }
+
+        // 备用复制方法
+        function fallbackCopy(text) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    textArea.setSelectionRange(0, 99999);
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        resolve(true);
+                    } else {
+                        reject(new Error('复制命令失败'));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        // 显示 Toast 消息
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas ${getToastIcon(type)}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        function getToastIcon(type) {
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            return icons[type] || 'fa-info-circle';
         }
     </script>
 </body>
