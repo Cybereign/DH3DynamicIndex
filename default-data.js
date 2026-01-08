@@ -100,7 +100,8 @@ const DEFAULT_CATEGORY_LIST = [
     { id: "category4", name: "联系信息" },
     { id: "category5", name: "再发防止" },
     { id: "category6", name: "整车配置" },
-    { id: "category6", name: "其他" }
+    { id: "category7", name: "责任分工" },
+    { id: "category8", name: "其他" }
 ];
 
 const DEFAULT_CATEGORY_MAP = {
@@ -110,7 +111,8 @@ const DEFAULT_CATEGORY_MAP = {
     "category4": "联系信息",
     "category5": "再发防止",
     "category6": "整车配置",
-    "category6": "其他"
+    "category7": "责任分工",
+    "categor8": "其他"
 };
 
 const DEFAULT_ADMIN_ACCOUNTS = [
