@@ -95,7 +95,7 @@ const DEFAULT_TABLE_DATA = [
         "id": 12,
         "category": "再发防止",
         "title": "DH3 设计故障类再发防止-扩库",
-        "path": "https://doc.weixin.qq.com/sheet/e3_AKkAcQbnAKcCNoUhJadOcRr27t3Mb?scode=AGwAPQeYAA0i5kLUWBAbgALQaUAJ8&version=5.0.0.8619&platform=win&tab=mfripw",
+        "path": "https://acndoaymjsa1.feishu.cn/file/ZS20b7nPcoRUbZxaIGXcOSUPnRg",
         "type": "url",
         "note": "【飞书】设计故障类再发防止-扩库"
     }
