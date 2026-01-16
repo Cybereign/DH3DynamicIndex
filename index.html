@@ -2579,11 +2579,11 @@
 
         // 数据持久化函数
         function saveDataToStorage() {
-            localStorage.setItem('h5IndexData', JSON.stringify(tableData));
+            localStorage.setItem('DH3h5IndexData', JSON.stringify(tableData));
         }
 
         function loadDataFromStorage() {
-            const savedData = localStorage.getItem('h5IndexData');
+            const savedData = localStorage.getItem('DH3h5IndexData');
             if (savedData) {
                 return JSON.parse(savedData);
             }
@@ -2592,11 +2592,11 @@
 
         // 表头配置持久化
         function saveHeadersToStorage() {
-            localStorage.setItem('h5IndexHeaders', JSON.stringify(headerConfig));
+            localStorage.setItem('DH3h5IndexHeaders', JSON.stringify(headerConfig));
         }
 
         function loadHeadersFromStorage() {
-            const savedHeaders = localStorage.getItem('h5IndexHeaders');
+            const savedHeaders = localStorage.getItem('DH3h5IndexHeaders');
             if (savedHeaders) {
                 return JSON.parse(savedHeaders);
             }
@@ -2638,7 +2638,7 @@
 
         // 检查登录状态
         function checkLoginStatus() {
-            const savedUser = localStorage.getItem('h5IndexCurrentUser');
+            const savedUser = localStorage.getItem('DH3h5IndexCurrentUser');
             if (savedUser) {
                 const user = JSON.parse(savedUser);
                 loginSuccess(user);
@@ -3102,7 +3102,7 @@
             isLoggedIn = true;
             currentUser = user;
             
-            localStorage.setItem('h5IndexCurrentUser', JSON.stringify({
+            localStorage.setItem('DH3h5IndexCurrentUser', JSON.stringify({
                 username: user.username,
                 name: user.name,
                 permissions: user.permissions || ['read']
@@ -3151,7 +3151,7 @@
             const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             filterTable(searchTerm, activeCategory);
             
-            localStorage.removeItem('h5IndexCurrentUser');
+            localStorage.removeItem('DH3h5IndexCurrentUser');
             showToast('您已成功退出登录', 'info');
         }
 
@@ -3569,7 +3569,7 @@
             if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub securityconfig的数据。')) {
                 loadConfigFromGitHub(true).then(success => {
                     if (success) {
-                        localStorage.removeItem('h5IndexData');
+                        localStorage.removeItem('DH3h5IndexData');
                         showToast('数据已重置为GitHub securityconfig的初始状态', 'success');
                     } else {
                         showToast('GitHub数据加载失败，请检查网络连接', 'error');
