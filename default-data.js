@@ -95,7 +95,7 @@ const DEFAULT_TABLE_DATA = [
         "id": 12,
         "category": "再发防止",
         "title": "DH3 设计故障类再发防止-扩库",
-        "path": https://dongfengyipai.feishu.cn/sheets/XqPHs0HR2hPAzYt5HumcUJoHnab?sheet=2qDVoG",
+        "path": "https://dongfengyipai.feishu.cn/sheets/XqPHs0HR2hPAzYt5HumcUJoHnab?sheet=2qDVoG",
         "type": "url",
         "note": "【飞书】设计故障类再发防止-扩库"
     }
