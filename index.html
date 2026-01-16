@@ -945,8 +945,9 @@
         
         .sort-btn {
             padding: 10px 18px;
-            background: orange;
-            border: none;
+            background: #6c757d;
+            border: 1px solid #6c757d;
+            color: white;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
@@ -957,8 +958,8 @@
         }
         
         .sort-btn:hover {
-            background: red;
-            border-color: #6a11cb;
+            background: #5a6268;
+            border-color: #545b62;
         }
         
         .sort-btn:disabled {
@@ -1289,12 +1290,11 @@
         // 示例数据 - 将从GitHub配置加载
         let tableData = [];
         
-        // GitHub配置URL
+        // GitHub配置信息
         const GITHUB_OWNER = 'Cybereign';
         const GITHUB_REPO = 'securityconfig';
         const GITHUB_BRANCH = 'main';
-        const GITHUB_CONFIG_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/config.json`;
-        const GITHUB_EXCEL_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/table.xlsx`;
+        const GITHUB_CONFIG_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
         
         // GitHub API 端点
         const GITHUB_API_BASE = 'https://api.github.com';
@@ -1319,7 +1319,88 @@
         let dragSrcEl = null;
         let originalOrder = [];
 
-        // 修复的GitHub API 服务
+        // GitHub服务实例
+        let gitHubService = null;
+
+        // 自动登出和登录尝试
+        let logoutTimer;
+        let loginAttempts = 0;
+
+        // 当前显示的数据和路径类型
+        let currentData = [];
+        let currentPathType = 'url';
+        let isLoggedIn = false;
+        let currentUser = null;
+
+        // 页面状态
+        let currentStatus = {
+            type: 'info',
+            message: '正在加载配置...',
+            showLoginHint: true
+        };
+
+        // DOM元素
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const addBtn = document.getElementById('addBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const syncExcelBtn = document.getElementById('syncExcelBtn');
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        const repairExcelBtn = document.getElementById('repairExcelBtn');
+        const updateHTMLBtn = document.getElementById('updateHTMLBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const refreshConfigBtn = document.getElementById('refreshConfigBtn');
+        const editHeadersBtn = document.getElementById('editHeadersBtn');
+        const itemModal = document.getElementById('itemModal');
+        const headersModal = document.getElementById('headersModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const itemForm = document.getElementById('itemForm');
+        const headersForm = document.getElementById('headersForm');
+        const editId = document.getElementById('editId');
+        const itemTitle = document.getElementById('itemTitle');
+        const itemCategory = document.getElementById('itemCategory');
+        const itemPath = document.getElementById('itemPath');
+        const itemNote = document.getElementById('itemNote');
+        const saveItemBtn = document.getElementById('saveItemBtn');
+        const closeModal = document.getElementById('closeModal');
+        const closeHeadersModal = document.getElementById('closeHeadersModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelHeadersBtn = document.getElementById('cancelHeadersBtn');
+        const saveHeadersBtn = document.getElementById('saveHeadersBtn');
+        const resetHeadersBtn = document.getElementById('resetHeadersBtn');
+        const totalCount = document.getElementById('totalCount');
+        const filteredCount = document.getElementById('filteredCount');
+        const configVersion = document.getElementById('configVersion');
+        const pathTypeButtons = document.querySelectorAll('.path-type-btn');
+        const pathExample = document.getElementById('pathExample');
+        
+        // 新增的认证相关DOM元素
+        const adminToggleBtn = document.getElementById('adminToggleBtn');
+        const authPanel = document.getElementById('authPanel');
+        const authUserInfo = document.getElementById('authUserInfo');
+        const userAvatar = document.getElementById('userAvatar');
+        const userDisplayName = document.getElementById('userDisplayName');
+        const userRole = document.getElementById('userRole');
+        const panelLogoutBtn = document.getElementById('panelLogoutBtn');
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const loginTab = document.getElementById('loginTab');
+        const githubTab = document.getElementById('githubTab');
+        const authUsername = document.getElementById('authUsername');
+        const authPassword = document.getElementById('authPassword');
+        const authLoginBtn = document.getElementById('authLoginBtn');
+        const testAccountBtn = document.getElementById('testAccountBtn');
+        const cancelLoginBtn = document.getElementById('cancelLoginBtn');
+        const authGithubToken = document.getElementById('authGithubToken');
+        const authSetupGithubBtn = document.getElementById('authSetupGithubBtn');
+        const cancelGithubBtn = document.getElementById('cancelGithubBtn');
+        const loginStatus = document.getElementById('loginStatus');
+        const githubStatus = document.getElementById('githubStatus');
+        const headerStatus = document.getElementById('headerStatus');
+        const statusText = document.getElementById('statusText');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        // ========== GitHub API 服务类 ==========
+
         class GitHubService {
             constructor(token) {
                 this.token = token;
@@ -1503,85 +1584,6 @@
             }
         }
 
-        // 创建 GitHub 服务实例
-        let gitHubService = null;
-
-        // 自动登出和登录尝试
-        let logoutTimer;
-        let loginAttempts = 0;
-
-        // 当前显示的数据和路径类型
-        let currentData = [];
-        let currentPathType = 'url';
-        let isLoggedIn = false;
-        let currentUser = null;
-
-        // 页面状态
-        let currentStatus = {
-            type: 'info',
-            message: '正在加载配置...',
-            showLoginHint: true
-        };
-
-        // DOM元素
-        const tableBody = document.getElementById('tableBody');
-        const searchInput = document.getElementById('searchInput');
-        const addBtn = document.getElementById('addBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const syncExcelBtn = document.getElementById('syncExcelBtn');
-        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
-        const repairExcelBtn = document.getElementById('repairExcelBtn');
-        const updateHTMLBtn = document.getElementById('updateHTMLBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const refreshConfigBtn = document.getElementById('refreshConfigBtn');
-        const editHeadersBtn = document.getElementById('editHeadersBtn');
-        const itemModal = document.getElementById('itemModal');
-        const headersModal = document.getElementById('headersModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const itemForm = document.getElementById('itemForm');
-        const headersForm = document.getElementById('headersForm');
-        const editId = document.getElementById('editId');
-        const itemTitle = document.getElementById('itemTitle');
-        const itemCategory = document.getElementById('itemCategory');
-        const itemPath = document.getElementById('itemPath');
-        const itemNote = document.getElementById('itemNote');
-        const saveItemBtn = document.getElementById('saveItemBtn');
-        const closeModal = document.getElementById('closeModal');
-        const closeHeadersModal = document.getElementById('closeHeadersModal');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const cancelHeadersBtn = document.getElementById('cancelHeadersBtn');
-        const saveHeadersBtn = document.getElementById('saveHeadersBtn');
-        const resetHeadersBtn = document.getElementById('resetHeadersBtn');
-        const totalCount = document.getElementById('totalCount');
-        const filteredCount = document.getElementById('filteredCount');
-        const configVersion = document.getElementById('configVersion');
-        const pathTypeButtons = document.querySelectorAll('.path-type-btn');
-        const pathExample = document.getElementById('pathExample');
-        
-        // 新增的认证相关DOM元素
-        const adminToggleBtn = document.getElementById('adminToggleBtn');
-        const authPanel = document.getElementById('authPanel');
-        const authUserInfo = document.getElementById('authUserInfo');
-        const userAvatar = document.getElementById('userAvatar');
-        const userDisplayName = document.getElementById('userDisplayName');
-        const userRole = document.getElementById('userRole');
-        const panelLogoutBtn = document.getElementById('panelLogoutBtn');
-        const authTabs = document.querySelectorAll('.auth-tab');
-        const loginTab = document.getElementById('loginTab');
-        const githubTab = document.getElementById('githubTab');
-        const authUsername = document.getElementById('authUsername');
-        const authPassword = document.getElementById('authPassword');
-        const authLoginBtn = document.getElementById('authLoginBtn');
-        const testAccountBtn = document.getElementById('testAccountBtn');
-        const cancelLoginBtn = document.getElementById('cancelLoginBtn');
-        const authGithubToken = document.getElementById('authGithubToken');
-        const authSetupGithubBtn = document.getElementById('authSetupGithubBtn');
-        const cancelGithubBtn = document.getElementById('cancelGithubBtn');
-        const loginStatus = document.getElementById('loginStatus');
-        const githubStatus = document.getElementById('githubStatus');
-        const headerStatus = document.getElementById('headerStatus');
-        const statusText = document.getElementById('statusText');
-
         // ========== 核心功能函数 ==========
 
         // 检查默认数据是否加载成功
@@ -1646,14 +1648,6 @@
             }
         }
 
-        // 获取默认数据（用于重置功能）
-        function getDefaultTableData() {
-            if (typeof DEFAULT_TABLE_DATA === 'undefined') {
-                throw new Error('默认数据文件未加载');
-            }
-            return JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
-        }
-
         // 从数据中初始化分类系统
         function initializeCategoriesFromData() {
             const uniqueCategories = new Map();
@@ -1677,13 +1671,29 @@
         }
 
         // 从GitHub加载配置函数
-        async function loadConfigFromGitHub() {
-            showLoadingIndicator('正在从GitHub securityconfig加载配置...');
+        async function loadConfigFromGitHub(forceRefresh = false) {
+            const timestamp = forceRefresh ? `?_=${Date.now()}` : '';
+            const configUrl = `${GITHUB_CONFIG_BASE}/config.json${timestamp}`;
+            const excelUrl = `${GITHUB_CONFIG_BASE}/table.xlsx${timestamp}`;
+            
+            showLoadingIndicator(forceRefresh ? '正在强制从GitHub加载配置...' : '正在从GitHub加载配置...');
             
             try {
                 const [configResponse, excelResponse] = await Promise.all([
-                    fetch(GITHUB_CONFIG_URL).catch(() => { throw new Error('无法连接到GitHub配置'); }),
-                    fetch(GITHUB_EXCEL_URL).catch(() => { throw new Error('无法连接到Excel文件'); })
+                    fetch(configUrl, {
+                        cache: forceRefresh ? 'no-cache' : 'default',
+                        headers: forceRefresh ? {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
+                        } : {}
+                    }).catch(() => { throw new Error('无法连接到GitHub配置'); }),
+                    fetch(excelUrl, {
+                        cache: forceRefresh ? 'no-cache' : 'default',
+                        headers: forceRefresh ? {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
+                        } : {}
+                    }).catch(() => { throw new Error('无法连接到Excel文件'); })
                 ]);
                 
                 if (!configResponse.ok) throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
@@ -1704,6 +1714,7 @@
                 }
                 
                 hideLoadingIndicator();
+                
                 if (isLoggedIn) {
                     updateStatus('success', '已加载GitHub配置，您当前是管理员模式');
                 } else {
@@ -1803,8 +1814,52 @@
             }
         }
 
+        // 从GitHub重新加载Excel数据
+        async function reloadExcelDataFromGitHub() {
+            try {
+                showLoadingIndicator('正在从GitHub获取最新数据...');
+                
+                // 使用时间戳绕过缓存
+                const timestamp = Date.now();
+                const excelUrl = `${GITHUB_CONFIG_BASE}/table.xlsx?_=${timestamp}`;
+                
+                const response = await fetch(excelUrl, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Excel加载失败: HTTP ${response.status}`);
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                await processExcelData(arrayBuffer);
+                
+                // 更新本地存储，确保一致性
+                saveDataToStorage();
+                
+                console.log('✅ 从GitHub重新加载数据成功，数据条数:', tableData.length);
+                hideLoadingIndicator();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 从GitHub重新加载数据失败:', error);
+                hideLoadingIndicator();
+                
+                // 如果重新加载失败，显示警告但继续使用当前数据
+                showToast('重新加载最新数据失败，将使用本地数据。请手动刷新页面查看最新数据。', 'warning');
+                return false;
+            }
+        }
+
         // 修复的初始化流程
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🔄 系统初始化开始...');
+            
             checkDefaultDataLoaded();
             
             const savedHeaders = loadHeadersFromStorage();
@@ -1861,7 +1916,7 @@
                 useDefaultConfig();
             }
             
-            console.log(`📊 数据量: ${tableData.length} 条记录`);
+            console.log(`📊 初始化完成，数据量: ${tableData.length} 条记录`);
             
             setupEventListeners();
             setupAuthEvents();
@@ -1877,6 +1932,8 @@
             initSorting();
             
             showToast(`系统初始化完成，数据来源: ${appConfig.source}`, 'success');
+            
+            console.log('✅ 系统初始化完成');
         });
 
         // ========== 认证面板功能 ==========
@@ -2165,8 +2222,11 @@
 
         // 渲染表格
         function renderTable(data) {
+            console.log(`🔄 渲染表格，数据条数: ${data.length}`);
+            
             if (data.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
+                updateStats();
                 return;
             }
             
@@ -2703,7 +2763,6 @@
             
             currentData = filteredData;
             renderTable(currentData);
-            updateStats();
         }
 
         // 打开模态框
@@ -2925,7 +2984,7 @@
 
         // 刷新配置
         async function refreshConfig() {
-            const success = await loadConfigFromGitHub();
+            const success = await loadConfigFromGitHub(true); // 强制刷新
             if (success) {
                 showToast('配置刷新成功！', 'success');
                 if (isLoggedIn && currentUser) {
@@ -2936,6 +2995,8 @@
                         updateButtonVisibility();
                     }
                 }
+            } else {
+                showToast('配置刷新失败，请检查网络连接', 'error');
             }
         }
 
@@ -3147,18 +3208,16 @@
 
         // 显示加载指示器
         function showLoadingIndicator(message) {
-            const indicator = document.getElementById('loadingIndicator');
-            const text = indicator.querySelector('span');
-            if (indicator) {
+            const text = loadingIndicator.querySelector('span');
+            if (loadingIndicator) {
                 text.textContent = message;
-                indicator.style.display = 'flex';
+                loadingIndicator.style.display = 'flex';
             }
         }
 
         function hideLoadingIndicator() {
-            const indicator = document.getElementById('loadingIndicator');
-            if (indicator) {
-                indicator.style.display = 'none';
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
             }
         }
 
@@ -3194,7 +3253,7 @@
             }
         }
 
-        // 修复的ArrayBuffer转Base64函数
+        // ArrayBuffer转Base64函数
         function arrayBufferToBase64(buffer) {
             try {
                 const bytes = new Uint8Array(buffer);
@@ -3283,6 +3342,18 @@
 
                 hideLoadingIndicator();
                 showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
+                
+                // ========== 关键修复：同步后重新从GitHub加载数据 ==========
+                console.log('🔄 同步成功，开始重新从GitHub加载最新数据...');
+                
+                // 强制重新从GitHub加载Excel数据
+                const reloadSuccess = await reloadExcelDataFromGitHub();
+                
+                if (reloadSuccess) {
+                    showToast('✅ 数据同步完成，已加载最新数据！', 'success');
+                } else {
+                    showToast('⚠️ 数据同步完成，但重新加载最新数据失败。页面显示可能不是最新数据。', 'warning');
+                }
                 
                 const searchTerm = searchInput.value.toLowerCase();
                 const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
@@ -3454,7 +3525,7 @@
             }
             
             if (confirm('确定要重置数据吗？这将清除所有本地修改，恢复为GitHub securityconfig的数据。')) {
-                loadConfigFromGitHub().then(success => {
+                loadConfigFromGitHub(true).then(success => {
                     if (success) {
                         localStorage.removeItem('h5IndexData');
                         showToast('数据已重置为GitHub securityconfig的初始状态', 'success');
