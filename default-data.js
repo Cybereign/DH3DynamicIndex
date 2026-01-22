@@ -98,6 +98,14 @@ const DEFAULT_TABLE_DATA = [
         "path": "https://dongfengyipai.feishu.cn/sheets/XqPHs0HR2hPAzYt5HumcUJoHnab?sheet=2qDVoG",
         "type": "url",
         "note": "【飞书】设计故障类再发防止-扩库"
+    },
+    {
+        "id": 13,
+        "category": "再发防止",
+        "title": "DH3异响再发防止清单-各专业",
+        "path": "https://acndoaymjsa1.feishu.cn/wiki/TU8YwzEhgi340zkxqVEcTmQindc",
+        "type": "url",
+        "note": "【飞书】DH3异响再发防止清单-各专业"
     }
 ];
 
