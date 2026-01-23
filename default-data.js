@@ -128,7 +128,7 @@ const DEFAULT_CATEGORY_MAP = {
     "category5": "再发防止",
     "category6": "整车配置",
     "category7": "责任分工",
-    "categor8": "其他"
+    "category8": "其他"
 };
 
 const DEFAULT_ADMIN_ACCOUNTS = [
