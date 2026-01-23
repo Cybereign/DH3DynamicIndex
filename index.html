@@ -388,6 +388,7 @@
             flex-wrap: wrap;
             gap: 15px;
             border-bottom: 1px solid #eaeaea;
+            align-items: center;
         }
         
         .search-box {
@@ -419,12 +420,36 @@
             color: #888;
         }
         
+        /* 修复分类筛选器区域 - 确保单行显示 */
         .filter-box {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 8px;
             flex: 1;
-            min-width: 300px;
+            min-width: 200px;
+            overflow-x: auto; /* 允许水平滚动 */
+            white-space: nowrap; /* 防止换行 */
+            padding: 5px 0; /* 添加一些内边距 */
+            scrollbar-width: thin; /* Firefox滚动条 */
+            scrollbar-color: #c1c1c1 #f1f1f1;
+        }
+        
+        /* Webkit浏览器滚动条样式 */
+        .filter-box::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .filter-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .filter-box::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .filter-box::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
         
         .filter-btn {
@@ -435,7 +460,8 @@
             cursor: pointer;
             transition: all 0.2s;
             font-size: 0.9rem;
-            white-space: nowrap;
+            white-space: nowrap; /* 防止按钮内文字换行 */
+            flex-shrink: 0; /* 防止按钮缩小 */
         }
         
         .filter-btn:hover {
@@ -448,13 +474,38 @@
             border-color: #6a11cb;
         }
         
+        /* 修复操作按钮区域 - 确保单行显示 */
         .action-buttons {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            flex: 1;
+            gap: 8px;
+            flex-wrap: nowrap; /* 禁止换行 */
             min-width: 300px;
             justify-content: flex-end;
+            align-items: center;
+            overflow-x: auto; /* 允许水平滚动 */
+            white-space: nowrap; /* 防止换行 */
+            padding: 5px 0; /* 添加一些内边距 */
+            scrollbar-width: thin; /* Firefox滚动条 */
+            scrollbar-color: #c1c1c1 #f1f1f1;
+        }
+        
+        /* Webkit浏览器滚动条样式 */
+        .action-buttons::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .action-buttons::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .action-buttons::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .action-buttons::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
         
         .btn {
@@ -467,7 +518,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap;
+            white-space: nowrap; /* 防止按钮内文字换行 */
+            flex-shrink: 0; /* 防止按钮缩小 */
+            height: 42px; /* 固定高度确保对齐 */
+            box-sizing: border-box; /* 确保padding包含在高度内 */
         }
         
         .btn-primary {
@@ -985,9 +1039,10 @@
         
         .sort-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
-            margin-left: 10px;
+            margin-left: 8px;
+            flex-shrink: 0; /* 防止排序控件缩小 */
         }
         
         .sort-btn {
@@ -1002,6 +1057,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: 42px;
+            box-sizing: border-box;
         }
         
         .sort-btn:hover {
@@ -1015,6 +1074,30 @@
         }
         
         /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                flex: 0 0 100%;
+                min-width: 100%;
+            }
+            
+            .filter-box {
+                width: 100%;
+                order: 2;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                justify-content: flex-start;
+                order: 3;
+                margin-top: 10px;
+            }
+        }
+        
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -1034,24 +1117,6 @@
                 margin: 0 auto;
             }
             
-            .controls {
-                flex-direction: column;
-            }
-            
-            .search-box {
-                flex: 0 0 100%;
-                min-width: 100%;
-            }
-            
-            .filter-box {
-                width: 100%;
-            }
-            
-            .action-buttons {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
             th, td {
                 padding: 12px 15px;
             }
@@ -1060,14 +1125,36 @@
                 font-size: 1.8rem;
             }
             
-            .btn {
-                flex: 1;
-                justify-content: center;
+            .btn, .sort-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                height: 38px;
             }
             
             .stats {
                 flex-direction: column;
                 gap: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .controls {
+                padding: 15px;
+            }
+            
+            .btn, .sort-btn {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+                gap: 5px;
+            }
+            
+            .filter-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
             }
         }
     </style>
