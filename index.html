@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">DH3项目HelpMe索引表</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 引入SheetJS库用于处理Excel文件 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 保持原有的CSS样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -393,10 +390,9 @@
             border-bottom: 1px solid #eaeaea;
         }
         
-        /* 缩小搜索框 */
         .search-box {
-            flex: 0 0 250px; /* 固定宽度 */
-            min-width: 200px;
+            flex: 0 0 250px; /* 固定宽度250px */
+            min-width: 250px;
             position: relative;
         }
         
@@ -427,6 +423,8 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            flex: 1;
+            min-width: 300px;
         }
         
         .filter-btn {
@@ -437,6 +435,7 @@
             cursor: pointer;
             transition: all 0.2s;
             font-size: 0.9rem;
+            white-space: nowrap;
         }
         
         .filter-btn:hover {
@@ -453,6 +452,9 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            flex: 1;
+            min-width: 300px;
+            justify-content: flex-end;
         }
         
         .btn {
@@ -465,6 +467,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
         
         .btn-primary {
@@ -1035,17 +1038,26 @@
                 flex-direction: column;
             }
             
+            .search-box {
+                flex: 0 0 100%;
+                min-width: 100%;
+            }
+            
+            .filter-box {
+                width: 100%;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
             th, td {
                 padding: 12px 15px;
             }
             
             h1 {
                 font-size: 1.8rem;
-            }
-            
-            .action-buttons {
-                width: 100%;
-                justify-content: space-between;
             }
             
             .btn {
@@ -1056,10 +1068,6 @@
             .stats {
                 flex-direction: column;
                 gap: 10px;
-            }
-            
-            .search-box {
-                flex: 0 0 100%;
             }
         }
     </style>
@@ -1152,15 +1160,14 @@
         </div>
         
         <div class="controls">
-            <!-- 缩小搜索框 -->
             <div class="search-box">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
                 <input type="text" id="searchInput" placeholder="搜索页面名称、分类或备注...">
             </div>
             
-            <!-- 分类按钮将通过JavaScript动态生成 -->
             <div class="filter-box" id="filterBox">
                 <button class="filter-btn active" data-category="all">全部</button>
+                <!-- 分类按钮将通过JavaScript动态生成 -->
             </div>
             
             <div class="action-buttons">
@@ -1328,95 +1335,61 @@
             </div>
         </div>
     </div>
+
+    <!-- 引入SheetJS库用于处理Excel文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <script>
         // ========== 项目配置 ==========
-        // 硬编码的默认数据，确保即使外部文件加载失败也能正常显示
+        // 只需修改这里的变量，就可以切换到其他项目
         
-        // 定义硬编码的默认数据
-        const HARDCODED_DEFAULT_DATA = [
-            { id: 1, category: "项目管理", title: "DH3项目主文档", path: "https://example.com/dh3", type: "url", note: "项目主要文档和计划" },
-            { id: 2, category: "工具", title: "设计工具文件夹", path: "\\\\10.4.9.25\\Design\\Tools", type: "folder", note: "设计相关工具软件" },
-            { id: 3, category: "开发", title: "代码仓库", path: "https://github.com/Cybereign/DH3", type: "url", note: "项目代码仓库" },
-            { id: 4, category: "测试", title: "测试用例", path: "D:\\Projects\\DH3\\TestCases", type: "folder", note: "测试用例文档" },
-            { id: 5, category: "文档", title: "API文档", path: "https://api.example.com/docs", type: "url", note: "API接口文档" },
-            { id: 6, category: "项目管理", title: "进度跟踪表", path: "\\\\10.4.9.25\\Project\\Track", type: "folder", note: "项目进度跟踪" },
-            { id: 7, category: "开发", title: "开发环境配置", path: "https://dev.example.com", type: "url", note: "开发环境访问地址" },
-            { id: 8, category: "测试", title: "测试报告", path: "D:\\Reports\\Test", type: "folder", note: "测试报告汇总" },
-            { id: 9, category: "工具", title: "项目管理工具", path: "https://trello.com/dh3", type: "url", note: "项目看板管理" },
-            { id: 10, category: "文档", title: "用户手册", path: "\\\\10.4.9.25\\Docs\\Manual", type: "folder", note: "用户使用手册" }
-        ];
-        
-        // 硬编码的默认分类（从上述数据中提取）
-        const HARDCODED_CATEGORY_LIST = [
-            { id: "category1", name: "项目管理" },
-            { id: "category2", name: "工具" },
-            { id: "category3", name: "开发" },
-            { id: "category4", name: "测试" },
-            { id: "category5", name: "文档" }
-        ];
-        
-        const HARDCODED_CATEGORY_MAP = {
-            "category1": "项目管理",
-            "category2": "工具", 
-            "category3": "开发",
-            "category4": "测试",
-            "category5": "文档"
-        };
-        
-        // 硬编码的管理员账户
-        const HARDCODED_ADMIN_ACCOUNTS = [
-            { 
-                username: "admin", 
-                passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123
-                name: "系统管理员",
-                permissions: ["read", "write", "delete", "export", "config"]
-            },
-            { 
-                username: "user", 
-                passwordHash: "ecb666d778725ec97307044d642bf4d160aabb76f56c0069c71ea25b1e926825", // user123
-                name: "普通用户",
-                permissions: ["read", "write"]
-            }
-        ];
-        
-        // 硬编码的应用配置
-        const HARDCODED_APP_CONFIG = {
-            version: "1.0.0",
-            autoLogout: 60,
-            maxLoginAttempts: 5,
-            source: "Builtin"
-        };
-
         const PROJECT_CONFIG = {
             // 项目标识（DH3, DH7, 等）
-            prefix: 'DH3',
+            prefix: 'DH1',
             
             // 项目完整名称
-            name: 'DH3项目',
+            name: 'DH1项目',
             
             // GitHub仓库配置
             githubOwner: 'Cybereign',
-            githubRepo: 'DH3SecurityConfig',
+            githubRepo: 'DH1SecurityConfig',
             githubBranch: 'main',
             
             // 本地存储键名前缀
-            storagePrefix: 'DH3h5Index',
+            storagePrefix: 'DH1h5Index',
             
-            // 默认数据 - 使用硬编码数据
-            defaultData: HARDCODED_DEFAULT_DATA,
+            // 默认数据 - 使用外部文件加载
+            defaultData: [],
             
             // 默认管理员账户
-            defaultAdminAccounts: HARDCODED_ADMIN_ACCOUNTS,
+            defaultAdminAccounts: [
+                { 
+                    username: "admin", 
+                    passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123
+                    name: "系统管理员",
+                    permissions: ["read", "write", "delete", "export", "config"]
+                },
+                { 
+                    username: "user", 
+                    passwordHash: "ecb666d778725ec97307044d642bf4d160aabb76f56c0069c71ea25b1e926825", // user123
+                    name: "普通用户",
+                    permissions: ["read", "write"]
+                }
+            ],
             
             // 默认应用配置
-            defaultAppConfig: HARDCODED_APP_CONFIG,
+            defaultAppConfig: {
+                version: "1.0.0",
+                autoLogout: 60,
+                maxLoginAttempts: 5,
+                source: "Builtin"
+            },
             
-            // 默认分类列表
-            defaultCategoryList: HARDCODED_CATEGORY_LIST,
+            // 默认分类列表 - 将动态从数据中提取
+            defaultCategoryList: [],
             
-            // 默认分类映射
-            defaultCategoryMap: HARDCODED_CATEGORY_MAP
+            // 默认分类映射 - 将动态从数据中构建
+            defaultCategoryMap: {}
         };
 
         // 从配置中提取变量
@@ -1427,11 +1400,9 @@
         const GITHUB_BRANCH = PROJECT_CONFIG.githubBranch;
         const STORAGE_PREFIX = PROJECT_CONFIG.storagePrefix;
         
-        const DEFAULT_TABLE_DATA = PROJECT_CONFIG.defaultData;
+        let DEFAULT_TABLE_DATA = []; // 将从外部文件加载
         const DEFAULT_ADMIN_ACCOUNTS = PROJECT_CONFIG.defaultAdminAccounts;
         const DEFAULT_APP_CONFIG = PROJECT_CONFIG.defaultAppConfig;
-        const DEFAULT_CATEGORY_LIST = PROJECT_CONFIG.defaultCategoryList;
-        const DEFAULT_CATEGORY_MAP = PROJECT_CONFIG.defaultCategoryMap;
 
         // 基于配置的GitHub URLs
         const GITHUB_CONFIG_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
@@ -1446,10 +1417,8 @@
         // 用户账户信息和配置
         let adminAccounts = [];
         let appConfig = {};
-        
-        // 关键修复：使用从外部文件加载的预定义分类，不从数据中提取
-        let categoryMap = DEFAULT_CATEGORY_MAP || {};
-        let categoryList = DEFAULT_CATEGORY_LIST || [];
+        let categoryMap = {};
+        let categoryList = [];
 
         // 表头配置
         let headerConfig = {
@@ -1520,6 +1489,7 @@
         const pathExample = document.getElementById('pathExample');
         const pageTitle = document.getElementById('pageTitle');
         const mainTitle = document.getElementById('mainTitle');
+        const filterBox = document.getElementById('filterBox');
         
         // 新增的认证相关DOM元素
         const adminToggleBtn = document.getElementById('adminToggleBtn');
@@ -1554,6 +1524,115 @@
             
             pageTitle.textContent = pageTitleText;
             mainTitle.textContent = mainTitleText;
+        }
+
+        // ========== 加载外部数据文件 ==========
+        async function loadDefaultDataFromJS() {
+            try {
+                console.log('🔄 尝试加载 default-data.js 文件...');
+                
+                // 从与index.html同目录的default-data.js文件加载
+                const response = await fetch('default-data.js');
+                
+                if (!response.ok) {
+                    console.error('default-data.js 文件加载失败:', response.status);
+                    throw new Error(`default-data.js 文件加载失败: ${response.status}`);
+                }
+                
+                const jsContent = await response.text();
+                console.log('✅ default-data.js 文件加载成功，内容长度:', jsContent.length);
+                
+                // 尝试解析JavaScript文件
+                let loadedData = null;
+                
+                // 方法1: 尝试执行JavaScript代码
+                try {
+                    // 创建一个临时函数来执行代码
+                    const tempFunction = new Function(jsContent);
+                    tempFunction();
+                    
+                    // 检查全局变量是否被定义
+                    if (typeof window.DEFAULT_TABLE_DATA !== 'undefined') {
+                        loadedData = window.DEFAULT_TABLE_DATA;
+                        console.log('✅ 从全局变量 DEFAULT_TABLE_DATA 加载数据成功，数据条数:', loadedData.length);
+                    }
+                } catch (e) {
+                    console.log('执行JavaScript方法失败:', e.message);
+                }
+                
+                // 方法2: 尝试直接解析数据（如果是JSON格式）
+                if (!loadedData) {
+                    try {
+                        // 尝试提取JSON数据
+                        const jsonMatch = jsContent.match(/DEFAULT_TABLE_DATA\s*=\s*(\[.*?\])/s);
+                        if (jsonMatch && jsonMatch[1]) {
+                            loadedData = JSON.parse(jsonMatch[1]);
+                            console.log('✅ 从JSON解析数据成功，数据条数:', loadedData.length);
+                        }
+                    } catch (e) {
+                        console.log('JSON解析方法失败:', e.message);
+                    }
+                }
+                
+                // 方法3: 如果上面都失败，使用简单的默认数据
+                if (!loadedData || !Array.isArray(loadedData) || loadedData.length === 0) {
+                    console.warn('⚠️ 无法从 default-data.js 加载数据，使用内置示例数据');
+                    loadedData = [
+                        { id: 1, category: "示例分类1", title: "示例页面1", path: "https://example.com/1", type: "url", note: "这是示例数据1" },
+                        { id: 2, category: "示例分类2", title: "示例页面2", path: "https://example.com/2", type: "url", note: "这是示例数据2" },
+                        { id: 3, category: "示例分类1", title: "示例文件夹1", path: "\\\\server\\share\\folder1", type: "folder", note: "这是示例文件夹1" }
+                    ];
+                }
+                
+                DEFAULT_TABLE_DATA = loadedData;
+                
+                // 动态构建分类
+                buildCategoriesFromData();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 加载外部数据文件失败:', error);
+                return false;
+            }
+        }
+
+        // ========== 从数据构建分类系统 ==========
+        function buildCategoriesFromData() {
+            console.log('🔧 从数据构建分类系统...');
+            
+            // 从数据中提取所有唯一的分类
+            const categoriesSet = new Set();
+            DEFAULT_TABLE_DATA.forEach(item => {
+                if (item.category && item.category.trim()) {
+                    categoriesSet.add(item.category.trim());
+                }
+            });
+            
+            // 将Set转换为数组并排序
+            const categoriesArray = Array.from(categoriesSet).sort((a, b) => 
+                a.localeCompare(b, 'zh-CN')
+            );
+            
+            console.log('📊 从数据中提取的分类:', categoriesArray);
+            
+            // 构建分类列表和映射
+            categoryList = [];
+            categoryMap = {};
+            
+            categoriesArray.forEach((categoryName, index) => {
+                const categoryId = `category${index + 1}`;
+                categoryList.push({
+                    id: categoryId,
+                    name: categoryName
+                });
+                categoryMap[categoryId] = categoryName;
+            });
+            
+            console.log('✅ 构建的分类系统:', {
+                categoryList: categoryList,
+                categoryMap: categoryMap
+            });
         }
 
         // ========== GitHub API 服务类 ==========
@@ -1743,49 +1822,32 @@
 
         // ========== 核心功能函数 ==========
 
-        // 加载默认数据 - 简化版本
-        function loadDefaultData() {
+        // 使用外部数据文件
+        async function useExternalDataConfig(showMessage = true) {
             try {
-                // 使用硬编码的默认数据
+                // 确保已加载外部数据
+                if (DEFAULT_TABLE_DATA.length === 0) {
+                    const success = await loadDefaultDataFromJS();
+                    if (!success) {
+                        throw new Error('外部数据文件加载失败');
+                    }
+                }
+                
                 tableData = JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
                 adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
                 appConfig = JSON.parse(JSON.stringify(DEFAULT_APP_CONFIG));
                 
-                // 使用硬编码的分类
-                categoryMap = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_MAP));
-                categoryList = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_LIST));
+                // 重新构建分类（从数据中动态构建）
+                buildCategoriesFromData();
                 
-                console.log('✅ 加载硬编码默认数据成功');
-                console.log('📊 预定义的分类数量:', categoryList.length);
-                console.log('📊 数据条数:', tableData.length);
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ 加载默认数据失败:', error);
-                updateStatus('error', `默认数据加载失败: ${error.message}`);
-                return false;
-            }
-        }
-
-        // 使用默认配置 - 立即显示默认数据
-        function useDefaultConfig(showMessage = true) {
-            try {
-                loadDefaultData();
-                
-                // 确保ID连续
                 tableData.forEach((item, index) => {
                     item.id = index + 1;
                 });
-                
-                appConfig.source = 'Builtin';
+                appConfig.source = 'ExternalData';
                 updateConfigVersionInfo(appConfig);
                 updateCategoryFilters();
                 updateCategorySelect();
-                
-                // 直接渲染数据
-                currentData = [...tableData];
-                renderTable(currentData);
+                renderTable(tableData);
                 updateStats();
                 
                 if (isSortMode) {
@@ -1793,17 +1855,17 @@
                 }
                 
                 if (showMessage) {
-                    updateStatus('success', '已加载内置默认配置');
+                    updateStatus('success', '已加载外部数据配置');
                 }
                 return true;
             } catch (error) {
-                console.error('使用默认配置失败:', error);
+                console.error('使用外部数据配置失败:', error);
                 updateStatus('error', `配置加载失败: ${error.message}`);
                 return false;
             }
         }
 
-        // 从GitHub加载配置函数
+        // 从GitHub加载配置函数 - 优化的异步加载
         async function loadConfigFromGitHub(forceRefresh = false) {
             const timestamp = forceRefresh ? `?_=${Date.now()}` : '';
             const configUrl = `${GITHUB_CONFIG_BASE}/config.json${timestamp}`;
@@ -1851,6 +1913,9 @@
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
                 
+                // 重新构建分类（从GitHub数据中）
+                rebuildCategoriesFromTableData();
+                
                 updateConfigVersionInfo(config);
                 console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
                 
@@ -1871,7 +1936,49 @@
             }
         }
 
-        // 处理Excel数据
+        // 从表格数据重建分类
+        function rebuildCategoriesFromTableData() {
+            console.log('🔧 从表格数据重建分类系统...');
+            
+            // 从数据中提取所有唯一的分类
+            const categoriesSet = new Set();
+            tableData.forEach(item => {
+                if (item.category && item.category.trim()) {
+                    categoriesSet.add(item.category.trim());
+                }
+            });
+            
+            // 将Set转换为数组并排序
+            const categoriesArray = Array.from(categoriesSet).sort((a, b) => 
+                a.localeCompare(b, 'zh-CN')
+            );
+            
+            console.log('📊 从表格数据中提取的分类:', categoriesArray);
+            
+            // 构建分类列表和映射
+            categoryList = [];
+            categoryMap = {};
+            
+            categoriesArray.forEach((categoryName, index) => {
+                const categoryId = `category${index + 1}`;
+                categoryList.push({
+                    id: categoryId,
+                    name: categoryName
+                });
+                categoryMap[categoryId] = categoryName;
+            });
+            
+            console.log('✅ 重建的分类系统:', {
+                categoryList: categoryList,
+                categoryMap: categoryMap
+            });
+            
+            // 更新UI
+            updateCategoryFilters();
+            updateCategorySelect();
+        }
+
+        // ========== 处理Excel数据 ==========
         async function processExcelData(arrayBuffer) {
             try {
                 const data = new Uint8Array(arrayBuffer);
@@ -1920,14 +2027,118 @@
                 
                 console.log('从Excel加载的数据条数:', tableData.length);
                 
-                // 渲染表格
-                currentData = [...tableData];
-                renderTable(currentData);
+                renderTable(tableData);
                 updateStats();
                 
             } catch (error) {
                 console.error('Excel数据处理失败:', error);
                 throw new Error(`Excel文件处理失败: ${error.message}`);
+            }
+        }
+
+        // ========== 优化的同步流程 ==========
+
+        // 优化的同步到Excel函数 - 修复重新加载问题
+        async function syncDataToExcel() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                showAuthPanel();
+                return;
+            }
+
+            try {
+                showLoadingIndicator(`正在同步数据到 ${PROJECT_NAME} GitHub Excel 文件...`);
+                
+                // 1. 准备Excel数据
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                // 确保ID连续
+                tableData.forEach((item, index) => {
+                    item.id = index + 1; // 重新排序ID
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                // 2. 创建Excel工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 3. 创建Excel工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, `${PROJECT_NAME}项目索引表`);
+                
+                // 4. 转换为Base64
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 5. 上传到GitHub
+                await gitHubService.forceCreateFile(
+                    'table.xlsx',
+                    excelBase64,
+                    `${PROJECT_NAME}自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
+                );
+
+                // 6. 立即更新本地数据
+                saveDataToStorage(); // 保存到本地存储
+                
+                // 7. 显示成功消息
+                hideLoadingIndicator();
+                showToast(`✅ ${PROJECT_NAME}数据已成功同步到 GitHub Excel 文件！`, 'success');
+                
+                // 8. 直接更新UI，不再从GitHub重新加载
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                filterTable(searchTerm, activeCategory);
+                updateConfigVersionInfo(appConfig);
+                
+                // 9. 更新状态显示
+                updateStatus('success', '数据同步成功！页面已更新为最新数据');
+                
+                // 10. 在后台验证数据是否同步成功（非阻塞）
+                setTimeout(async () => {
+                    try {
+                        await verifyGitHubSync();
+                    } catch (error) {
+                        console.log('后台验证失败，不影响用户操作:', error);
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('同步到 Excel 失败:', error);
+                hideLoadingIndicator();
+                
+                if (error.message.includes('文件版本冲突')) {
+                    showToast(`${PROJECT_NAME}同步失败: ${error.message}\n\n请先点击"修复Excel格式"按钮，然后重试同步。`, 'error');
+                } else {
+                    showToast(`${PROJECT_NAME}同步失败: ${error.message}`, 'error');
+                }
             }
         }
 
@@ -1939,8 +2150,9 @@
             // 1. 初始化页面标题
             initPageTitles();
             
-            // 2. 立即显示加载中的状态
-            updateStatus('info', '正在加载系统...');
+            // 2. 加载外部数据文件
+            console.log('🔄 加载外部数据文件...');
+            await loadDefaultDataFromJS();
             
             // 3. 加载本地配置
             const savedHeaders = loadHeadersFromStorage();
@@ -1952,15 +2164,13 @@
             // 4. 加载GitHub令牌（如果有）
             loadGitHubToken();
 
-            // 5. 立即显示默认数据（硬编码数据，确保一定能显示）
-            console.log('📊 立即显示硬编码默认数据...');
-            
-            // 确保使用硬编码数据
-            useDefaultConfig(false);
+            // 5. 立即显示外部数据（优先显示）
+            console.log('📊 优先显示外部数据...');
+            await useExternalDataConfig(false); // 不显示消息
             
             // 6. 设置基础UI
             configVersion.textContent = '配置版本: 加载中...';
-            updateStatus('info', '系统初始化完成，正在加载数据...');
+            updateStatus('info', '正在初始化系统，优先显示外部数据...');
             
             // 7. 设置事件监听器
             setupEventListeners();
@@ -1977,13 +2187,10 @@
             document.addEventListener('keypress', resetAutoLogoutTimer);
             document.addEventListener('mousemove', resetAutoLogoutTimer);
             
-            // 10. 更新状态
-            updateStatus('success', '系统初始化完成！已显示默认数据。');
-            
-            // 11. 异步尝试从GitHub加载最新数据
+            // 10. 异步尝试从GitHub加载最新数据
             console.log(`🔄 开始异步尝试从GitHub加载${PROJECT_NAME}最新数据...`);
             
-            // 在后台尝试加载GitHub数据
+            // 立即显示外部数据后，在后台尝试加载GitHub数据
             setTimeout(async () => {
                 try {
                     console.log('🔄 异步尝试连接GitHub...');
@@ -2005,41 +2212,40 @@
                         
                         showToast(`✅ 已成功从GitHub加载${PROJECT_NAME}最新数据`, 'success');
                     } else {
-                        // GitHub加载失败，继续使用默认数据
-                        console.log('⚠️ GitHub加载失败，继续使用默认数据');
-                        appConfig.source = `Builtin (${PROJECT_NAME}GitHub连接失败)`;
+                        // GitHub加载失败，继续使用外部数据
+                        console.log('⚠️ GitHub加载失败，继续使用外部数据');
+                        appConfig.source = `ExternalData (${PROJECT_NAME}GitHub连接失败)`;
                         updateConfigVersionInfo(appConfig);
                         
                         const savedData = loadDataFromStorage();
                         if (savedData && savedData.length > 0) {
                             console.log('📊 使用本地存储的数据');
                             tableData = savedData;
-                            
                             currentData = [...tableData];
+                            
+                            // 重新构建分类
+                            rebuildCategoriesFromTableData();
+                            
                             renderTable(currentData);
                             updateStats();
                             
-                            updateCategoryFilters();
-                            updateCategorySelect();
-                            
                             updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，使用本地缓存数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
                         } else {
-                            updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，使用内置默认数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
+                            updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，使用外部数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
                         }
                     }
                     
                 } catch (error) {
                     console.error('❌ 异步加载GitHub数据异常:', error);
-                    // 错误已经被处理，继续使用默认数据
+                    // 错误已经被处理，继续使用外部数据
                 }
                 
                 console.log(`📊 ${PROJECT_NAME}初始化完成，最终数据量: ${tableData.length} 条记录，来源: ${appConfig.source}`);
-                console.log(`📊 最终分类数量: ${categoryList.length} 个`);
                 showToast(`${PROJECT_NAME}系统初始化完成，数据来源: ${appConfig.source}`, 'success');
                 
-            }, 500); // 稍微延迟，确保默认数据先显示
+            }, 100); // 稍微延迟，确保外部数据先显示
             
-            console.log(`✅ ${PROJECT_NAME}系统基础初始化完成，硬编码数据已显示`);
+            console.log(`✅ ${PROJECT_NAME}系统基础初始化完成，外部数据已显示`);
         });
 
         // ========== 认证面板功能 ==========
@@ -2316,13 +2522,14 @@
         // 创建分类颜色映射函数
         function createCategoryColorMap() {
             const colorMap = {};
+            const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
             
-            // 使用预定义的分类列表
-            const sortedCategories = [...categoryList].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+            // 按分类名称排序，确保颜色分配的一致性
+            const sortedCategories = uniqueCategories.sort((a, b) => a.localeCompare(b, 'zh-CN'));
             
             sortedCategories.forEach((category, index) => {
                 const colorIndex = (index % 20) + 1;
-                colorMap[category.name] = `category-${colorIndex}`;
+                colorMap[category] = `category-${colorIndex}`;
             });
             
             return colorMap;
@@ -2648,7 +2855,7 @@
                 return;
             }
             
-            useDefaultConfig();
+            useExternalDataConfig();
             
             showToast('已重置为默认顺序', 'success');
         }
@@ -2812,9 +3019,10 @@
 
         // 设置筛选事件
         function setupFilterEvents() {
-            // 事件委托到filter-box容器
-            const filterBox = document.getElementById('filterBox');
-            filterBox.addEventListener('click', handleFilter);
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', handleFilter);
+            });
         }
 
         // 处理路径类型变化
@@ -2841,15 +3049,13 @@
 
         // 处理筛选
         function handleFilter(e) {
-            if (e.target.classList.contains('filter-btn')) {
-                const filterButtons = document.querySelectorAll('.filter-btn');
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                
-                const searchTerm = searchInput.value.toLowerCase();
-                const category = e.target.dataset.category;
-                filterTable(searchTerm, category);
-            }
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = e.currentTarget.dataset.category;
+            filterTable(searchTerm, category);
         }
 
         // 筛选表格数据
@@ -2866,7 +3072,6 @@
             }
             
             if (category !== 'all') {
-                // 通过分类ID查找对应的分类名称
                 const selectedCategory = categoryList.find(cat => cat.id === category);
                 if (selectedCategory) {
                     filteredData = filteredData.filter(item => item.category === selectedCategory.name);
@@ -2884,9 +3089,15 @@
                 return;
             }
             
+            console.log('🔍 打开模态框，项目ID:', id);
+            
             if (id) {
                 const item = tableData.find(item => item.id === id);
                 if (item) {
+                    console.log('🔍 编辑项目信息:');
+                    console.log('- 项目ID:', item.id);
+                    console.log('- 项目分类名称:', item.category);
+                    
                     modalTitle.textContent = '编辑条目';
                     editId.value = item.id;
                     itemTitle.value = item.title;
@@ -2895,18 +3106,18 @@
                     let categoryId = '';
                     if (item.category) {
                         const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
+                        
                         if (categoryEntry) {
                             categoryId = categoryEntry[0];
+                            console.log(`✅ 找到分类映射: "${item.category}" -> ${categoryId}`);
                         } else {
-                            // 如果没找到，尝试在分类列表中查找
-                            const categoryObj = categoryList.find(cat => cat.name === item.category);
-                            if (categoryObj) {
-                                categoryId = categoryObj.id;
-                            }
+                            console.warn(`❌ 未找到分类 "${item.category}" 的映射`);
                         }
                     }
                     
+                    console.log('设置分类选择器值为:', categoryId);
                     itemCategory.value = categoryId;
+                    
                     itemPath.value = item.path;
                     itemNote.value = item.note;
                     
@@ -2974,57 +3185,25 @@
             let categoryName;
             let categoryId = itemCategory.value;
             
-            if (categoryId === '__new__') {
-                // 处理新分类
-                categoryName = prompt('请输入新分类名称:');
-                if (!categoryName || !categoryName.trim()) {
-                    alert('分类名称不能为空！');
-                    return;
-                }
-                categoryName = categoryName.trim();
-                
-                // 检查是否已存在同名分类
-                const existingCategory = categoryList.find(cat => cat.name === categoryName);
-                if (existingCategory) {
-                    categoryId = existingCategory.id;
-                    categoryName = existingCategory.name;
-                    alert(`分类 "${categoryName}" 已存在，将使用现有分类。`);
-                } else {
-                    // 创建新分类ID
-                    categoryId = `category${categoryList.length + 1}`;
-                    
-                    // 添加到分类列表和映射
-                    categoryMap[categoryId] = categoryName;
-                    categoryList.push({
-                        id: categoryId,
-                        name: categoryName
-                    });
-                    
-                    // 更新UI
-                    updateCategoryFilters();
-                    updateCategorySelect();
-                    
-                    showToast(`新分类 "${categoryName}" 已创建！`, 'success');
-                }
+            // 查找分类名称
+            if (categoryId && categoryMap[categoryId]) {
+                categoryName = categoryMap[categoryId];
             } else {
-                // 使用现有分类
-                if (categoryId && categoryMap[categoryId]) {
-                    categoryName = categoryMap[categoryId];
-                } else {
-                    // 如果ID无效，使用分类名称本身
-                    categoryName = categoryId;
-                    categoryId = `category${categoryList.length + 1}`;
-                    
-                    const newCategory = {
-                        id: categoryId,
-                        name: categoryName
-                    };
-                    categoryList.push(newCategory);
-                    categoryMap[categoryId] = categoryName;
-                    
-                    updateCategoryFilters();
-                    updateCategorySelect();
-                }
+                // 如果是新分类
+                categoryName = categoryId;
+                categoryId = `category${categoryList.length + 1}`;
+                
+                const newCategory = {
+                    id: categoryId,
+                    name: categoryName
+                };
+                categoryList.push(newCategory);
+                categoryMap[categoryId] = categoryName;
+                
+                updateCategoryFilters();
+                updateCategorySelect();
+                
+                console.log('✅ 新分类已添加:', newCategory);
             }
             
             const newItem = {
@@ -3283,47 +3462,16 @@
             showToast(`您已成功退出${PROJECT_NAME}登录`, 'info');
         }
 
-        // 更新分类筛选器
+        // 更新分类筛选器 - 使用动态分类
         function updateCategoryFilters() {
-            const filterBox = document.getElementById('filterBox');
-            if (!filterBox) return;
-            
-            console.log('🔄 更新分类筛选器...');
-            
-            // 保存当前选中的分类
-            const currentActive = filterBox.querySelector('.filter-btn.active');
-            const currentCategory = currentActive ? currentActive.dataset.category : 'all';
-            
-            // 清空除"全部"按钮外的所有按钮
             const allButton = filterBox.querySelector('[data-category="all"]');
-            filterBox.innerHTML = '';
             
-            // 添加"全部"按钮
-            if (!allButton) {
-                const newAllButton = document.createElement('button');
-                newAllButton.className = 'filter-btn';
-                newAllButton.setAttribute('data-category', 'all');
-                newAllButton.textContent = '全部';
-                filterBox.appendChild(newAllButton);
-            } else {
-                filterBox.appendChild(allButton);
-            }
+            // 清空除了"全部"按钮之外的其他按钮
+            const buttonsToRemove = filterBox.querySelectorAll('.filter-btn:not([data-category="all"])');
+            buttonsToRemove.forEach(btn => btn.remove());
             
-            // 检查分类列表是否为空
-            if (!categoryList || categoryList.length === 0) {
-                console.warn('⚠️ 分类列表为空，无法生成筛选按钮');
-                return;
-            }
-            
-            // 按分类名称排序，以便于查找
-            const sortedCategories = [...categoryList].sort((a, b) => 
-                a.name.localeCompare(b.name, 'zh-CN')
-            );
-            
-            console.log('排序后的分类:', sortedCategories.map(cat => `${cat.id}: ${cat.name}`));
-            
-            // 为每个分类创建筛选按钮
-            sortedCategories.forEach(category => {
+            // 添加动态分类按钮
+            categoryList.forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'filter-btn';
                 button.setAttribute('data-category', category.id);
@@ -3331,23 +3479,24 @@
                 filterBox.appendChild(button);
             });
             
-            // 恢复选中的分类
-            const newActiveButton = filterBox.querySelector(`[data-category="${currentCategory}"]`);
-            if (newActiveButton) {
-                newActiveButton.classList.add('active');
-            } else {
-                // 如果没有找到之前选中的分类，默认选中"全部"
-                filterBox.querySelector('[data-category="all"]').classList.add('active');
-            }
+            setupFilterEvents();
             
-            console.log(`✅ 更新完成，共创建 ${sortedCategories.length} 个分类筛选按钮`);
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category;
+            if (activeCategory) {
+                const activeBtn = filterBox.querySelector(`[data-category="${activeCategory}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                } else {
+                    allButton.classList.add('active');
+                }
+            } else {
+                allButton.classList.add('active');
+            }
         }
 
-        // 更新分类选择器
+        // 更新分类选择器 - 使用动态分类
         function updateCategorySelect() {
             const categorySelect = document.getElementById('itemCategory');
-            if (!categorySelect) return;
-            
             const currentValue = categorySelect.value;
             
             console.log('🔄 更新分类选择器...');
@@ -3356,12 +3505,6 @@
                 <option value="">选择分类</option>
                 <option value="__new__">+ 添加新分类</option>
             `;
-            
-            // 检查分类列表是否为空
-            if (!categoryList || categoryList.length === 0) {
-                console.warn('⚠️ 分类列表为空，无法生成选择器选项');
-                return;
-            }
             
             // 按分类名称排序，以便于查找
             const sortedCategories = [...categoryList].sort((a, b) => 
@@ -3379,7 +3522,34 @@
             
             if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
                 categorySelect.value = currentValue;
+                console.log(`恢复之前选择的值: ${currentValue}`);
             }
+            
+            // 添加新分类的逻辑
+            categorySelect.addEventListener('change', function() {
+                if (this.value === '__new__') {
+                    const newCategoryName = prompt('请输入新分类名称:');
+                    if (newCategoryName && newCategoryName.trim()) {
+                        const newCategoryId = `category${categoryList.length + 1}`;
+                        const newCategory = {
+                            id: newCategoryId,
+                            name: newCategoryName.trim()
+                        };
+                        
+                        categoryList.push(newCategory);
+                        categoryMap[newCategoryId] = newCategoryName.trim();
+                        
+                        updateCategorySelect();
+                        updateCategoryFilters();
+                        
+                        categorySelect.value = newCategoryId;
+                        
+                        showToast(`新分类 "${newCategoryName}" 已创建！`, 'success');
+                    } else {
+                        this.value = '';
+                    }
+                }
+            });
         }
 
         // 更新统计数据
@@ -3780,26 +3950,11 @@
         // 在浏览器控制台可以调用的调试函数
         window.debugCategories = function() {
             console.group('🔍 分类调试信息');
-            console.log('tableData 中的分类:', [...new Set(tableData.map(item => item.category).filter(Boolean))]);
-            console.log('categoryList (预定义):', categoryList);
-            console.log('categoryMap (预定义):', categoryMap);
-            
-            console.log('📊 预定义分类数量:', categoryList.length);
-            console.log('📊 数据条目数量:', tableData.length);
-            
-            // 检查分类按钮是否显示正确
-            const filterBox = document.getElementById('filterBox');
-            if (filterBox) {
-                const filterButtons = filterBox.querySelectorAll('.filter-btn');
-                console.log(`筛选按钮数量: ${filterButtons.length}`);
-                filterButtons.forEach(btn => {
-                    console.log(`按钮: "${btn.textContent}" (${btn.dataset.category})`);
-                });
-            }
-            
+            console.log('当前数据中的分类:', [...new Set(tableData.map(item => item.category).filter(Boolean))]);
+            console.log('categoryList:', categoryList);
+            console.log('categoryMap:', categoryMap);
+            console.log('外部数据文件中的分类:', [...new Set(DEFAULT_TABLE_DATA.map(item => item.category).filter(Boolean))]);
             console.groupEnd();
-            
-            return true;
         };
 
         // 显示当前项目配置
@@ -3809,23 +3964,15 @@
             console.log('项目名称:', PROJECT_NAME);
             console.log('GitHub仓库:', `${GITHUB_OWNER}/${GITHUB_REPO}`);
             console.log('存储前缀:', STORAGE_PREFIX);
-            console.log('默认数据条数:', DEFAULT_TABLE_DATA.length);
-            console.log('预定义分类数量:', categoryList.length);
+            console.log('外部数据条数:', DEFAULT_TABLE_DATA.length);
+            console.log('动态分类数量:', categoryList.length);
             console.groupEnd();
             return PROJECT_CONFIG;
         };
 
-        // 强制重新加载分类按钮
-        window.reloadCategoryFilters = function() {
-            console.log('🔄 强制重新加载分类筛选按钮...');
-            updateCategoryFilters();
-            console.log('✅ 分类筛选按钮已重新加载');
-            return true;
-        };
-
         // 页面加载后自动检查
         setTimeout(() => {
-            console.log(`🔍 ${PROJECT_NAME}页面加载完成，检查分类映射...`);
+            console.log(`🔍 ${PROJECT_NAME}页面加载完成，检查分类系统...`);
             debugCategories();
         }, 2000);
     </script>
