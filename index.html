@@ -1702,9 +1702,8 @@
                 updateConfigVersionInfo(config);
                 console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
                 
-                if (categoryList.length === 0 && tableData.length > 0) {
-                    initializeCategoriesFromData();
-                }
+                // 确保分类映射一致性
+                ensureCategoryMappingConsistency();
                 
                 hideLoadingIndicator();
                 
@@ -1721,6 +1720,73 @@
                 hideLoadingIndicator();
                 return false;
             }
+        }
+
+        // ========== 分类映射一致性修复 ==========
+
+        // 确保分类映射一致性（长期解决方案）
+        function ensureCategoryMappingConsistency() {
+            console.log('🔧 确保分类映射一致性...');
+            
+            // 创建默认分类名称到ID的映射
+            const defaultNameToId = {};
+            Object.entries(DEFAULT_CATEGORY_MAP).forEach(([id, name]) => {
+                defaultNameToId[name] = id;
+            });
+            
+            // 收集数据中实际使用的分类
+            const usedCategories = new Set();
+            tableData.forEach(item => {
+                if (item.category && item.category.trim()) {
+                    usedCategories.add(item.category.trim());
+                }
+            });
+            
+            console.log('数据中使用的分类:', Array.from(usedCategories));
+            
+            // 重建分类映射，优先使用默认ID
+            const newCategoryMap = {};
+            const newCategoryList = [];
+            
+            // 首先添加默认分类（保持ID一致性）
+            Object.entries(DEFAULT_CATEGORY_MAP).forEach(([defaultId, defaultName]) => {
+                newCategoryMap[defaultId] = defaultName;
+                newCategoryList.push({
+                    id: defaultId,
+                    name: defaultName
+                });
+            });
+            
+            // 然后添加数据中新增的分类（使用新ID）
+            let customIndex = Object.keys(DEFAULT_CATEGORY_MAP).length + 1;
+            Array.from(usedCategories).forEach(categoryName => {
+                // 如果这个分类不在默认映射中，添加它
+                if (!defaultNameToId[categoryName]) {
+                    const newId = `category${customIndex}`;
+                    newCategoryMap[newId] = categoryName;
+                    newCategoryList.push({
+                        id: newId,
+                        name: categoryName
+                    });
+                    customIndex++;
+                    console.log(`➕ 新增分类: ${categoryName} -> ${newId}`);
+                }
+            });
+            
+            // 更新全局变量
+            categoryMap = newCategoryMap;
+            categoryList = newCategoryList;
+            
+            console.log('✅ 一致性映射完成:');
+            categoryList.forEach(cat => {
+                console.log(`  ${cat.id}: ${cat.name}`);
+            });
+            
+            // 更新UI
+            updateCategoryFilters();
+            updateCategorySelect();
+            
+            return true;
         }
 
         // 处理Excel数据 - 修复分类映射问题
@@ -1751,9 +1817,6 @@
                 console.log('Excel表头结构:', headers);
                 
                 tableData = [];
-                categoryMap = {};
-                categoryList = [];
-                const uniqueCategories = new Map();
                 
                 for (let i = 1; i < excelData.length; i++) {
                     const row = excelData[i];
@@ -1771,31 +1834,13 @@
                     if (!item.title && !item.path) continue;
                     
                     tableData.push(item);
-                    
-                    // 确保分类映射正确
-                    if (item.category && !uniqueCategories.has(item.category)) {
-                        const categoryId = `category${uniqueCategories.size + 1}`;
-                        uniqueCategories.set(item.category, {
-                            id: categoryId,
-                            name: item.category
-                        });
-                        
-                        // 同时更新 categoryMap
-                        categoryMap[categoryId] = item.category;
-                    }
                 }
                 
-                // 确保 categoryList 和 categoryMap 同步
-                categoryList = Array.from(uniqueCategories.values());
-                console.log('✅ 分类映射已建立:');
-                categoryList.forEach(category => {
-                    console.log(`  ${category.id} -> ${category.name}`);
-                });
+                console.log('从Excel加载的数据条数:', tableData.length);
                 
-                // 检查并修复分类映射
-                fixCategoryMappings();
+                // 确保分类映射一致性
+                ensureCategoryMappingConsistency();
                 
-                updateCategoryFilters();
                 renderTable(tableData);
                 updateStats();
                 
@@ -1929,9 +1974,8 @@
                             renderTable(currentData);
                             updateStats();
                             
-                            if (categoryList.length === 0 && tableData.length > 0) {
-                                initializeCategoriesFromData();
-                            }
+                            // 确保分类映射一致性
+                            ensureCategoryMappingConsistency();
                             
                             updateStatus('warning', 'GitHub连接失败，使用本地缓存数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。');
                         } else {
@@ -2796,39 +2840,31 @@
                     console.log('🔍 编辑项目信息:');
                     console.log('- 项目ID:', item.id);
                     console.log('- 项目分类名称:', item.category);
-                    console.log('- categoryList:', categoryList);
-                    console.log('- categoryMap:', categoryMap);
                     
                     modalTitle.textContent = '编辑条目';
                     editId.value = item.id;
                     itemTitle.value = item.title;
                     
-                    // 查找对应的分类ID - 修复映射问题
+                    // 查找对应的分类ID - 使用确保一致性的映射
                     let categoryId = '';
                     if (item.category) {
-                        // 先在categoryMap中查找
-                        const categoryEntry = Object.entries(categoryMap).find(([id, name]) => {
-                            return name === item.category;
-                        });
+                        // 在categoryMap中查找
+                        const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
                         
                         if (categoryEntry) {
                             categoryId = categoryEntry[0];
-                            console.log('✅ 找到分类映射:', categoryEntry);
+                            console.log(`✅ 找到分类映射: "${item.category}" -> ${categoryId}`);
                         } else {
-                            // 如果没有找到，检查是否需要修复映射
-                            console.warn('❌ 未找到分类映射，尝试修复...');
-                            fixCategoryMappings();
+                            console.warn(`❌ 未找到分类 "${item.category}" 的映射`);
+                            
+                            // 尝试修复映射
+                            ensureCategoryMappingConsistency();
                             
                             // 再次查找
-                            const newCategoryEntry = Object.entries(categoryMap).find(([id, name]) => {
-                                return name === item.category;
-                            });
-                            
+                            const newCategoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
                             if (newCategoryEntry) {
                                 categoryId = newCategoryEntry[0];
-                                console.log('✅ 修复后找到分类映射:', newCategoryEntry);
-                            } else {
-                                console.warn('❌ 修复后仍未找到分类映射');
+                                console.log(`✅ 修复后找到: "${item.category}" -> ${categoryId}`);
                             }
                         }
                     }
@@ -3198,7 +3234,7 @@
                 }
             });
             
-            uniqueCategories.forEach(category => {
+            uniqueCategories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')).forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'filter-btn';
                 button.setAttribute('data-category', category.id);
@@ -3227,8 +3263,6 @@
             const currentValue = categorySelect.value;
             
             console.log('🔄 更新分类选择器...');
-            console.log('当前分类列表:', categoryList);
-            console.log('当前分类映射:', categoryMap);
             
             categorySelect.innerHTML = `
                 <option value="">选择分类</option>
@@ -3247,11 +3281,11 @@
                 categorySelect.appendChild(option);
             });
             
-            console.log('选择器选项数量:', categorySelect.options.length);
+            console.log(`选择器选项数量: ${categorySelect.options.length}`);
             
             if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
                 categorySelect.value = currentValue;
-                console.log('恢复之前选择的值:', currentValue);
+                console.log(`恢复之前选择的值: ${currentValue}`);
             }
             
             // 添加新分类的逻辑
@@ -3423,10 +3457,9 @@
                 hideLoadingIndicator();
                 showToast('✅ 数据已成功同步到 GitHub Excel 文件！', 'success');
                 
-                // ========== 关键修复：同步后重新从GitHub加载数据 ==========
+                // 同步后重新从GitHub加载数据
                 console.log('🔄 同步成功，开始重新从GitHub加载最新数据...');
                 
-                // 强制重新从GitHub加载Excel数据
                 const reloadSuccess = await reloadExcelDataFromGitHub();
                 
                 if (reloadSuccess) {
@@ -3775,88 +3808,6 @@
             return icons[type] || 'fa-info-circle';
         }
 
-        // ========== 新增的分类修复函数 ==========
-
-        // 修复分类映射问题
-        function fixCategoryMappings() {
-            console.log('🔄 修复分类映射...');
-            
-            // 收集所有唯一的分类名称
-            const uniqueCategoryNames = new Set();
-            tableData.forEach(item => {
-                if (item.category) {
-                    uniqueCategoryNames.add(item.category);
-                }
-            });
-            
-            console.log('数据中的分类名称:', Array.from(uniqueCategoryNames));
-            
-            // 检查现有的映射
-            const missingMappings = [];
-            Array.from(uniqueCategoryNames).forEach(categoryName => {
-                const existingMapping = Object.entries(categoryMap).find(([id, name]) => name === categoryName);
-                if (!existingMapping) {
-                    missingMappings.push(categoryName);
-                }
-            });
-            
-            if (missingMappings.length > 0) {
-                console.log('发现缺失的分类映射:', missingMappings);
-                
-                // 为缺失的分类创建映射
-                missingMappings.forEach(categoryName => {
-                    const categoryId = `category${Object.keys(categoryMap).length + 1}`;
-                    categoryMap[categoryId] = categoryName;
-                    
-                    // 添加到 categoryList
-                    if (!categoryList.find(cat => cat.name === categoryName)) {
-                        categoryList.push({
-                            id: categoryId,
-                            name: categoryName
-                        });
-                    }
-                });
-                
-                console.log('✅ 分类映射已修复');
-                console.log('新的 categoryMap:', categoryMap);
-                console.log('新的 categoryList:', categoryList);
-                
-                // 更新UI
-                updateCategoryFilters();
-                updateCategorySelect();
-                
-                return true;
-            }
-            
-            console.log('✅ 分类映射正常');
-            return false;
-        }
-
-        // 从数据中初始化分类系统
-        function initializeCategoriesFromData() {
-            console.log('🔄 从数据中初始化分类系统...');
-            
-            const uniqueCategories = new Map();
-            tableData.forEach(item => {
-                if (item.category && !uniqueCategories.has(item.category)) {
-                    const categoryId = `category${uniqueCategories.size + 1}`;
-                    uniqueCategories.set(item.category, {
-                        id: categoryId,
-                        name: item.category
-                    });
-                }
-            });
-            
-            categoryList = Array.from(uniqueCategories.values());
-            categoryMap = {};
-            categoryList.forEach(category => {
-                categoryMap[category.id] = category.name;
-            });
-            
-            console.log('从数据中提取的分类:', categoryList);
-            updateCategoryFilters();
-        }
-
         // ========== 调试工具函数 ==========
 
         // 在浏览器控制台可以调用的调试函数
@@ -3866,49 +3817,68 @@
             console.log('categoryList:', categoryList);
             console.log('categoryMap:', categoryMap);
             
-            // 检查不一致的分类
-            let hasIssues = false;
-            tableData.forEach(item => {
-                if (item.category) {
-                    const mappingExists = Object.values(categoryMap).includes(item.category);
-                    if (!mappingExists) {
-                        console.warn(`❌ 分类 "${item.category}" 没有映射到 categoryMap`);
-                        hasIssues = true;
+            // 检查分类映射一致性
+            console.log('\n🔍 检查与默认映射的一致性:');
+            let allConsistent = true;
+            
+            Object.entries(DEFAULT_CATEGORY_MAP).forEach(([defaultId, defaultName]) => {
+                const currentEntry = Object.entries(categoryMap).find(([id, name]) => name === defaultName);
+                
+                if (currentEntry) {
+                    if (currentEntry[0] === defaultId) {
+                        console.log(`✅ 一致: "${defaultName}" -> ${defaultId}`);
+                    } else {
+                        console.warn(`⚠️ 不一致: "${defaultName}" 应该是 ${defaultId}, 但当前是 ${currentEntry[0]}`);
+                        allConsistent = false;
                     }
+                } else {
+                    console.log(`➖ 默认分类 "${defaultName}" 不在当前数据中`);
                 }
             });
             
-            if (!hasIssues) {
-                console.log('✅ 所有分类映射正常');
+            if (allConsistent) {
+                console.log('✅ 所有默认分类映射一致');
+            } else {
+                console.warn('❌ 发现分类映射不一致');
             }
             
             console.groupEnd();
             
-            // 自动修复
-            fixCategoryMappings();
+            return allConsistent;
         };
 
-        // 测试分类选择器
-        window.testCategorySelector = function(itemId) {
-            const item = tableData.find(item => item.id === itemId);
-            if (item) {
-                console.log('测试项目:', item);
-                console.log('分类名称:', item.category);
+        // 强制修复分类映射
+        window.fixCategoryMappingNow = function() {
+            console.log('🔧 强制修复分类映射...');
+            ensureCategoryMappingConsistency();
+            console.log('✅ 分类映射已强制修复');
+            showToast('分类映射已修复', 'success');
+            return categoryMap;
+        };
+
+        // 测试ID 12的分类
+        window.testItem12 = function() {
+            const item12 = tableData.find(item => item.id === 12);
+            if (item12) {
+                console.log('ID 12的数据:', item12);
+                const mapping = Object.entries(categoryMap).find(([id, name]) => name === item12.category);
+                console.log(`分类 "${item12.category}" 的映射:`, mapping);
                 
-                const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
-                console.log('找到的映射:', categoryEntry);
-                
-                if (categoryEntry) {
-                    console.log('应该在选择器中选择:', categoryEntry[0]);
-                    console.log('当前选择器选项:', Array.from(document.getElementById('itemCategory').options).map(opt => ({value: opt.value, text: opt.text})));
+                if (mapping) {
+                    console.log(`应该在选择器中选中: ${mapping[0]}`);
+                    console.log(`当前选择器选项:`);
+                    Array.from(document.getElementById('itemCategory').options).forEach(opt => {
+                        console.log(`  ${opt.value}: ${opt.text}`);
+                    });
                 }
             }
+            return item12;
         };
 
         // 页面加载后自动检查
         setTimeout(() => {
             console.log('🔍 页面加载完成，检查分类映射...');
-            fixCategoryMappings();
+            debugCategories();
         }, 2000);
     </script>
 </body>
