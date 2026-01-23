@@ -393,7 +393,7 @@
         /* 缩小搜索框 */
         .search-box {
             flex: 0 0 250px; /* 固定宽度 */
-            min-width: 250px;
+            min-width: 200px;
             position: relative;
         }
         
@@ -1335,18 +1335,18 @@
         
         const PROJECT_CONFIG = {
             // 项目标识（DH3, DH7, 等）
-            prefix: 'DH1',
+            prefix: 'DH3',
             
             // 项目完整名称
-            name: 'DH1项目',
+            name: 'DH3项目',
             
             // GitHub仓库配置
             githubOwner: 'Cybereign',
-            githubRepo: 'DH1SecurityConfig',
+            githubRepo: 'DH3SecurityConfig',
             githubBranch: 'main',
             
             // 本地存储键名前缀
-            storagePrefix: 'DH1h5Index',
+            storagePrefix: 'DH3h5Index',
             
             // 默认数据 - 从中提取分类
             defaultData: [
@@ -1544,7 +1544,7 @@
                         name: categoryName
                     });
                     
-                    console.log(`✅ 提取分类: ${categoryName} -> ${categoryId}`);
+                    console.log(`✅ 提取分类: "${categoryName}" -> ${categoryId}`);
                 }
             });
             
@@ -2091,110 +2091,6 @@
             } catch (error) {
                 console.log('验证过程中出现错误:', error);
                 return false;
-            }
-        }
-
-        // 从GitHub重新加载Excel数据（优化的版本）
-        async function reloadExcelDataFromGitHub() {
-            try {
-                console.log('🔄 重新从GitHub获取最新数据...');
-                
-                // 使用不同的方法来获取数据，避免缓存问题
-                const timestamp = Date.now();
-                const excelUrl = `${GITHUB_CONFIG_BASE}/table.xlsx`;
-                
-                // 方法1：直接下载
-                const response = await fetch(`${excelUrl}?_=${timestamp}`, {
-                    method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`下载失败: HTTP ${response.status}`);
-                }
-                
-                const arrayBuffer = await response.arrayBuffer();
-                
-                if (arrayBuffer.byteLength === 0) {
-                    throw new Error('下载的文件为空');
-                }
-                
-                // 处理Excel数据
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { 
-                    type: 'array',
-                    cellText: false,
-                    cellDates: true,
-                    raw: false
-                });
-                
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
-                    header: 1,
-                    defval: '',
-                    blankrows: false
-                });
-                
-                if (excelData.length < 2) {
-                    throw new Error('Excel文件为空或格式不正确');
-                }
-                
-                const newTableData = [];
-                
-                for (let i = 1; i < excelData.length; i++) {
-                    const row = excelData[i];
-                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
-                    
-                    const item = {
-                        id: parseInt(row[0]) || i,
-                        category: String(row[1] || '').trim(),
-                        title: String(row[2] || '').trim(),
-                        path: String(row[3] || '').trim(),
-                        type: String(row[4] || 'url').toLowerCase().trim(),
-                        note: String(row[5] || '').trim()
-                    };
-                    
-                    if (!item.title && !item.path) continue;
-                    
-                    newTableData.push(item);
-                }
-                
-                // 更新数据
-                tableData = newTableData;
-                
-                // 从数据中提取分类
-                const extracted = extractCategoriesFromData(tableData);
-                categoryMap = extracted.categoryMap;
-                categoryList = extracted.categoryList;
-                
-                // 更新本地存储
-                saveDataToStorage();
-                
-                // 更新UI
-                const searchTerm = searchInput.value.toLowerCase();
-                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
-                filterTable(searchTerm, activeCategory);
-                
-                console.log('✅ 从GitHub重新加载数据成功，数据条数:', tableData.length);
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ 从GitHub重新加载数据失败:', error);
-                
-                // 如果重新加载失败，但本地有数据，继续使用本地数据
-                if (tableData && tableData.length > 0) {
-                    console.log('⚠️ 使用本地缓存数据');
-                    return false;
-                }
-                
-                throw error;
             }
         }
 
@@ -3561,10 +3457,13 @@
             showToast(`您已成功退出${PROJECT_NAME}登录`, 'info');
         }
 
-        // 更新分类筛选器
+        // 更新分类筛选器 - 修正版
         function updateCategoryFilters() {
             const filterBox = document.getElementById('filterBox');
             if (!filterBox) return;
+            
+            console.log('🔄 更新分类筛选器...');
+            console.log('当前分类列表:', categoryList);
             
             // 保存当前选中的分类
             const currentActive = filterBox.querySelector('.filter-btn.active');
@@ -3573,14 +3472,22 @@
             // 清空除"全部"按钮外的所有按钮
             const allButton = filterBox.querySelector('[data-category="all"]');
             filterBox.innerHTML = '';
-            if (allButton) {
-                filterBox.appendChild(allButton);
-            } else {
+            
+            // 添加"全部"按钮
+            if (!allButton) {
                 const newAllButton = document.createElement('button');
                 newAllButton.className = 'filter-btn';
                 newAllButton.setAttribute('data-category', 'all');
                 newAllButton.textContent = '全部';
                 filterBox.appendChild(newAllButton);
+            } else {
+                filterBox.appendChild(allButton);
+            }
+            
+            // 检查分类列表是否为空
+            if (!categoryList || categoryList.length === 0) {
+                console.warn('⚠️ 分类列表为空，无法生成筛选按钮');
+                return;
             }
             
             // 按分类名称排序，以便于查找
@@ -3588,6 +3495,9 @@
                 a.name.localeCompare(b.name, 'zh-CN')
             );
             
+            console.log('排序后的分类:', sortedCategories.map(cat => `${cat.id}: ${cat.name}`));
+            
+            // 为每个分类创建筛选按钮
             sortedCategories.forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'filter-btn';
@@ -3601,8 +3511,11 @@
             if (newActiveButton) {
                 newActiveButton.classList.add('active');
             } else {
+                // 如果没有找到之前选中的分类，默认选中"全部"
                 filterBox.querySelector('[data-category="all"]').classList.add('active');
             }
+            
+            console.log(`✅ 更新完成，共创建 ${sortedCategories.length} 个分类筛选按钮`);
         }
 
         // 更新分类选择器 - 修复显示问题
@@ -3618,6 +3531,12 @@
                 <option value="">选择分类</option>
                 <option value="__new__">+ 添加新分类</option>
             `;
+            
+            // 检查分类列表是否为空
+            if (!categoryList || categoryList.length === 0) {
+                console.warn('⚠️ 分类列表为空，无法生成选择器选项');
+                return;
+            }
             
             // 按分类名称排序，以便于查找
             const sortedCategories = [...categoryList].sort((a, b) => 
@@ -4044,6 +3963,16 @@
             console.log('📊 从数据中提取的分类数量:', categoryList.length);
             console.log('📊 数据条目数量:', tableData.length);
             
+            // 检查分类按钮是否显示正确
+            const filterBox = document.getElementById('filterBox');
+            if (filterBox) {
+                const filterButtons = filterBox.querySelectorAll('.filter-btn');
+                console.log(`筛选按钮数量: ${filterButtons.length}`);
+                filterButtons.forEach(btn => {
+                    console.log(`按钮: "${btn.textContent}" (${btn.dataset.category})`);
+                });
+            }
+            
             console.groupEnd();
             
             return true;
@@ -4060,6 +3989,14 @@
             console.log('从数据提取的分类数量:', categoryList.length);
             console.groupEnd();
             return PROJECT_CONFIG;
+        };
+
+        // 强制重新加载分类按钮
+        window.reloadCategoryFilters = function() {
+            console.log('🔄 强制重新加载分类筛选按钮...');
+            updateCategoryFilters();
+            console.log('✅ 分类筛选按钮已重新加载');
+            return true;
         };
 
         // 页面加载后自动检查
