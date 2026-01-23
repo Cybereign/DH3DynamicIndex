@@ -381,18 +381,27 @@
             display: none !important;
         }
         
+        /* 控制区域 - 重新设计布局 */
         .controls {
             padding: 20px 30px;
             background: #f8f9fa;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
             border-bottom: 1px solid #eaeaea;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .controls-row:last-child {
+            margin-bottom: 0;
         }
         
         .search-box {
-            flex: 0 0 250px; /* 固定宽度250px */
+            flex: 0 0 250px;
             min-width: 250px;
             position: relative;
         }
@@ -420,36 +429,13 @@
             color: #888;
         }
         
-        /* 修复分类筛选器区域 - 确保单行显示 */
+        /* 分类筛选器区域 - 自动换行 */
         .filter-box {
             display: flex;
             gap: 8px;
             flex: 1;
-            min-width: 200px;
-            overflow-x: auto; /* 允许水平滚动 */
-            white-space: nowrap; /* 防止换行 */
-            padding: 5px 0; /* 添加一些内边距 */
-            scrollbar-width: thin; /* Firefox滚动条 */
-            scrollbar-color: #c1c1c1 #f1f1f1;
-        }
-        
-        /* Webkit浏览器滚动条样式 */
-        .filter-box::-webkit-scrollbar {
-            height: 6px;
-        }
-        
-        .filter-box::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        
-        .filter-box::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        
-        .filter-box::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+            min-width: 300px;
+            flex-wrap: wrap; /* 允许换行 */
         }
         
         .filter-btn {
@@ -460,8 +446,8 @@
             cursor: pointer;
             transition: all 0.2s;
             font-size: 0.9rem;
-            white-space: nowrap; /* 防止按钮内文字换行 */
-            flex-shrink: 0; /* 防止按钮缩小 */
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         
         .filter-btn:hover {
@@ -474,38 +460,28 @@
             border-color: #6a11cb;
         }
         
-        /* 修复操作按钮区域 - 确保单行显示 */
+        /* 操作按钮区域 - 重新设计 */
         .action-buttons {
             display: flex;
             gap: 8px;
-            flex-wrap: nowrap; /* 禁止换行 */
-            min-width: 300px;
-            justify-content: flex-end;
-            align-items: center;
-            overflow-x: auto; /* 允许水平滚动 */
-            white-space: nowrap; /* 防止换行 */
-            padding: 5px 0; /* 添加一些内边距 */
-            scrollbar-width: thin; /* Firefox滚动条 */
-            scrollbar-color: #c1c1c1 #f1f1f1;
+            flex-wrap: wrap; /* 允许换行 */
+            width: 100%;
         }
         
-        /* Webkit浏览器滚动条样式 */
-        .action-buttons::-webkit-scrollbar {
-            height: 6px;
+        /* 主操作按钮组 */
+        .main-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
         }
         
-        .action-buttons::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        
-        .action-buttons::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        
-        .action-buttons::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+        /* 排序控制按钮组 */
+        .sort-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-left: 10px;
         }
         
         .btn {
@@ -518,10 +494,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap; /* 防止按钮内文字换行 */
-            flex-shrink: 0; /* 防止按钮缩小 */
-            height: 42px; /* 固定高度确保对齐 */
-            box-sizing: border-box; /* 确保padding包含在高度内 */
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: 42px;
+            box-sizing: border-box;
         }
         
         .btn-primary {
@@ -1037,14 +1013,7 @@
             cursor: grabbing;
         }
         
-        .sort-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-left: 8px;
-            flex-shrink: 0; /* 防止排序控件缩小 */
-        }
-        
+        /* 排序按钮样式 */
         .sort-btn {
             padding: 10px 18px;
             background: #6c757d;
@@ -1075,26 +1044,30 @@
         
         /* 响应式设计 */
         @media (max-width: 1024px) {
-            .controls {
+            .controls-row {
                 flex-direction: column;
                 align-items: stretch;
             }
             
             .search-box {
-                flex: 0 0 100%;
-                min-width: 100%;
+                width: 100%;
+                flex: 0 0 auto;
             }
             
             .filter-box {
                 width: 100%;
-                order: 2;
+                justify-content: flex-start;
             }
             
             .action-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .main-actions, .sort-actions {
                 width: 100%;
+                margin-left: 0;
                 justify-content: flex-start;
-                order: 3;
-                margin-top: 10px;
             }
         }
         
@@ -1117,6 +1090,10 @@
                 margin: 0 auto;
             }
             
+            .controls {
+                padding: 15px;
+            }
+            
             th, td {
                 padding: 12px 15px;
             }
@@ -1131,6 +1108,11 @@
                 height: 38px;
             }
             
+            .filter-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            
             .stats {
                 flex-direction: column;
                 gap: 10px;
@@ -1138,23 +1120,28 @@
         }
         
         @media (max-width: 480px) {
-            .controls {
-                padding: 15px;
-            }
-            
             .btn, .sort-btn {
                 padding: 6px 10px;
                 font-size: 0.8rem;
                 gap: 5px;
+                height: 36px;
             }
             
             .filter-btn {
-                padding: 8px 12px;
-                font-size: 0.85rem;
+                padding: 6px 10px;
+                font-size: 0.8rem;
             }
             
             h1 {
                 font-size: 1.5rem;
+            }
+            
+            .controls {
+                padding: 12px;
+            }
+            
+            .controls-row {
+                gap: 10px;
             }
         }
     </style>
@@ -1247,61 +1234,70 @@
         </div>
         
         <div class="controls">
-            <div class="search-box">
-                <span class="search-icon"><i class="fas fa-search"></i></span>
-                <input type="text" id="searchInput" placeholder="搜索页面名称、分类或备注...">
-            </div>
-            
-            <div class="filter-box" id="filterBox">
-                <button class="filter-btn active" data-category="all">全部</button>
-                <!-- 分类按钮将通过JavaScript动态生成 -->
-            </div>
-            
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="addBtn" style="display: none;">
-                    <i class="fas fa-plus"></i> 添加新条目
-                </button>
-                
-                <!-- 排序控制按钮 -->
-                <div class="sort-controls" id="sortControls" style="display: none;">
-                    <button class="sort-btn" id="enableSortBtn" title="启用拖拽排序">
-                        <i class="fas fa-arrows-alt"></i> 调整顺序
-                    </button>
-                    <button class="sort-btn" id="saveOrderBtn" title="保存顺序" style="display: none;">
-                        <i class="fas fa-save"></i> 保存顺序
-                    </button>
-                    <button class="sort-btn" id="cancelSortBtn" title="取消排序" style="display: none;">
-                        <i class="fas fa-times"></i> 取消
-                    </button>
-                    <button class="sort-btn" id="resetOrderBtn" title="重置为默认顺序">
-                        <i class="fas fa-undo"></i> 重置顺序
-                    </button>
+            <!-- 第一行：搜索和分类筛选 -->
+            <div class="controls-row">
+                <div class="search-box">
+                    <span class="search-icon"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" placeholder="搜索页面名称、分类或备注...">
                 </div>
                 
-                <button class="btn btn-success" id="exportBtn" style="display: none;">
-                    <i class="fas fa-file-export"></i> 导出数据
-                </button>
-                <button class="btn btn-success" id="syncExcelBtn" style="display: none;">
-                    <i class="fas fa-sync"></i> 同步到 Excel
-                </button>
-                <button class="btn btn-success" id="downloadExcelBtn">
-                    <i class="fas fa-download"></i> 下载 Excel
-                </button>
-                <button class="btn btn-warning" id="repairExcelBtn" style="display: none;">
-                    <i class="fas fa-tools"></i> 修复Excel格式
-                </button>
-                <button class="btn btn-success" id="updateHTMLBtn" style="display: none;">
-                    <i class="fas fa-download"></i> 更新HTML
-                </button>
-                <button class="btn btn-danger" id="resetBtn" style="display: none;">
-                    <i class="fas fa-redo"></i> 重置数据
-                </button>
-                <button class="btn btn-primary" id="refreshConfigBtn">
-                    <i class="fas fa-sync-alt"></i> 刷新配置
-                </button>
-                <button class="btn btn-primary" id="editHeadersBtn" style="display: none;">
-                    <i class="fas fa-edit"></i> 编辑表头
-                </button>
+                <div class="filter-box" id="filterBox">
+                    <button class="filter-btn active" data-category="all">全部</button>
+                    <!-- 分类按钮将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <!-- 第二行：操作按钮 -->
+            <div class="controls-row">
+                <div class="action-buttons">
+                    <!-- 主操作按钮 -->
+                    <div class="main-actions">
+                        <button class="btn btn-primary" id="addBtn" style="display: none;">
+                            <i class="fas fa-plus"></i> 添加新条目
+                        </button>
+                        
+                        <button class="btn btn-success" id="exportBtn" style="display: none;">
+                            <i class="fas fa-file-export"></i> 导出数据
+                        </button>
+                        <button class="btn btn-success" id="syncExcelBtn" style="display: none;">
+                            <i class="fas fa-sync"></i> 同步到 Excel
+                        </button>
+                        <button class="btn btn-success" id="downloadExcelBtn">
+                            <i class="fas fa-download"></i> 下载 Excel
+                        </button>
+                        <button class="btn btn-warning" id="repairExcelBtn" style="display: none;">
+                            <i class="fas fa-tools"></i> 修复Excel格式
+                        </button>
+                        <button class="btn btn-success" id="updateHTMLBtn" style="display: none;">
+                            <i class="fas fa-download"></i> 更新HTML
+                        </button>
+                        <button class="btn btn-danger" id="resetBtn" style="display: none;">
+                            <i class="fas fa-redo"></i> 重置数据
+                        </button>
+                        <button class="btn btn-primary" id="refreshConfigBtn">
+                            <i class="fas fa-sync-alt"></i> 刷新配置
+                        </button>
+                        <button class="btn btn-primary" id="editHeadersBtn" style="display: none;">
+                            <i class="fas fa-edit"></i> 编辑表头
+                        </button>
+                    </div>
+                    
+                    <!-- 排序控制按钮 -->
+                    <div class="sort-actions" id="sortControls" style="display: none;">
+                        <button class="sort-btn" id="enableSortBtn" title="启用拖拽排序">
+                            <i class="fas fa-arrows-alt"></i> 调整顺序
+                        </button>
+                        <button class="sort-btn" id="saveOrderBtn" title="保存顺序" style="display: none;">
+                            <i class="fas fa-save"></i> 保存顺序
+                        </button>
+                        <button class="sort-btn" id="cancelSortBtn" title="取消排序" style="display: none;">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                        <button class="sort-btn" id="resetOrderBtn" title="重置为默认顺序">
+                            <i class="fas fa-undo"></i> 重置顺序
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -1432,18 +1428,18 @@
         
         const PROJECT_CONFIG = {
             // 项目标识（DH3, DH7, 等）
-            prefix: 'DH1',
+            prefix: 'DH3',
             
             // 项目完整名称
-            name: 'DH1项目',
+            name: 'DH3项目',
             
             // GitHub仓库配置
             githubOwner: 'Cybereign',
-            githubRepo: 'DH1SecurityConfig',
+            githubRepo: 'DH3SecurityConfig',
             githubBranch: 'main',
             
             // 本地存储键名前缀
-            storagePrefix: 'DH1h5Index',
+            storagePrefix: 'DH3h5Index',
             
             // 默认数据 - 使用外部文件加载
             defaultData: [],
@@ -1577,6 +1573,11 @@
         const pageTitle = document.getElementById('pageTitle');
         const mainTitle = document.getElementById('mainTitle');
         const filterBox = document.getElementById('filterBox');
+        const sortControls = document.getElementById('sortControls');
+        const enableSortBtn = document.getElementById('enableSortBtn');
+        const saveOrderBtn = document.getElementById('saveOrderBtn');
+        const cancelSortBtn = document.getElementById('cancelSortBtn');
+        const resetOrderBtn = document.getElementById('resetOrderBtn');
         
         // 新增的认证相关DOM元素
         const adminToggleBtn = document.getElementById('adminToggleBtn');
@@ -1949,283 +1950,6 @@
                 console.error('使用外部数据配置失败:', error);
                 updateStatus('error', `配置加载失败: ${error.message}`);
                 return false;
-            }
-        }
-
-        // 从GitHub加载配置函数 - 优化的异步加载
-        async function loadConfigFromGitHub(forceRefresh = false) {
-            const timestamp = forceRefresh ? `?_=${Date.now()}` : '';
-            const configUrl = `${GITHUB_CONFIG_BASE}/config.json${timestamp}`;
-            const excelUrl = `${GITHUB_CONFIG_BASE}/table.xlsx${timestamp}`;
-            
-            console.log('🔄 尝试从GitHub加载配置...');
-            
-            try {
-                showLoadingIndicator('正在从GitHub securityconfig加载配置...');
-                
-                // 设置超时时间
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('GitHub连接超时，请检查网络连接')), 10000);
-                });
-                
-                const configFetch = fetch(configUrl, {
-                    cache: forceRefresh ? 'no-cache' : 'default',
-                    headers: forceRefresh ? {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                    } : {}
-                });
-                
-                const excelFetch = fetch(excelUrl, {
-                    cache: forceRefresh ? 'no-cache' : 'default',
-                    headers: forceRefresh ? {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                    } : {}
-                });
-                
-                // 使用Promise.race实现超时控制
-                const [configResponse, excelResponse] = await Promise.race([
-                    Promise.all([configFetch, excelFetch]),
-                    timeoutPromise
-                ]);
-                
-                if (!configResponse.ok) throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
-                if (!excelResponse.ok) throw new Error(`Excel加载失败: HTTP ${excelResponse.status}`);
-                
-                const config = await configResponse.json();
-                const arrayBuffer = await excelResponse.arrayBuffer();
-                
-                await processExcelData(arrayBuffer);
-                adminAccounts = config.users || [];
-                appConfig = config.settings || {};
-                
-                // 重新构建分类（从GitHub数据中）
-                rebuildCategoriesFromTableData();
-                
-                updateConfigVersionInfo(config);
-                console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
-                
-                hideLoadingIndicator();
-                
-                if (isLoggedIn) {
-                    updateStatus('success', '已加载GitHub配置，您当前是管理员模式');
-                } else {
-                    updateStatus('success', '已加载GitHub配置，您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。');
-                }
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ GitHub配置加载失败:', error);
-                hideLoadingIndicator();
-                return false;
-            }
-        }
-
-        // 从表格数据重建分类
-        function rebuildCategoriesFromTableData() {
-            console.log('🔧 从表格数据重建分类系统...');
-            
-            // 从数据中提取所有唯一的分类
-            const categoriesSet = new Set();
-            tableData.forEach(item => {
-                if (item.category && item.category.trim()) {
-                    categoriesSet.add(item.category.trim());
-                }
-            });
-            
-            // 将Set转换为数组并排序
-            const categoriesArray = Array.from(categoriesSet).sort((a, b) => 
-                a.localeCompare(b, 'zh-CN')
-            );
-            
-            console.log('📊 从表格数据中提取的分类:', categoriesArray);
-            
-            // 构建分类列表和映射
-            categoryList = [];
-            categoryMap = {};
-            
-            categoriesArray.forEach((categoryName, index) => {
-                const categoryId = `category${index + 1}`;
-                categoryList.push({
-                    id: categoryId,
-                    name: categoryName
-                });
-                categoryMap[categoryId] = categoryName;
-            });
-            
-            console.log('✅ 重建的分类系统:', {
-                categoryList: categoryList,
-                categoryMap: categoryMap
-            });
-            
-            // 更新UI
-            updateCategoryFilters();
-            updateCategorySelect();
-        }
-
-        // ========== 处理Excel数据 ==========
-        async function processExcelData(arrayBuffer) {
-            try {
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { 
-                    type: 'array',
-                    cellText: false,
-                    cellDates: true,
-                    raw: false
-                });
-                
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
-                    header: 1,
-                    defval: '',
-                    blankrows: false
-                });
-                
-                if (excelData.length < 2) {
-                    throw new Error('Excel文件为空或格式不正确');
-                }
-                
-                const headers = excelData[0];
-                console.log('Excel表头结构:', headers);
-                
-                tableData = [];
-                
-                for (let i = 1; i < excelData.length; i++) {
-                    const row = excelData[i];
-                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
-                    
-                    const item = {
-                        id: parseInt(row[0]) || i,
-                        category: String(row[1] || '').trim(),
-                        title: String(row[2] || '').trim(),
-                        path: String(row[3] || '').trim(),
-                        type: String(row[4] || 'url').toLowerCase().trim(),
-                        note: String(row[5] || '').trim()
-                    };
-                    
-                    if (!item.title && !item.path) continue;
-                    
-                    tableData.push(item);
-                }
-                
-                console.log('从Excel加载的数据条数:', tableData.length);
-                
-                renderTable(tableData);
-                updateStats();
-                
-            } catch (error) {
-                console.error('Excel数据处理失败:', error);
-                throw new Error(`Excel文件处理失败: ${error.message}`);
-            }
-        }
-
-        // ========== 优化的同步流程 ==========
-
-        // 优化的同步到Excel函数 - 修复重新加载问题
-        async function syncDataToExcel() {
-            if (!isLoggedIn) {
-                alert('请先登录管理员账户');
-                return;
-            }
-
-            if (!gitHubService) {
-                alert('请先配置 GitHub 个人访问令牌');
-                showAuthPanel();
-                return;
-            }
-
-            try {
-                showLoadingIndicator(`正在同步数据到 ${PROJECT_NAME} GitHub Excel 文件...`);
-                
-                // 1. 准备Excel数据
-                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
-                const excelData = [headers];
-                
-                // 确保ID连续
-                tableData.forEach((item, index) => {
-                    item.id = index + 1; // 重新排序ID
-                    const row = [
-                        item.id || '',
-                        item.category || '',
-                        item.title || '',
-                        item.path || '',
-                        item.type || 'url',
-                        item.note || ''
-                    ];
-                    excelData.push(row);
-                });
-
-                // 2. 创建Excel工作表
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                
-                const colWidths = [
-                    { wch: 8 },   // 序号
-                    { wch: 15 },  // 分类
-                    { wch: 30 },  // 标题
-                    { wch: 50 },  // 地址
-                    { wch: 12 },  // 地址类型
-                    { wch: 25 }   // 备注
-                ];
-                worksheet['!cols'] = colWidths;
-
-                // 3. 创建Excel工作簿
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, `${PROJECT_NAME}项目索引表`);
-                
-                // 4. 转换为Base64
-                const excelBuffer = XLSX.write(workbook, { 
-                    bookType: 'xlsx', 
-                    type: 'array',
-                    bookSST: false
-                });
-
-                const excelBase64 = arrayBufferToBase64(excelBuffer);
-
-                // 5. 上传到GitHub
-                await gitHubService.forceCreateFile(
-                    'table.xlsx',
-                    excelBase64,
-                    `${PROJECT_NAME}自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
-                );
-
-                // 6. 立即更新本地数据
-                saveDataToStorage(); // 保存到本地存储
-                
-                // 7. 显示成功消息
-                hideLoadingIndicator();
-                showToast(`✅ ${PROJECT_NAME}数据已成功同步到 GitHub Excel 文件！`, 'success');
-                
-                // 8. 直接更新UI，不再从GitHub重新加载
-                const searchTerm = searchInput.value.toLowerCase();
-                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
-                filterTable(searchTerm, activeCategory);
-                updateConfigVersionInfo(appConfig);
-                
-                // 9. 更新状态显示
-                updateStatus('success', '数据同步成功！页面已更新为最新数据');
-                
-                // 10. 在后台验证数据是否同步成功（非阻塞）
-                setTimeout(async () => {
-                    try {
-                        await verifyGitHubSync();
-                    } catch (error) {
-                        console.log('后台验证失败，不影响用户操作:', error);
-                    }
-                }, 1000);
-                
-            } catch (error) {
-                console.error('同步到 Excel 失败:', error);
-                hideLoadingIndicator();
-                
-                if (error.message.includes('文件版本冲突')) {
-                    showToast(`${PROJECT_NAME}同步失败: ${error.message}\n\n请先点击"修复Excel格式"按钮，然后重试同步。`, 'error');
-                } else {
-                    showToast(`${PROJECT_NAME}同步失败: ${error.message}`, 'error');
-                }
             }
         }
 
@@ -4030,6 +3754,283 @@
                 info: 'fa-info-circle'
             };
             return icons[type] || 'fa-info-circle';
+        }
+
+        // ========== GitHub配置加载函数 ==========
+        async function loadConfigFromGitHub(forceRefresh = false) {
+            const timestamp = forceRefresh ? `?_=${Date.now()}` : '';
+            const configUrl = `${GITHUB_CONFIG_BASE}/config.json${timestamp}`;
+            const excelUrl = `${GITHUB_CONFIG_BASE}/table.xlsx${timestamp}`;
+            
+            console.log('🔄 尝试从GitHub加载配置...');
+            
+            try {
+                showLoadingIndicator('正在从GitHub securityconfig加载配置...');
+                
+                // 设置超时时间
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('GitHub连接超时，请检查网络连接')), 10000);
+                });
+                
+                const configFetch = fetch(configUrl, {
+                    cache: forceRefresh ? 'no-cache' : 'default',
+                    headers: forceRefresh ? {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    } : {}
+                });
+                
+                const excelFetch = fetch(excelUrl, {
+                    cache: forceRefresh ? 'no-cache' : 'default',
+                    headers: forceRefresh ? {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    } : {}
+                });
+                
+                // 使用Promise.race实现超时控制
+                const [configResponse, excelResponse] = await Promise.race([
+                    Promise.all([configFetch, excelFetch]),
+                    timeoutPromise
+                ]);
+                
+                if (!configResponse.ok) throw new Error(`配置加载失败: HTTP ${configResponse.status}`);
+                if (!excelResponse.ok) throw new Error(`Excel加载失败: HTTP ${excelResponse.status}`);
+                
+                const config = await configResponse.json();
+                const arrayBuffer = await excelResponse.arrayBuffer();
+                
+                await processExcelData(arrayBuffer);
+                adminAccounts = config.users || [];
+                appConfig = config.settings || {};
+                
+                // 重新构建分类（从GitHub数据中）
+                rebuildCategoriesFromTableData();
+                
+                updateConfigVersionInfo(config);
+                console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
+                
+                hideLoadingIndicator();
+                
+                if (isLoggedIn) {
+                    updateStatus('success', '已加载GitHub配置，您当前是管理员模式');
+                } else {
+                    updateStatus('success', '已加载GitHub配置，您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ GitHub配置加载失败:', error);
+                hideLoadingIndicator();
+                return false;
+            }
+        }
+
+        // 从表格数据重建分类
+        function rebuildCategoriesFromTableData() {
+            console.log('🔧 从表格数据重建分类系统...');
+            
+            // 从数据中提取所有唯一的分类
+            const categoriesSet = new Set();
+            tableData.forEach(item => {
+                if (item.category && item.category.trim()) {
+                    categoriesSet.add(item.category.trim());
+                }
+            });
+            
+            // 将Set转换为数组并排序
+            const categoriesArray = Array.from(categoriesSet).sort((a, b) => 
+                a.localeCompare(b, 'zh-CN')
+            );
+            
+            console.log('📊 从表格数据中提取的分类:', categoriesArray);
+            
+            // 构建分类列表和映射
+            categoryList = [];
+            categoryMap = {};
+            
+            categoriesArray.forEach((categoryName, index) => {
+                const categoryId = `category${index + 1}`;
+                categoryList.push({
+                    id: categoryId,
+                    name: categoryName
+                });
+                categoryMap[categoryId] = categoryName;
+            });
+            
+            console.log('✅ 重建的分类系统:', {
+                categoryList: categoryList,
+                categoryMap: categoryMap
+            });
+            
+            // 更新UI
+            updateCategoryFilters();
+            updateCategorySelect();
+        }
+
+        // ========== 处理Excel数据 ==========
+        async function processExcelData(arrayBuffer) {
+            try {
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { 
+                    type: 'array',
+                    cellText: false,
+                    cellDates: true,
+                    raw: false
+                });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: '',
+                    blankrows: false
+                });
+                
+                if (excelData.length < 2) {
+                    throw new Error('Excel文件为空或格式不正确');
+                }
+                
+                const headers = excelData[0];
+                console.log('Excel表头结构:', headers);
+                
+                tableData = [];
+                
+                for (let i = 1; i < excelData.length; i++) {
+                    const row = excelData[i];
+                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
+                    
+                    const item = {
+                        id: parseInt(row[0]) || i,
+                        category: String(row[1] || '').trim(),
+                        title: String(row[2] || '').trim(),
+                        path: String(row[3] || '').trim(),
+                        type: String(row[4] || 'url').toLowerCase().trim(),
+                        note: String(row[5] || '').trim()
+                    };
+                    
+                    if (!item.title && !item.path) continue;
+                    
+                    tableData.push(item);
+                }
+                
+                console.log('从Excel加载的数据条数:', tableData.length);
+                
+                renderTable(tableData);
+                updateStats();
+                
+            } catch (error) {
+                console.error('Excel数据处理失败:', error);
+                throw new Error(`Excel文件处理失败: ${error.message}`);
+            }
+        }
+
+        // ========== 优化的同步流程 ==========
+
+        // 优化的同步到Excel函数 - 修复重新加载问题
+        async function syncDataToExcel() {
+            if (!isLoggedIn) {
+                alert('请先登录管理员账户');
+                return;
+            }
+
+            if (!gitHubService) {
+                alert('请先配置 GitHub 个人访问令牌');
+                showAuthPanel();
+                return;
+            }
+
+            try {
+                showLoadingIndicator(`正在同步数据到 ${PROJECT_NAME} GitHub Excel 文件...`);
+                
+                // 1. 准备Excel数据
+                const headers = ['序号', '分类', '标题', '地址', '地址类型', '备注'];
+                const excelData = [headers];
+                
+                // 确保ID连续
+                tableData.forEach((item, index) => {
+                    item.id = index + 1; // 重新排序ID
+                    const row = [
+                        item.id || '',
+                        item.category || '',
+                        item.title || '',
+                        item.path || '',
+                        item.type || 'url',
+                        item.note || ''
+                    ];
+                    excelData.push(row);
+                });
+
+                // 2. 创建Excel工作表
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                
+                const colWidths = [
+                    { wch: 8 },   // 序号
+                    { wch: 15 },  // 分类
+                    { wch: 30 },  // 标题
+                    { wch: 50 },  // 地址
+                    { wch: 12 },  // 地址类型
+                    { wch: 25 }   // 备注
+                ];
+                worksheet['!cols'] = colWidths;
+
+                // 3. 创建Excel工作簿
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, `${PROJECT_NAME}项目索引表`);
+                
+                // 4. 转换为Base64
+                const excelBuffer = XLSX.write(workbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array',
+                    bookSST: false
+                });
+
+                const excelBase64 = arrayBufferToBase64(excelBuffer);
+
+                // 5. 上传到GitHub
+                await gitHubService.forceCreateFile(
+                    'table.xlsx',
+                    excelBase64,
+                    `${PROJECT_NAME}自动同步表格数据 - ${new Date().toLocaleString()} - 共${tableData.length}条记录`
+                );
+
+                // 6. 立即更新本地数据
+                saveDataToStorage(); // 保存到本地存储
+                
+                // 7. 显示成功消息
+                hideLoadingIndicator();
+                showToast(`✅ ${PROJECT_NAME}数据已成功同步到 GitHub Excel 文件！`, 'success');
+                
+                // 8. 直接更新UI，不再从GitHub重新加载
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                filterTable(searchTerm, activeCategory);
+                updateConfigVersionInfo(appConfig);
+                
+                // 9. 更新状态显示
+                updateStatus('success', '数据同步成功！页面已更新为最新数据');
+                
+                // 10. 在后台验证数据是否同步成功（非阻塞）
+                setTimeout(async () => {
+                    try {
+                        await verifyGitHubSync();
+                    } catch (error) {
+                        console.log('后台验证失败，不影响用户操作:', error);
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('同步到 Excel 失败:', error);
+                hideLoadingIndicator();
+                
+                if (error.message.includes('文件版本冲突')) {
+                    showToast(`${PROJECT_NAME}同步失败: ${error.message}\n\n请先点击"修复Excel格式"按钮，然后重试同步。`, 'error');
+                } else {
+                    showToast(`${PROJECT_NAME}同步失败: ${error.message}`, 'error');
+                }
+            }
         }
 
         // ========== 调试工具函数 ==========
