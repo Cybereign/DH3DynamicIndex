@@ -390,10 +390,9 @@
             border-bottom: 1px solid #eaeaea;
         }
         
-        /* 缩小搜索框 */
         .search-box {
-            flex: 0 0 250px; /* 固定宽度 */
-            min-width: 200px;
+            flex: 1;
+            min-width: 250px;
             position: relative;
         }
         
@@ -1054,10 +1053,6 @@
                 flex-direction: column;
                 gap: 10px;
             }
-            
-            .search-box {
-                flex: 0 0 100%;
-            }
         }
     </style>
 </head>
@@ -1149,15 +1144,14 @@
         </div>
         
         <div class="controls">
-            <!-- 缩小搜索框 -->
             <div class="search-box">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
-                <input type="text" id="searchInput" placeholder="搜索名称、分类或备注...">
+                <input type="text" id="searchInput" placeholder="搜索页面名称、分类或备注...">
             </div>
             
-            <!-- 分类按钮将通过JavaScript动态生成 -->
-            <div class="filter-box" id="filterBox">
+            <div class="filter-box">
                 <button class="filter-btn active" data-category="all">全部</button>
+                <!-- 分类按钮将通过JavaScript动态生成 -->
             </div>
             
             <div class="action-buttons">
@@ -1329,42 +1323,80 @@
     <!-- 引入SheetJS库用于处理Excel文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <!-- 引入默认数据文件 -->
-    <script src="https://raw.githubusercontent.com/Cybereign/DH3SecurityConfig/main/default-data.js"></script>
-    
     <script>
         // ========== 项目配置 ==========
         // 只需修改这里的变量，就可以切换到其他项目
         
         const PROJECT_CONFIG = {
             // 项目标识（DH3, DH7, 等）
-            prefix: 'DH3',
+            prefix: 'DH1',
             
             // 项目完整名称
-            name: 'DH3项目',
+            name: 'DH1项目',
             
             // GitHub仓库配置
             githubOwner: 'Cybereign',
-            githubRepo: 'DH3SecurityConfig',
+            githubRepo: 'DH1SecurityConfig',
             githubBranch: 'main',
             
             // 本地存储键名前缀
-            storagePrefix: 'DH3h5Index',
+            storagePrefix: 'DH1h5Index',
             
-            // 默认数据 - 从外部文件加载
-            defaultData: DEFAULT_TABLE_DATA, // 使用外部文件的数据
+            // 默认数据
+            defaultData: [
+                { id: 1, category: "项目管理", title: "DH3项目主文档", path: "https://example.com/dh3", type: "url", note: "项目主要文档和计划" },
+                { id: 2, category: "工具", title: "设计工具文件夹", path: "\\\\10.4.9.25\\Design\\Tools", type: "folder", note: "设计相关工具软件" },
+                { id: 3, category: "开发", title: "代码仓库", path: "https://github.com/Cybereign/DH3", type: "url", note: "项目代码仓库" },
+                { id: 4, category: "测试", title: "测试用例", path: "D:\\Projects\\DH3\\TestCases", type: "folder", note: "测试用例文档" },
+                { id: 5, category: "文档", title: "API文档", path: "https://api.example.com/docs", type: "url", note: "API接口文档" },
+                { id: 6, category: "项目管理", title: "进度跟踪表", path: "\\\\10.4.9.25\\Project\\Track", type: "folder", note: "项目进度跟踪" },
+                { id: 7, category: "开发", title: "开发环境配置", path: "https://dev.example.com", type: "url", note: "开发环境访问地址" },
+                { id: 8, category: "测试", title: "测试报告", path: "D:\\Reports\\Test", type: "folder", note: "测试报告汇总" },
+                { id: 9, category: "工具", title: "项目管理工具", path: "https://trello.com/dh3", type: "url", note: "项目看板管理" },
+                { id: 10, category: "文档", title: "用户手册", path: "\\\\10.4.9.25\\Docs\\Manual", type: "folder", note: "用户使用手册" }
+            ],
             
             // 默认管理员账户
-            defaultAdminAccounts: DEFAULT_ADMIN_ACCOUNTS, // 使用外部文件的账户
+            defaultAdminAccounts: [
+                { 
+                    username: "admin", 
+                    passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123
+                    name: "系统管理员",
+                    permissions: ["read", "write", "delete", "export", "config"]
+                },
+                { 
+                    username: "user", 
+                    passwordHash: "ecb666d778725ec97307044d642bf4d160aabb76f56c0069c71ea25b1e926825", // user123
+                    name: "普通用户",
+                    permissions: ["read", "write"]
+                }
+            ],
             
             // 默认应用配置
-            defaultAppConfig: DEFAULT_APP_CONFIG, // 使用外部文件的配置
+            defaultAppConfig: {
+                version: "1.0.0",
+                autoLogout: 60,
+                maxLoginAttempts: 5,
+                source: "Builtin"
+            },
             
-            // 从外部文件获取预定义的分类列表
-            defaultCategoryList: DEFAULT_CATEGORY_LIST, // 使用外部文件的分类列表
+            // 默认分类列表
+            defaultCategoryList: [
+                { id: "category1", name: "项目管理" },
+                { id: "category2", name: "开发" },
+                { id: "category3", name: "测试" },
+                { id: "category4", name: "文档" },
+                { id: "category5", name: "工具" }
+            ],
             
-            // 从外部文件获取预定义的分类映射
-            defaultCategoryMap: DEFAULT_CATEGORY_MAP // 使用外部文件的分类映射
+            // 默认分类映射
+            defaultCategoryMap: {
+                "category1": "项目管理",
+                "category2": "开发",
+                "category3": "测试",
+                "category4": "文档",
+                "category5": "工具"
+            }
         };
 
         // 从配置中提取变量
@@ -1394,10 +1426,8 @@
         // 用户账户信息和配置
         let adminAccounts = [];
         let appConfig = {};
-        
-        // 关键修复：使用从外部文件加载的预定义分类，不从数据中提取
-        let categoryMap = DEFAULT_CATEGORY_MAP || {};
-        let categoryList = DEFAULT_CATEGORY_LIST || [];
+        let categoryMap = {};
+        let categoryList = [];
 
         // 表头配置
         let headerConfig = {
@@ -1494,69 +1524,6 @@
         const statusText = document.getElementById('statusText');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const loadingText = document.getElementById('loadingText');
-
-        // ========== 分类管理函数 ==========
-
-        // 关键修复：不再从数据中提取分类，而是使用预定义的分类
-        function getAvailableCategories() {
-            console.log('🔍 获取可用分类...');
-            console.log('预定义分类列表:', categoryList);
-            
-            // 使用预定义的分类列表
-            if (categoryList && categoryList.length > 0) {
-                console.log(`✅ 使用预定义的 ${categoryList.length} 个分类`);
-                return categoryList;
-            }
-            
-            // 如果预定义分类为空，则从数据中提取作为后备方案
-            console.warn('⚠️ 预定义分类为空，从数据中提取分类作为后备方案');
-            
-            const categorySet = new Set();
-            const backupCategoryList = [];
-            
-            // 从数据中提取所有唯一的分类
-            tableData.forEach(item => {
-                if (item.category && item.category.trim() && !categorySet.has(item.category)) {
-                    const categoryName = item.category.trim();
-                    categorySet.add(categoryName);
-                    
-                    // 创建分类ID
-                    const categoryId = `category${backupCategoryList.length + 1}`;
-                    
-                    backupCategoryList.push({
-                        id: categoryId,
-                        name: categoryName
-                    });
-                    
-                    console.log(`✅ 从数据提取分类: "${categoryName}" -> ${categoryId}`);
-                }
-            });
-            
-            console.log(`📊 从数据中提取了 ${backupCategoryList.length} 个分类作为后备`);
-            return backupCategoryList;
-        }
-
-        // 获取分类映射
-        function getCategoryMap() {
-            console.log('🔍 获取分类映射...');
-            
-            // 使用预定义的分类映射
-            if (categoryMap && Object.keys(categoryMap).length > 0) {
-                console.log(`✅ 使用预定义的分类映射，共 ${Object.keys(categoryMap).length} 个分类`);
-                return categoryMap;
-            }
-            
-            // 如果预定义分类映射为空，从分类列表创建
-            console.warn('⚠️ 预定义分类映射为空，从分类列表创建');
-            
-            const backupCategoryMap = {};
-            categoryList.forEach(category => {
-                backupCategoryMap[category.id] = category.name;
-            });
-            
-            console.log('创建的备用分类映射:', backupCategoryMap);
-            return backupCategoryMap;
-        }
 
         // ========== 初始化页面标题和标题 ==========
         function initPageTitles() {
@@ -1775,13 +1742,10 @@
                 tableData = JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
                 adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
                 appConfig = JSON.parse(JSON.stringify(DEFAULT_APP_CONFIG));
-                
-                // 关键修复：使用预定义的分类，不从数据中提取
-                // 分类已经在全局变量中从外部文件加载了
+                categoryList = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_LIST));
+                categoryMap = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_MAP));
                 
                 console.log('✅ 从外部文件加载默认数据成功');
-                console.log('📊 预定义的分类数量:', categoryList.length);
-                
                 return true;
                 
             } catch (error) {
@@ -1869,11 +1833,11 @@
                 adminAccounts = config.users || [];
                 appConfig = config.settings || {};
                 
-                // 关键修复：不再从数据中提取分类，使用预定义的分类
-                // 分类已经在全局变量中从外部文件加载了
-                
                 updateConfigVersionInfo(config);
                 console.log('✅ GitHub securityconfig配置和Excel数据加载成功');
+                
+                // 确保分类映射一致性
+                ensureCategoryMappingConsistency();
                 
                 hideLoadingIndicator();
                 
@@ -1892,7 +1856,74 @@
             }
         }
 
-        // 处理Excel数据
+        // ========== 分类映射一致性修复 ==========
+
+        // 确保分类映射一致性（长期解决方案）
+        function ensureCategoryMappingConsistency() {
+            console.log('🔧 确保分类映射一致性...');
+            
+            // 创建默认分类名称到ID的映射
+            const defaultNameToId = {};
+            Object.entries(DEFAULT_CATEGORY_MAP).forEach(([id, name]) => {
+                defaultNameToId[name] = id;
+            });
+            
+            // 收集数据中实际使用的分类
+            const usedCategories = new Set();
+            tableData.forEach(item => {
+                if (item.category && item.category.trim()) {
+                    usedCategories.add(item.category.trim());
+                }
+            });
+            
+            console.log('数据中使用的分类:', Array.from(usedCategories));
+            
+            // 重建分类映射，优先使用默认ID
+            const newCategoryMap = {};
+            const newCategoryList = [];
+            
+            // 首先添加默认分类（保持ID一致性）
+            Object.entries(DEFAULT_CATEGORY_MAP).forEach(([defaultId, defaultName]) => {
+                newCategoryMap[defaultId] = defaultName;
+                newCategoryList.push({
+                    id: defaultId,
+                    name: defaultName
+                });
+            });
+            
+            // 然后添加数据中新增的分类（使用新ID）
+            let customIndex = Object.keys(DEFAULT_CATEGORY_MAP).length + 1;
+            Array.from(usedCategories).forEach(categoryName => {
+                // 如果这个分类不在默认映射中，添加它
+                if (!defaultNameToId[categoryName]) {
+                    const newId = `category${customIndex}`;
+                    newCategoryMap[newId] = categoryName;
+                    newCategoryList.push({
+                        id: newId,
+                        name: categoryName
+                    });
+                    customIndex++;
+                    console.log(`➕ 新增分类: ${categoryName} -> ${newId}`);
+                }
+            });
+            
+            // 更新全局变量
+            categoryMap = newCategoryMap;
+            categoryList = newCategoryList;
+            
+            console.log('✅ 一致性映射完成:');
+            categoryList.forEach(cat => {
+                console.log(`  ${cat.id}: ${cat.name}`);
+            });
+            
+            // 更新UI
+            updateCategoryFilters();
+            updateCategorySelect();
+            
+            return true;
+        }
+
+        // 处理Excel数据 - 修复分类映射问题
         async function processExcelData(arrayBuffer) {
             try {
                 const data = new Uint8Array(arrayBuffer);
@@ -1941,8 +1972,8 @@
                 
                 console.log('从Excel加载的数据条数:', tableData.length);
                 
-                // 关键修复：不再从数据中提取分类，使用预定义的分类
-                // 分类已经在全局变量中从外部文件加载了
+                // 确保分类映射一致性
+                ensureCategoryMappingConsistency();
                 
                 renderTable(tableData);
                 updateStats();
@@ -1955,7 +1986,7 @@
 
         // ========== 优化的同步流程 ==========
 
-        // 优化的同步到Excel函数
+        // 优化的同步到Excel函数 - 修复重新加载问题
         async function syncDataToExcel() {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -2091,6 +2122,108 @@
             }
         }
 
+        // 从GitHub重新加载Excel数据（优化的版本）
+        async function reloadExcelDataFromGitHub() {
+            try {
+                console.log('🔄 重新从GitHub获取最新数据...');
+                
+                // 使用不同的方法来获取数据，避免缓存问题
+                const timestamp = Date.now();
+                const excelUrl = `${GITHUB_CONFIG_BASE}/table.xlsx`;
+                
+                // 方法1：直接下载
+                const response = await fetch(`${excelUrl}?_=${timestamp}`, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`下载失败: HTTP ${response.status}`);
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                
+                if (arrayBuffer.byteLength === 0) {
+                    throw new Error('下载的文件为空');
+                }
+                
+                // 处理Excel数据
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { 
+                    type: 'array',
+                    cellText: false,
+                    cellDates: true,
+                    raw: false
+                });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: '',
+                    blankrows: false
+                });
+                
+                if (excelData.length < 2) {
+                    throw new Error('Excel文件为空或格式不正确');
+                }
+                
+                const newTableData = [];
+                
+                for (let i = 1; i < excelData.length; i++) {
+                    const row = excelData[i];
+                    if (row.length === 0 || !row.some(cell => cell !== '' && cell != null)) continue;
+                    
+                    const item = {
+                        id: parseInt(row[0]) || i,
+                        category: String(row[1] || '').trim(),
+                        title: String(row[2] || '').trim(),
+                        path: String(row[3] || '').trim(),
+                        type: String(row[4] || 'url').toLowerCase().trim(),
+                        note: String(row[5] || '').trim()
+                    };
+                    
+                    if (!item.title && !item.path) continue;
+                    
+                    newTableData.push(item);
+                }
+                
+                // 更新数据
+                tableData = newTableData;
+                
+                // 确保分类映射一致性
+                ensureCategoryMappingConsistency();
+                
+                // 更新本地存储
+                saveDataToStorage();
+                
+                // 更新UI
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                filterTable(searchTerm, activeCategory);
+                
+                console.log('✅ 从GitHub重新加载数据成功，数据条数:', tableData.length);
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 从GitHub重新加载数据失败:', error);
+                
+                // 如果重新加载失败，但本地有数据，继续使用本地数据
+                if (tableData && tableData.length > 0) {
+                    console.log('⚠️ 使用本地缓存数据');
+                    return false;
+                }
+                
+                throw error;
+            }
+        }
+
         // ========== 优化的初始化流程 ==========
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -2172,16 +2305,12 @@
                         if (savedData && savedData.length > 0) {
                             console.log('📊 使用本地存储的数据');
                             tableData = savedData;
-                            
-                            // 关键修复：不再从数据中提取分类，使用预定义的分类
-                            // 分类已经在全局变量中从外部文件加载了
-                            
                             currentData = [...tableData];
                             renderTable(currentData);
                             updateStats();
                             
-                            updateCategoryFilters();
-                            updateCategorySelect();
+                            // 确保分类映射一致性
+                            ensureCategoryMappingConsistency();
                             
                             updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，使用本地缓存数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
                         } else {
@@ -2195,7 +2324,6 @@
                 }
                 
                 console.log(`📊 ${PROJECT_NAME}初始化完成，最终数据量: ${tableData.length} 条记录，来源: ${appConfig.source}`);
-                console.log(`📊 最终分类数量: ${categoryList.length} 个`);
                 showToast(`${PROJECT_NAME}系统初始化完成，数据来源: ${appConfig.source}`, 'success');
                 
             }, 100); // 稍微延迟，确保默认数据先显示
@@ -2477,16 +2605,14 @@
         // 创建分类颜色映射函数 - 修复版
         function createCategoryColorMap() {
             const colorMap = {};
-            
-            // 关键修复：使用预定义的分类列表，而不是从数据中提取
-            const availableCategories = getAvailableCategories();
+            const uniqueCategories = [...new Set(tableData.map(item => item.category).filter(Boolean))];
             
             // 按分类名称排序，确保颜色分配的一致性
-            const sortedCategories = availableCategories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+            const sortedCategories = uniqueCategories.sort((a, b) => a.localeCompare(b, 'zh-CN'));
             
             sortedCategories.forEach((category, index) => {
                 const colorIndex = (index % 20) + 1;
-                colorMap[category.name] = `category-${colorIndex}`;
+                colorMap[category] = `category-${colorIndex}`;
             });
             
             return colorMap;
@@ -2976,9 +3102,10 @@
 
         // 设置筛选事件
         function setupFilterEvents() {
-            // 事件委托到filter-box容器
-            const filterBox = document.getElementById('filterBox');
-            filterBox.addEventListener('click', handleFilter);
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', handleFilter);
+            });
         }
 
         // 处理路径类型变化
@@ -3005,15 +3132,13 @@
 
         // 处理筛选
         function handleFilter(e) {
-            if (e.target.classList.contains('filter-btn')) {
-                const filterButtons = document.querySelectorAll('.filter-btn');
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                
-                const searchTerm = searchInput.value.toLowerCase();
-                const category = e.target.dataset.category;
-                filterTable(searchTerm, category);
-            }
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = e.currentTarget.dataset.category;
+            filterTable(searchTerm, category);
         }
 
         // 筛选表格数据
@@ -3030,7 +3155,6 @@
             }
             
             if (category !== 'all') {
-                // 关键修复：通过分类ID查找对应的分类名称
                 const selectedCategory = categoryList.find(cat => cat.id === category);
                 if (selectedCategory) {
                     filteredData = filteredData.filter(item => item.category === selectedCategory.name);
@@ -3041,7 +3165,7 @@
             renderTable(currentData);
         }
 
-        // 打开模态框
+        // 打开模态框 - 修复分类选择问题
         function openModal(id = null) {
             if (!isLoggedIn) {
                 alert('请先登录管理员账户');
@@ -3061,19 +3185,26 @@
                     editId.value = item.id;
                     itemTitle.value = item.title;
                     
-                    // 查找对应的分类ID
+                    // 查找对应的分类ID - 使用确保一致性的映射
                     let categoryId = '';
                     if (item.category) {
+                        // 在categoryMap中查找
                         const categoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
+                        
                         if (categoryEntry) {
                             categoryId = categoryEntry[0];
                             console.log(`✅ 找到分类映射: "${item.category}" -> ${categoryId}`);
                         } else {
                             console.warn(`❌ 未找到分类 "${item.category}" 的映射`);
-                            // 如果没找到，尝试在分类列表中查找
-                            const categoryObj = categoryList.find(cat => cat.name === item.category);
-                            if (categoryObj) {
-                                categoryId = categoryObj.id;
+                            
+                            // 尝试修复映射
+                            ensureCategoryMappingConsistency();
+                            
+                            // 再次查找
+                            const newCategoryEntry = Object.entries(categoryMap).find(([id, name]) => name === item.category);
+                            if (newCategoryEntry) {
+                                categoryId = newCategoryEntry[0];
+                                console.log(`✅ 修复后找到: "${item.category}" -> ${categoryId}`);
                             }
                         }
                     }
@@ -3148,60 +3279,25 @@
             let categoryName;
             let categoryId = itemCategory.value;
             
-            if (categoryId === '__new__') {
-                // 处理新分类
-                categoryName = prompt('请输入新分类名称:');
-                if (!categoryName || !categoryName.trim()) {
-                    alert('分类名称不能为空！');
-                    return;
-                }
-                categoryName = categoryName.trim();
-                
-                // 检查是否已存在同名分类
-                const existingCategory = categoryList.find(cat => cat.name === categoryName);
-                if (existingCategory) {
-                    categoryId = existingCategory.id;
-                    categoryName = existingCategory.name;
-                    alert(`分类 "${categoryName}" 已存在，将使用现有分类。`);
-                } else {
-                    // 创建新分类ID
-                    categoryId = `category${categoryList.length + 1}`;
-                    
-                    // 添加到分类列表和映射
-                    categoryMap[categoryId] = categoryName;
-                    categoryList.push({
-                        id: categoryId,
-                        name: categoryName
-                    });
-                    
-                    // 更新UI
-                    updateCategoryFilters();
-                    updateCategorySelect();
-                    
-                    console.log('✅ 新分类已添加:', { id: categoryId, name: categoryName });
-                    showToast(`新分类 "${categoryName}" 已创建！`, 'success');
-                }
+            // 查找分类名称
+            if (categoryId && categoryMap[categoryId]) {
+                categoryName = categoryMap[categoryId];
             } else {
-                // 使用现有分类
-                if (categoryId && categoryMap[categoryId]) {
-                    categoryName = categoryMap[categoryId];
-                } else {
-                    // 如果ID无效，使用分类名称本身
-                    categoryName = categoryId;
-                    categoryId = `category${categoryList.length + 1}`;
-                    
-                    const newCategory = {
-                        id: categoryId,
-                        name: categoryName
-                    };
-                    categoryList.push(newCategory);
-                    categoryMap[categoryId] = categoryName;
-                    
-                    updateCategoryFilters();
-                    updateCategorySelect();
-                    
-                    console.log('✅ 新分类已添加:', newCategory);
-                }
+                // 如果是新分类
+                categoryName = categoryId;
+                categoryId = `category${Object.keys(categoryMap).length + 1}`;
+                
+                const newCategory = {
+                    id: categoryId,
+                    name: categoryName
+                };
+                categoryList.push(newCategory);
+                categoryMap[categoryId] = categoryName;
+                
+                updateCategoryFilters();
+                updateCategorySelect();
+                
+                console.log('✅ 新分类已添加:', newCategory);
             }
             
             const newItem = {
@@ -3460,51 +3556,25 @@
             showToast(`您已成功退出${PROJECT_NAME}登录`, 'info');
         }
 
-        // 关键修复：更新分类筛选器 - 使用预定义的分类
+        // 更新分类筛选器
         function updateCategoryFilters() {
-            const filterBox = document.getElementById('filterBox');
-            if (!filterBox) return;
-            
-            console.log('🔄 更新分类筛选器...');
-            
-            // 获取可用的分类列表
-            const availableCategories = getAvailableCategories();
-            console.log('可用分类:', availableCategories);
-            
-            // 保存当前选中的分类
-            const currentActive = filterBox.querySelector('.filter-btn.active');
-            const currentCategory = currentActive ? currentActive.dataset.category : 'all';
-            
-            // 清空除"全部"按钮外的所有按钮
+            const filterBox = document.querySelector('.filter-box');
             const allButton = filterBox.querySelector('[data-category="all"]');
+            
             filterBox.innerHTML = '';
+            filterBox.appendChild(allButton);
             
-            // 添加"全部"按钮
-            if (!allButton) {
-                const newAllButton = document.createElement('button');
-                newAllButton.className = 'filter-btn';
-                newAllButton.setAttribute('data-category', 'all');
-                newAllButton.textContent = '全部';
-                filterBox.appendChild(newAllButton);
-            } else {
-                filterBox.appendChild(allButton);
-            }
+            const uniqueCategories = [];
+            const addedNames = new Set();
             
-            // 检查分类列表是否为空
-            if (!availableCategories || availableCategories.length === 0) {
-                console.warn('⚠️ 分类列表为空，无法生成筛选按钮');
-                return;
-            }
+            categoryList.forEach(category => {
+                if (!addedNames.has(category.name)) {
+                    uniqueCategories.push(category);
+                    addedNames.add(category.name);
+                }
+            });
             
-            // 按分类名称排序，以便于查找
-            const sortedCategories = [...availableCategories].sort((a, b) => 
-                a.name.localeCompare(b.name, 'zh-CN')
-            );
-            
-            console.log('排序后的分类:', sortedCategories.map(cat => `${cat.id}: ${cat.name}`));
-            
-            // 为每个分类创建筛选按钮
-            sortedCategories.forEach(category => {
+            uniqueCategories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')).forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'filter-btn';
                 button.setAttribute('data-category', category.id);
@@ -3512,23 +3582,24 @@
                 filterBox.appendChild(button);
             });
             
-            // 恢复选中的分类
-            const newActiveButton = filterBox.querySelector(`[data-category="${currentCategory}"]`);
-            if (newActiveButton) {
-                newActiveButton.classList.add('active');
-            } else {
-                // 如果没有找到之前选中的分类，默认选中"全部"
-                filterBox.querySelector('[data-category="all"]').classList.add('active');
-            }
+            setupFilterEvents();
             
-            console.log(`✅ 更新完成，共创建 ${sortedCategories.length} 个分类筛选按钮`);
+            const activeCategory = document.querySelector('.filter-btn.active')?.dataset.category;
+            if (activeCategory) {
+                const activeBtn = filterBox.querySelector(`[data-category="${activeCategory}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                } else {
+                    allButton.classList.add('active');
+                }
+            } else {
+                allButton.classList.add('active');
+            }
         }
 
-        // 关键修复：更新分类选择器 - 使用预定义的分类
+        // 更新分类选择器 - 修复显示问题
         function updateCategorySelect() {
             const categorySelect = document.getElementById('itemCategory');
-            if (!categorySelect) return;
-            
             const currentValue = categorySelect.value;
             
             console.log('🔄 更新分类选择器...');
@@ -3538,17 +3609,8 @@
                 <option value="__new__">+ 添加新分类</option>
             `;
             
-            // 获取可用的分类列表
-            const availableCategories = getAvailableCategories();
-            
-            // 检查分类列表是否为空
-            if (!availableCategories || availableCategories.length === 0) {
-                console.warn('⚠️ 分类列表为空，无法生成选择器选项');
-                return;
-            }
-            
             // 按分类名称排序，以便于查找
-            const sortedCategories = [...availableCategories].sort((a, b) => 
+            const sortedCategories = [...categoryList].sort((a, b) => 
                 a.name.localeCompare(b.name, 'zh-CN')
             );
             
@@ -3561,10 +3623,36 @@
             
             console.log(`选择器选项数量: ${categorySelect.options.length}`);
             
-            if (currentValue && availableCategories.find(cat => cat.id === currentValue)) {
+            if (currentValue && categoryList.find(cat => cat.id === currentValue)) {
                 categorySelect.value = currentValue;
                 console.log(`恢复之前选择的值: ${currentValue}`);
             }
+            
+            // 添加新分类的逻辑
+            categorySelect.addEventListener('change', function() {
+                if (this.value === '__new__') {
+                    const newCategoryName = prompt('请输入新分类名称:');
+                    if (newCategoryName && newCategoryName.trim()) {
+                        const newCategoryId = `category${categoryList.length + 1}`;
+                        const newCategory = {
+                            id: newCategoryId,
+                            name: newCategoryName.trim()
+                        };
+                        
+                        categoryList.push(newCategory);
+                        categoryMap[newCategoryId] = newCategoryName.trim();
+                        
+                        updateCategorySelect();
+                        updateCategoryFilters();
+                        
+                        categorySelect.value = newCategoryId;
+                        
+                        showToast(`新分类 "${newCategoryName}" 已创建！`, 'success');
+                    } else {
+                        this.value = '';
+                    }
+                }
+            });
         }
 
         // 更新统计数据
@@ -3966,25 +4054,65 @@
         window.debugCategories = function() {
             console.group('🔍 分类调试信息');
             console.log('tableData 中的分类:', [...new Set(tableData.map(item => item.category).filter(Boolean))]);
-            console.log('categoryList (预定义):', categoryList);
-            console.log('categoryMap (预定义):', categoryMap);
+            console.log('categoryList:', categoryList);
+            console.log('categoryMap:', categoryMap);
             
-            console.log('📊 预定义分类数量:', categoryList.length);
-            console.log('📊 数据条目数量:', tableData.length);
+            // 检查分类映射一致性
+            console.log('\n🔍 检查与默认映射的一致性:');
+            let allConsistent = true;
             
-            // 检查分类按钮是否显示正确
-            const filterBox = document.getElementById('filterBox');
-            if (filterBox) {
-                const filterButtons = filterBox.querySelectorAll('.filter-btn');
-                console.log(`筛选按钮数量: ${filterButtons.length}`);
-                filterButtons.forEach(btn => {
-                    console.log(`按钮: "${btn.textContent}" (${btn.dataset.category})`);
-                });
+            Object.entries(DEFAULT_CATEGORY_MAP).forEach(([defaultId, defaultName]) => {
+                const currentEntry = Object.entries(categoryMap).find(([id, name]) => name === defaultName);
+                
+                if (currentEntry) {
+                    if (currentEntry[0] === defaultId) {
+                        console.log(`✅ 一致: "${defaultName}" -> ${defaultId}`);
+                    } else {
+                        console.warn(`⚠️ 不一致: "${defaultName}" 应该是 ${defaultId}, 但当前是 ${currentEntry[0]}`);
+                        allConsistent = false;
+                    }
+                } else {
+                    console.log(`➖ 默认分类 "${defaultName}" 不在当前数据中`);
+                }
+            });
+            
+            if (allConsistent) {
+                console.log('✅ 所有默认分类映射一致');
+            } else {
+                console.warn('❌ 发现分类映射不一致');
             }
             
             console.groupEnd();
             
-            return true;
+            return allConsistent;
+        };
+
+        // 强制修复分类映射
+        window.fixCategoryMappingNow = function() {
+            console.log('🔧 强制修复分类映射...');
+            ensureCategoryMappingConsistency();
+            console.log('✅ 分类映射已强制修复');
+            showToast('分类映射已修复', 'success');
+            return categoryMap;
+        };
+
+        // 测试特定ID的分类
+        window.testItem = function(id) {
+            const item = tableData.find(item => item.id === id);
+            if (item) {
+                console.log(`ID ${id}的数据:`, item);
+                const mapping = Object.entries(categoryMap).find(([id, name]) => name === item.category);
+                console.log(`分类 "${item.category}" 的映射:`, mapping);
+                
+                if (mapping) {
+                    console.log(`应该在选择器中选中: ${mapping[0]}`);
+                    console.log(`当前选择器选项:`);
+                    Array.from(document.getElementById('itemCategory').options).forEach(opt => {
+                        console.log(`  ${opt.value}: ${opt.text}`);
+                    });
+                }
+            }
+            return item;
         };
 
         // 显示当前项目配置
@@ -3995,17 +4123,9 @@
             console.log('GitHub仓库:', `${GITHUB_OWNER}/${GITHUB_REPO}`);
             console.log('存储前缀:', STORAGE_PREFIX);
             console.log('默认数据条数:', DEFAULT_TABLE_DATA.length);
-            console.log('预定义分类数量:', categoryList.length);
+            console.log('默认分类数量:', DEFAULT_CATEGORY_LIST.length);
             console.groupEnd();
             return PROJECT_CONFIG;
-        };
-
-        // 强制重新加载分类按钮
-        window.reloadCategoryFilters = function() {
-            console.log('🔄 强制重新加载分类筛选按钮...');
-            updateCategoryFilters();
-            console.log('✅ 分类筛选按钮已重新加载');
-            return true;
         };
 
         // 页面加载后自动检查
