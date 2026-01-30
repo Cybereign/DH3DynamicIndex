@@ -1427,7 +1427,7 @@
         // 只需修改这里的变量，就可以切换到其他项目
         
         const PROJECT_CONFIG = {
-            // 项目标识（DH3, DH7, 等）
+            // 项目标识（DH1, DH3, 等）
             prefix: 'DH3',
             
             // 项目完整名称
@@ -1662,14 +1662,14 @@
                     }
                 }
                 
-                // 方法3: 如果上面都失败，使用简单的默认数据
+                // 方法3: 如果上面都失败，显示空表格而不是示例数据
                 if (!loadedData || !Array.isArray(loadedData) || loadedData.length === 0) {
-                    console.warn('⚠️ 无法从 default-data.js 加载数据，使用内置示例数据');
-                    loadedData = [
-                        { id: 1, category: "示例分类1", title: "示例页面1", path: "https://example.com/1", type: "url", note: "这是示例数据1" },
-                        { id: 2, category: "示例分类2", title: "示例页面2", path: "https://example.com/2", type: "url", note: "这是示例数据2" },
-                        { id: 3, category: "示例分类1", title: "示例文件夹1", path: "\\\\server\\share\\folder1", type: "folder", note: "这是示例文件夹1" }
-                    ];
+                    console.warn('⚠️ 无法从 default-data.js 加载有效数据，使用空数据');
+                    loadedData = []; // 改为空数组
+                    
+                    // 显示空表格
+                    tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">正在加载数据，请稍候...</td></tr>`;
+                    updateStatus('warning', '外部数据文件为空或格式不正确');
                 }
                 
                 DEFAULT_TABLE_DATA = loadedData;
@@ -1681,6 +1681,12 @@
                 
             } catch (error) {
                 console.error('❌ 加载外部数据文件失败:', error);
+                
+                // 显示空表格而不是示例数据
+                DEFAULT_TABLE_DATA = [];
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">数据加载失败，请刷新页面重试</td></tr>`;
+                updateStatus('error', '外部数据文件加载失败');
+                
                 return false;
             }
         }
@@ -1921,6 +1927,18 @@
                     }
                 }
                 
+                // 如果外部数据为空，显示空表格
+                if (DEFAULT_TABLE_DATA.length === 0) {
+                    tableData = [];
+                    tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">暂无数据，请添加条目或从外部数据源加载</td></tr>`;
+                    updateStats();
+                    
+                    if (showMessage) {
+                        updateStatus('warning', '外部数据文件为空');
+                    }
+                    return false;
+                }
+                
                 tableData = JSON.parse(JSON.stringify(DEFAULT_TABLE_DATA));
                 adminAccounts = JSON.parse(JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
                 appConfig = JSON.parse(JSON.stringify(DEFAULT_APP_CONFIG));
@@ -1948,6 +1966,9 @@
                 return true;
             } catch (error) {
                 console.error('使用外部数据配置失败:', error);
+                tableData = [];
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">数据加载失败: ${error.message}</td></tr>`;
+                updateStats();
                 updateStatus('error', `配置加载失败: ${error.message}`);
                 return false;
             }
@@ -1961,9 +1982,9 @@
             // 1. 初始化页面标题
             initPageTitles();
             
-            // 2. 加载外部数据文件
-            console.log('🔄 加载外部数据文件...');
-            await loadDefaultDataFromJS();
+            // 2. 显示初始化状态
+            tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">正在初始化系统，请稍候...</td></tr>`;
+            updateStats();
             
             // 3. 加载本地配置
             const savedHeaders = loadHeadersFromStorage();
@@ -1975,40 +1996,63 @@
             // 4. 加载GitHub令牌（如果有）
             loadGitHubToken();
 
-            // 5. 立即显示外部数据（优先显示）
-            console.log('📊 优先显示外部数据...');
-            await useExternalDataConfig(false); // 不显示消息
-            
-            // 6. 设置基础UI
+            // 5. 设置基础UI
             configVersion.textContent = '配置版本: 加载中...';
-            updateStatus('info', '正在初始化系统，优先显示外部数据...');
+            updateStatus('info', '正在初始化系统...');
             
-            // 7. 设置事件监听器
+            // 6. 设置事件监听器
             setupEventListeners();
             setupAuthEvents();
             checkLoginStatus();
             updateCategorySelect();
             updateButtonVisibility();
             
-            // 8. 初始化拖拽排序
+            // 7. 初始化拖拽排序
             initSorting();
             
-            // 9. 设置自动登出监听器
+            // 8. 设置自动登出监听器
             document.addEventListener('click', resetAutoLogoutTimer);
             document.addEventListener('keypress', resetAutoLogoutTimer);
             document.addEventListener('mousemove', resetAutoLogoutTimer);
             
+            // 9. 异步加载外部数据文件
+            console.log('🔄 开始加载外部数据文件...');
+            
+            try {
+                const success = await loadDefaultDataFromJS();
+                
+                if (success && DEFAULT_TABLE_DATA.length > 0) {
+                    // 成功加载到数据，立即显示
+                    await useExternalDataConfig(false); // 不显示消息
+                    console.log('✅ 外部数据文件加载成功，数据条数:', DEFAULT_TABLE_DATA.length);
+                    updateStatus('success', '已加载外部数据配置');
+                } else {
+                    // 数据为空或加载失败
+                    console.log('⚠️ 外部数据文件为空或加载失败');
+                    tableData = [];
+                    tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">暂无数据，请添加条目或等待GitHub数据加载</td></tr>`;
+                    updateStats();
+                    updateStatus('warning', '外部数据文件为空或加载失败');
+                }
+                
+            } catch (error) {
+                console.error('❌ 外部数据文件加载异常:', error);
+                tableData = [];
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">数据加载失败，请刷新页面重试</td></tr>`;
+                updateStats();
+                updateStatus('error', '数据加载失败');
+            }
+            
             // 10. 异步尝试从GitHub加载最新数据
             console.log(`🔄 开始异步尝试从GitHub加载${PROJECT_NAME}最新数据...`);
             
-            // 立即显示外部数据后，在后台尝试加载GitHub数据
             setTimeout(async () => {
                 try {
                     console.log('🔄 异步尝试连接GitHub...');
                     
                     const githubDataLoaded = await loadConfigFromGitHub();
                     
-                    if (githubDataLoaded) {
+                    if (githubDataLoaded && tableData.length > 0) {
                         console.log('✅ GitHub数据加载成功，更新显示');
                         appConfig.source = `GitHub ${PROJECT_NAME}SecurityConfig`;
                         
@@ -2022,10 +2066,20 @@
                         }
                         
                         showToast(`✅ 已成功从GitHub加载${PROJECT_NAME}最新数据`, 'success');
+                    } else if (githubDataLoaded && tableData.length === 0) {
+                        // GitHub数据也为空
+                        console.log('⚠️ GitHub数据加载成功但为空');
+                        appConfig.source = `GitHub ${PROJECT_NAME}SecurityConfig (空数据)`;
+                        updateConfigVersionInfo(appConfig);
+                        updateStatus('info', 'GitHub数据加载成功但为空，请添加数据');
                     } else {
-                        // GitHub加载失败，继续使用外部数据
-                        console.log('⚠️ GitHub加载失败，继续使用外部数据');
-                        appConfig.source = `ExternalData (${PROJECT_NAME}GitHub连接失败)`;
+                        // GitHub加载失败，继续使用当前数据
+                        console.log('⚠️ GitHub加载失败，继续使用当前数据');
+                        if (tableData.length > 0) {
+                            appConfig.source = `ExternalData (${PROJECT_NAME}GitHub连接失败)`;
+                        } else {
+                            appConfig.source = `无数据 (${PROJECT_NAME}GitHub连接失败)`;
+                        }
                         updateConfigVersionInfo(appConfig);
                         
                         const savedData = loadDataFromStorage();
@@ -2041,22 +2095,26 @@
                             updateStats();
                             
                             updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，使用本地缓存数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
-                        } else {
-                            updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，使用外部数据。您当前是访客模式，只能查看数据。请登录管理员账户以进行添加、编辑和删除操作。`);
+                        } else if (tableData.length === 0) {
+                            updateStatus('warning', `${PROJECT_NAME}GitHub连接失败，且无本地数据。您当前是访客模式，只能查看数据。请登录管理员账户以添加新条目。`);
                         }
                     }
                     
                 } catch (error) {
                     console.error('❌ 异步加载GitHub数据异常:', error);
-                    // 错误已经被处理，继续使用外部数据
+                    // 错误已经被处理，继续使用当前数据
                 }
                 
                 console.log(`📊 ${PROJECT_NAME}初始化完成，最终数据量: ${tableData.length} 条记录，来源: ${appConfig.source}`);
-                showToast(`${PROJECT_NAME}系统初始化完成，数据来源: ${appConfig.source}`, 'success');
+                if (tableData.length > 0) {
+                    showToast(`${PROJECT_NAME}系统初始化完成，数据来源: ${appConfig.source}`, 'success');
+                } else {
+                    showToast(`${PROJECT_NAME}系统初始化完成，暂无数据`, 'info');
+                }
                 
             }, 100); // 稍微延迟，确保外部数据先显示
             
-            console.log(`✅ ${PROJECT_NAME}系统基础初始化完成，外部数据已显示`);
+            console.log(`✅ ${PROJECT_NAME}系统基础初始化完成`);
         });
 
         // ========== 认证面板功能 ==========
@@ -2351,7 +2409,7 @@
             console.log(`🔄 渲染表格，数据条数: ${data.length}`);
             
             if (data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">未找到匹配的页面</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">暂无数据</td></tr>`;
                 updateStats();
                 return;
             }
@@ -3823,6 +3881,14 @@
             } catch (error) {
                 console.error('❌ GitHub配置加载失败:', error);
                 hideLoadingIndicator();
+                
+                // 不改变当前数据，只是显示错误信息
+                if (tableData.length === 0) {
+                    updateStatus('error', 'GitHub配置加载失败，请检查网络连接');
+                } else {
+                    updateStatus('warning', 'GitHub配置加载失败，继续使用当前数据');
+                }
+                
                 return false;
             }
         }
@@ -3890,7 +3956,10 @@
                 });
                 
                 if (excelData.length < 2) {
-                    throw new Error('Excel文件为空或格式不正确');
+                    console.warn('Excel文件为空或格式不正确');
+                    tableData = [];
+                    renderTable(tableData);
+                    return;
                 }
                 
                 const headers = excelData[0];
@@ -3918,7 +3987,12 @@
                 
                 console.log('从Excel加载的数据条数:', tableData.length);
                 
-                renderTable(tableData);
+                // 如果数据为空，显示空表格
+                if (tableData.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">GitHub数据为空</td></tr>`;
+                } else {
+                    renderTable(tableData);
+                }
                 updateStats();
                 
             } catch (error) {
@@ -4011,15 +4085,6 @@
                 
                 // 9. 更新状态显示
                 updateStatus('success', '数据同步成功！页面已更新为最新数据');
-                
-                // 10. 在后台验证数据是否同步成功（非阻塞）
-                setTimeout(async () => {
-                    try {
-                        await verifyGitHubSync();
-                    } catch (error) {
-                        console.log('后台验证失败，不影响用户操作:', error);
-                    }
-                }, 1000);
                 
             } catch (error) {
                 console.error('同步到 Excel 失败:', error);
